@@ -16,6 +16,7 @@ TEST_CASE("Partition", "[partition]") {
 
  REQUIRE(p->branch_count() == 7);
 
+ std::cout << p->ToNewick() << std::endl;
 
 }
 
