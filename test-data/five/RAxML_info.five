@@ -1,0 +1,72 @@
+
+
+Using BFGS method to optimize GTR rate parameters, to disable this specify "--no-bfgs" 
+
+
+
+This is RAxML version 8.2.8 released by Alexandros Stamatakis on March 23 2016.
+
+With greatly appreciated code contributions by:
+Andre Aberer      (HITS)
+Simon Berger      (HITS)
+Alexey Kozlov     (HITS)
+Kassian Kobert    (HITS)
+David Dao         (KIT and HITS)
+Sarah Lutteropp   (KIT and HITS)
+Nick Pattengale   (Sandia)
+Wayne Pfeiffer    (SDSC)
+Akifumi S. Tanabe (NRIFS)
+Charlie Taylor    (UF)
+
+
+Alignment has 146 distinct alignment patterns
+
+Proportion of gaps and completely undetermined characters in this alignment: 2.00%
+
+RAxML rapid hill-climbing mode
+
+Using 1 distinct models/data partitions with joint branch length optimization
+
+
+Executing 1 inferences on the original alignment using 1 distinct randomized MP trees
+
+All free model parameters will be estimated by RAxML
+GAMMA model of rate heteorgeneity, ML estimate of alpha-parameter
+
+GAMMA Model parameters will be estimated up to an accuracy of 0.1000000000 Log Likelihood units
+
+Partition: 0
+Alignment Patterns: 146
+Name: No Name Provided
+DataType: DNA
+Substitution Matrix: GTR
+
+
+
+
+RAxML was called as follows:
+
+../standard-RAxML/raxmlHPC-AVX -m GTRGAMMA -s five.fasta -n five -p 1 
+
+
+Partition: 0 with name: No Name Provided
+Base frequencies: 0.370 0.194 0.246 0.191 
+
+Inference[0]: Time 0.102112 GAMMA-based likelihood -3739.000225, best rearrangement setting 2
+alpha[0]: 0.221363 rates[0] ac ag at cg ct gt: 1.420268 5.241274 0.870287 0.348533 7.363575 1.000000 
+
+
+Conducting final model optimizations on all 1 trees under GAMMA-based models ....
+
+Inference[0] final GAMMA-based Likelihood: -3738.999950 tree written to file /home/matsen/y/RAxML_result.five
+
+
+Starting final GAMMA-based thorough Optimization on tree 0 likelihood -3738.999950 .... 
+
+Final GAMMA-based Score of best tree -3738.999950
+
+Program execution info written to /home/matsen/y/RAxML_info.five
+Best-scoring ML tree written to: /home/matsen/y/RAxML_bestTree.five
+
+Overall execution time: 0.134559 secs or 0.000037 hours or 0.000002 days
+
