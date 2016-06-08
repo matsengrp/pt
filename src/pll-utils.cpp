@@ -121,6 +121,8 @@ unsigned int ParseFasta(
 /// A partition to equip.
 /// @param[in] tree
 /// The tree to use for equipping the partition.
+/// @param[in] tip_nodes_count
+/// The number of tip nodes.
 /// @param[out] headers
 /// An array of header strings.
 /// @param[out] seqdata
@@ -180,20 +182,25 @@ void EquipPartitionWithData(
 }
 
 
+/// @brief Set up the model parameters of the given partition.
+/// @todo This should take a RAxML_info file, parse it, and insert those values here.
 void SetModelParameters(pll_partition_t * partition) {
   /* initialize the array of base frequencies */
+  /// @todo `Base frequencies` should go here
   double frequencies[4] = { 0.17, 0.19, 0.25, 0.39 };
 
   /* substitution rates for the 4x4 GTR model. This means we need exactly
      (4*4-4)/2 = 6 values, i.e. the number of elements above the diagonal */
+  /// @todo `rates` should go here
   double subst_params[6] = {1,1,1,1,1,1};
 
-  /* we'll use 4 rate categories, and currently initialize them to 0 */
-  double rate_cats[4] = {0};
+  /* we'll use RATE_CATS rate categories, and currently initialize them to 0 */
+  double rate_cats[RATE_CATS] = {0};
 
   /* compute the discretized category rates from a gamma distribution
      with alpha shape 1 and store them in rate_cats  */
-  pll_compute_gamma_cats(1, 4, rate_cats);
+  /// @todo `alpha` should go here
+  pll_compute_gamma_cats(1, RATE_CATS, rate_cats);
 
   /* set frequencies at model with index 0 (we currently have only one model) */
   pll_set_frequencies(partition, 0, frequencies);
@@ -204,8 +211,6 @@ void SetModelParameters(pll_partition_t * partition) {
   /* set rate categories */
   pll_set_category_rates(partition, rate_cats);
 }
-
-
 
 
 }
