@@ -66,6 +66,10 @@ Partition::Partition(std::string newick_path, std::string fasta_path) {
       (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
   operations_ =
       (pll_operation_t *)malloc(inner_nodes_count() * sizeof(pll_operation_t));
+  sumtable_ = (double *)pll_aligned_alloc(
+      partition_->sites * partition_->rate_cats * partition_->states_padded *
+          sizeof(double),
+      ALIGNMENT);
 }
 
 
@@ -76,6 +80,7 @@ Partition::~Partition() {
   free(branch_lengths_);
   free(matrix_indices_);
   free(operations_);
+  pll_aligned_free(sumtable_);
   pll_partition_destroy(partition_);
   pll_utree_destroy(tree_);
 }
@@ -88,12 +93,11 @@ std::string Partition::ToNewick() {
 }
 
 
-/// @brief Perform a full tree traversal and return the likelihood.
+/// @brief Perform a full tree traversal and update CLV's, etc.
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
 /// want to calculate the likelihood, but we'll do that carefully!
-/// @return Log likelihood.
-double Partition::FullTraversalLogLikelihood() {
+void Partition::FullTraversalUpdate() {
   /* Perform a full postorder traversal of the unrooted tree. */
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
@@ -120,12 +124,69 @@ double Partition::FullTraversalLogLikelihood() {
      will be carried out sequentially starting from operation 0 towrds
      ops_count-1. */
   pll_update_partials(partition_, operations_, ops_count);
+}
 
+
+/// @brief Just calculate log likelihood.
+/// NOTE: This will return nonsense if you haven't updated CLV's, etc.
+/// @return Log likelihood.
+double Partition::LogLikelihood() {
   double logl = pll_compute_edge_loglikelihood(
       partition_, tree_->clv_index, tree_->scaler_index, tree_->back->clv_index,
       tree_->back->scaler_index, tree_->pmatrix_index, params_indices_,
-      NULL);  // Can supply a persite_lnl parameter.
+      NULL);  // Can supply a persite_lnl parameter as last argument.
 
   return logl;
+}
+
+
+/// @brief Make a traversal and return the log likelihood.
+/// @return Log likelihood.
+double Partition::FullTraversalLogLikelihood() {
+  FullTraversalUpdate();
+  return LogLikelihood();
+}
+
+
+/// @brief Optimize the current branch length.
+/// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
+double Partition::OptimizeCurrentBranch() {
+  /* Perform a full postorder traversal of the unrooted tree. */
+  pll_utree_t *parent = tree_;
+  pll_utree_t *child = tree_->back;
+
+  // Compute the sumtable for the particular branch once before proceeding with
+  // the optimization.
+  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
+                      params_indices_, sumtable_);
+
+  double len = tree_->length;
+  double d1;  // First derivative.
+  double d2;  // Second derivative.
+  for (unsigned int i = 0; i < MAX_ITER; ++i) {
+    double opt_logl = pll_compute_likelihood_derivatives(
+        partition_, parent->scaler_index, child->scaler_index, len,
+        params_indices_, sumtable_, &d1, &d2);
+
+    printf("Branch length: %f log-L: %f Derivative: %f\n", len, opt_logl, d1);
+
+    // If derivative is approximately zero then we've found the maximum.
+    if (fabs(d1) < EPSILON) break;
+
+    /* Newton's method for finding the optimum of a function. The iteration to
+       reach the optimum is
+
+       x_{i+1} = x_i - f'(x_i) / f''(x_i)
+
+       where x_i is the current branch, f'(x_i) is the first derivative and
+       f''(x_i) is the second derivative of the likelihood function. */
+    len -= d1 / d2;
+  }
+
+  // Update current branch lengths.
+  parent->length = len;
+  child->length = len;
+
+  return len;
 }
 }

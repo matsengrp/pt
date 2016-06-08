@@ -20,6 +20,8 @@ TEST_CASE("Partition", "[partition]") {
       "test-data/tiny/newton.tre", "test-data/tiny/newton.fasta"));
   // Value reported by running newton PLL example.
   REQUIRE(-33.387713 - p_newton->FullTraversalLogLikelihood() < 1e-6);
+  REQUIRE(2.607098 - p_newton->OptimizeCurrentBranch() < 1e-6);
+  std::cout << p_newton->ToNewick() << std::endl;
 }
 
 

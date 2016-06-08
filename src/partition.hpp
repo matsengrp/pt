@@ -27,6 +27,7 @@ class Partition {
   // buffer for storing pointers to nodes of the tree in postorder traversal.
   pll_utree_t** travbuffer_;
   unsigned int* params_indices_;
+  double* sumtable_;
 
  public:
   Partition(std::string newick_path, std::string fasta_path);
@@ -40,7 +41,10 @@ class Partition {
   unsigned int branch_count() { return (nodes_count() - 1); };
 
   std::string ToNewick();
+  void FullTraversalUpdate();
+  double LogLikelihood();
   double FullTraversalLogLikelihood();
+  double OptimizeCurrentBranch();
 };
 }
 
