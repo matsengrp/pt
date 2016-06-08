@@ -19,7 +19,8 @@ Partition::Partition(std::string newick_path, std::string fasta_path) {
   // tip nodes in tip_nodes_count.
   tree_ = pll_utree_parse_newick(&newick_path[0], &tip_nodes_count_);
   if (!tree_) {
-    std::cout << "Parsing failure: tree must be an unrooted binary tree.\n";
+    std::cout << "Parsing failure: " << newick_path
+              << " must be an unrooted binary tree.\n";
     exit(EXIT_FAILURE);
   };
 
