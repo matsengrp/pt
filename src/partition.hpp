@@ -30,7 +30,7 @@ class Partition {
   double* sumtable_;
 
  public:
-  Partition(std::string newick_path, std::string fasta_path);
+  Partition(std::string newick_path, std::string fasta_path, std::string RAxML_info_path);
   virtual ~Partition();
 
   unsigned int tip_nodes_count() { return tip_nodes_count_; };
@@ -41,10 +41,13 @@ class Partition {
   unsigned int branch_count() { return (nodes_count() - 1); };
 
   std::string ToNewick();
-  void FullTraversalUpdate();
+  void FullTraversalUpdate(pll_utree_t* tree);
   double LogLikelihood();
   double FullTraversalLogLikelihood();
-  double OptimizeCurrentBranch();
+  double OptimizeCurrentBranch(pll_utree_t* tree);
+  void TreeBranchLengthsAux(pll_utree_t *tree);
+  void TreeBranchLengths();
+  void FullBranchOpt();
 };
 }
 

@@ -14,7 +14,7 @@ namespace pt {
 /// Path to a file with a Newick-format tree string.
 /// @param[in] fasta_path
 /// Path to a FASTA-formatted alignment.
-Partition::Partition(std::string newick_path, std::string fasta_path) {
+Partition::Partition(std::string newick_path, std::string fasta_path, std::string RAxML_info_path) {
   // Parse the unrooted binary tree in newick format, and store the number of
   // tip nodes in tip_nodes_count.
   tree_ = pll_utree_parse_newick(&newick_path[0], &tip_nodes_count_);
@@ -44,7 +44,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path) {
       inner_nodes_count(),  // How many scale buffers to use.
       ARCH_FLAGS);          // List of flags for hardware acceleration.
 
-  SetModelParameters(partition_);
+  SetModelParameters(partition_,RAxML_info_path);
 
   EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
                          seqdata);
@@ -70,6 +70,8 @@ Partition::Partition(std::string newick_path, std::string fasta_path) {
       partition_->sites * partition_->rate_cats * partition_->states_padded *
           sizeof(double),
       ALIGNMENT);
+
+
 }
 
 
@@ -97,11 +99,11 @@ std::string Partition::ToNewick() {
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
 /// want to calculate the likelihood, but we'll do that carefully!
-void Partition::FullTraversalUpdate() {
+void Partition::FullTraversalUpdate(pll_utree_t* tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
-  if (!pll_utree_traverse(tree_, cb_full_traversal, travbuffer_,
+  if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
                           &traversal_size)) {
     fatal("Function pll_utree_traverse() requires inner nodes as parameters");
   }
@@ -143,30 +145,34 @@ double Partition::LogLikelihood() {
 /// @brief Make a traversal and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood() {
-  FullTraversalUpdate();
+  FullTraversalUpdate(tree_);
   return LogLikelihood();
 }
 
 
 /// @brief Optimize the current branch length.
 /// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
-double Partition::OptimizeCurrentBranch() {
+double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
-  pll_utree_t *parent = tree_;
-  pll_utree_t *child = tree_->back;
+  pll_utree_t *parent = tree;
+  pll_utree_t *child = tree->back;
 
   // Compute the sumtable for the particular branch once before proceeding with
   // the optimization.
   pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
                       params_indices_, sumtable_);
 
-  double len = tree_->length;
+  double len = tree->length;
   double d1;  // First derivative.
   double d2;  // Second derivative.
   for (unsigned int i = 0; i < MAX_ITER; ++i) {
     double opt_logl = pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
+    double opt_check= pll_compute_edge_loglikelihood(
+      partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
+      tree->back->scaler_index, tree->pmatrix_index, params_indices_,
+      NULL);
 
     printf("Branch length: %f log-L: %f Derivative: %f\n", len, opt_logl, d1);
 
@@ -181,6 +187,11 @@ double Partition::OptimizeCurrentBranch() {
        where x_i is the current branch, f'(x_i) is the first derivative and
        f''(x_i) is the second derivative of the likelihood function. */
     len -= d1 / d2;
+    if(len<0)
+    {
+    len=1e-6;
+    break;
+    }
   }
 
   // Update current branch lengths.
@@ -189,4 +200,53 @@ double Partition::OptimizeCurrentBranch() {
 
   return len;
 }
+
+
+void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
+  if (!tree->next){
+  FullTraversalUpdate(tree->back);
+  OptimizeCurrentBranch(tree->back);
+  std::cout<<"DONE"<<std::endl;
+  }
+  else{
+  FullTraversalUpdate(tree);
+  OptimizeCurrentBranch(tree);
+  std::cout<<"DONE"<<std::endl;
+
+  TreeBranchLengthsAux(tree->next->back);
+  TreeBranchLengthsAux(tree->next->next->back);
+  }
+}
+
+
+void Partition::TreeBranchLengths(){
+  if(!tree_->next)
+    {
+    fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
+    }
+  TreeBranchLengthsAux(tree_);
+  TreeBranchLengthsAux(tree_->back);
+
+}
+
+
+void Partition::FullBranchOpt(){
+  double loglike_prev=FullTraversalLogLikelihood();
+
+  TreeBranchLengths();
+
+  double loglike=FullTraversalLogLikelihood();
+
+  int i=0;
+  while((fabs(loglike_prev-loglike) > EPSILON)&& i<MAX_ITER){
+  TreeBranchLengths();
+
+  loglike_prev=loglike;
+  loglike=FullTraversalLogLikelihood();
+  i++;
+
+  }
+
+}
+
 }

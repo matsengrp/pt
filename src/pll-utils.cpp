@@ -1,6 +1,11 @@
 #include "pll-utils.hpp"
 #include <cstdarg>
 #include <search.h>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iomanip>
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.
@@ -26,26 +31,40 @@ void fatal(const char *format, ...) {
 /* a callback function for performing a full traversal */
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
-
-bool TreeHealthyAux(pll_utree_t *tree) {
-  if (!tree->length) return false;
-
-  if (tree->next) {
-    if (!tree->next->length || !tree->next->next->length) return false;
-
-    return (TreeHealthyAux(tree->next->back) &&
-            TreeHealthyAux(tree->next->next->back));
+static int utree_traverse_check(pll_utree_t * node,
+                                 int (*cbtrav)(pll_utree_t *))
+{
+  if (!node->next)
+  {
+    return cbtrav(node);
   }
+  if (!cbtrav(node))
+    return 0;
 
-  return true;
+  return utree_traverse_check(node->next->back, cbtrav) &&
+         utree_traverse_check(node->next->next->back, cbtrav);
 }
 
 
 /// @brief Determine if a tree is healthy, i.e. has branch lengths.
 /// @param[in] tree
 /// A pll_utree_t to check.
+int cb_branch_healthy(pll_utree_t *tree)
+{
+if (!tree->length) return 0;
+
+  if (tree->next) {
+    if (!tree->next->length || !tree->next->next->length) return 0;
+
+    return (cb_branch_healthy(tree->next->back) &&
+            cb_branch_healthy(tree->next->next->back));
+  }
+
+  return true;
+
+}
 bool TreeHealthy(pll_utree_t *tree) {
-  return (TreeHealthyAux(tree) && TreeHealthyAux(tree->back));
+  return (utree_traverse_check(tree,cb_branch_healthy) && utree_traverse_check(tree,cb_branch_healthy));
 }
 
 
@@ -170,19 +189,63 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
   free(tipnodes);
 }
 
+std::vector<std::string> ssplit(const std::string &s, char delim) {
+    std::stringstream ss(s);
+    std::string item;
+    std::vector<std::string> tokens;
+    while (getline(ss, item, delim)) {
+        tokens.push_back(item);
+    }
+    return tokens;
+}
+
 
 /// @brief Set up the model parameters of the given partition.
 /// @todo This should take a RAxML_info file, parse it, and insert those values
 /// here.
-void SetModelParameters(pll_partition_t *partition) {
+void SetModelParameters(pll_partition_t *partition, std::string path) {
   /* initialize the array of base frequencies */
   /// @todo `Base frequencies` should go here
-  double frequencies[4] = {0.17, 0.19, 0.25, 0.39};
+  std::ifstream file(path);
+  std::string read;
+  std::string contents;
+
+  while(std::getline(file,read))
+  {
+    contents+=read;
+    contents.push_back('\n');
+   }
+
+  std::size_t pos1= contents.find("frequencies: ");
+  std::size_t pos2= contents.find('\n',pos1);
+
+  std::string sstr=contents.substr(pos1+13,pos2-pos1-13);
+
+  std::vector<std::string> freqvector=ssplit(sstr,' ');
+  double frequencies[freqvector.size()];
+
+  for(int i=0; i<freqvector.size(); i++)
+    frequencies[i]=std::stod(freqvector.at(i));
+
+  ///double frequencies[4] = {0.17, 0.19, 0.25, 0.39}; OLD
 
   /* substitution rates for the 4x4 GTR model. This means we need exactly
      (4*4-4)/2 = 6 values, i.e. the number of elements above the diagonal */
   /// @todo `rates` should go here
-  double subst_params[6] = {1, 1, 1, 1, 1, 1};
+  pos1= contents.find("ac ag at cg ct gt:");
+  pos2= contents.find('\n',pos1);
+  sstr=contents.substr(pos1+19,pos2-pos1-19);
+  std::vector<std::string> ratevector=ssplit(sstr,' ');
+  double subst_params[ratevector.size()];
+
+  for(int i=0; i<ratevector.size(); i++)
+    subst_params[i]=std::stod(ratevector.at(i));
+  if(ratevector.size()!=(((freqvector.size())*freqvector.size() -4)/2))
+    fatal("Wrong number of rate values.");
+
+
+/*for(int i=0;i<6;i++)
+  subst_params[i] = 1;*/
 
   /* we'll use RATE_CATS rate categories, and currently initialize them to 0 */
   double rate_cats[RATE_CATS] = {0};
@@ -190,7 +253,14 @@ void SetModelParameters(pll_partition_t *partition) {
   /* compute the discretized category rates from a gamma distribution
      with alpha shape 1 and store them in rate_cats  */
   /// @todo `alpha` should go here
-  pll_compute_gamma_cats(1, RATE_CATS, rate_cats);
+  pos1= contents.find("alpha[0]: ");
+  pos2= contents.find(' ', pos1+10);
+  sstr=contents.substr(pos1+10,pos2-pos1-10);
+  double alpha= stod(sstr);
+  pll_compute_gamma_cats(alpha, RATE_CATS, rate_cats);
+
+
+  file.close();
 
   /* set frequencies at model with index 0 (we currently have only one model) */
   pll_set_frequencies(partition, 0, frequencies);
@@ -201,4 +271,6 @@ void SetModelParameters(pll_partition_t *partition) {
   /* set rate categories */
   pll_set_category_rates(partition, rate_cats);
 }
+
+
 }

@@ -1,8 +1,9 @@
 #ifndef PT_PLL_UTILS_
 #define PT_PLL_UTILS_
 
-#include <libpll/pll.h>
+#include <pll.h>
 #include <string>
+#include <vector>
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.
@@ -29,7 +30,12 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
 void EquipPartitionWithData(pll_partition_t* partition, pll_utree_t* tree,
                             unsigned int tip_nodes_count, char** headers,
                             char** seqdata);
-void SetModelParameters(pll_partition_t* partition);
+std::vector<std::string> ssplit(const std::string &s, char delim);
+void SetModelParameters(pll_partition_t* partition, std::string path);
+
+static int utree_traverse_check(pll_utree_t * node,
+                                 int (*cbtrav)(pll_utree_t *));
+
 }
 
 #endif  // PT_PLL_UTILS_
