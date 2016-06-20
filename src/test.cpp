@@ -14,6 +14,7 @@ TEST_CASE("Partition", "[partition]") {
 
   REQUIRE(p_five->branch_count() == 7);
   // Value reported by running newick-fasta-unrooted PLL example.
+  //Our calculation uses the true subst_param and alpha values from the RAxML file, unlike the example.
   ///REQUIRE(std::fabs(-4159.020246 - p_five->FullTraversalLogLikelihood()) < 1e-6);
   p_five->FullBranchOpt();
 

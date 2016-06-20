@@ -169,10 +169,6 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
     double opt_logl = pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
-    double opt_check= pll_compute_edge_loglikelihood(
-      partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
-      tree->back->scaler_index, tree->pmatrix_index, params_indices_,
-      NULL);
 
     printf("Branch length: %f log-L: %f Derivative: %f\n", len, opt_logl, d1);
 
@@ -187,9 +183,12 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
        where x_i is the current branch, f'(x_i) is the first derivative and
        f''(x_i) is the second derivative of the likelihood function. */
     len -= d1 / d2;
+
+    /*Branch optimization was returning negative values, set minimum branch length to be small positive value*/
+
     if(len<0)
     {
-    len=1e-6;
+    len=EPSILON;
     break;
     }
   }

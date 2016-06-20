@@ -244,9 +244,6 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
     fatal("Wrong number of rate values.");
 
 
-/*for(int i=0;i<6;i++)
-  subst_params[i] = 1;*/
-
   /* we'll use RATE_CATS rate categories, and currently initialize them to 0 */
   double rate_cats[RATE_CATS] = {0};
 
