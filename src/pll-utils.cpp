@@ -31,6 +31,7 @@ void fatal(const char *format, ...) {
 /* a callback function for performing a full traversal */
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
+
 static int utree_traverse_check(pll_utree_t * node,
                                  int (*cbtrav)(pll_utree_t *))
 {
@@ -204,8 +205,8 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
 /// @todo This should take a RAxML_info file, parse it, and insert those values
 /// here.
 void SetModelParameters(pll_partition_t *partition, std::string path) {
-  /* initialize the array of base frequencies */
-  /// @todo `Base frequencies` should go here
+
+  /*Import the info file*/
   std::ifstream file(path);
   std::string read;
   std::string contents;
@@ -215,7 +216,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
     contents+=read;
     contents.push_back('\n');
    }
-
+  /* initialize the array of base frequencies */
   std::size_t pos1= contents.find("frequencies: ");
   std::size_t pos2= contents.find('\n',pos1);
 
@@ -227,11 +228,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   for(int i=0; i<freqvector.size(); i++)
     frequencies[i]=std::stod(freqvector.at(i));
 
-  ///double frequencies[4] = {0.17, 0.19, 0.25, 0.39}; OLD
-
-  /* substitution rates for the 4x4 GTR model. This means we need exactly
-     (4*4-4)/2 = 6 values, i.e. the number of elements above the diagonal */
-  /// @todo `rates` should go here
+  /*initialize the array of subst_params*/
   pos1= contents.find("ac ag at cg ct gt:");
   pos2= contents.find('\n',pos1);
   sstr=contents.substr(pos1+19,pos2-pos1-19);
@@ -247,13 +244,13 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   /* we'll use RATE_CATS rate categories, and currently initialize them to 0 */
   double rate_cats[RATE_CATS] = {0};
 
-  /* compute the discretized category rates from a gamma distribution
-     with alpha shape 1 and store them in rate_cats  */
-  /// @todo `alpha` should go here
+  /*initialize the alpha value*/
   pos1= contents.find("alpha[0]: ");
   pos2= contents.find(' ', pos1+10);
   sstr=contents.substr(pos1+10,pos2-pos1-10);
   double alpha= stod(sstr);
+
+
   pll_compute_gamma_cats(alpha, RATE_CATS, rate_cats);
 
 

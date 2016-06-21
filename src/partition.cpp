@@ -200,7 +200,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
   return len;
 }
 
-
+///@brief Aux function for optimizing branch lengths accross the whole tree.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next){
   FullTraversalUpdate(tree->back);
@@ -217,7 +217,8 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   }
 }
 
-
+///@brief Perform a postorder tree traversal, optimizing the branch length at every edge.
+///NOTE: This optimizes internal branches twice per traversal.
 void Partition::TreeBranchLengths(){
   if(!tree_->next)
     {
@@ -228,7 +229,7 @@ void Partition::TreeBranchLengths(){
 
 }
 
-
+///@brief Repeat branch length optimization until log likelihood changes very little or MAX_ITER is reached.
 void Partition::FullBranchOpt(){
   double loglike_prev=FullTraversalLogLikelihood();
 
