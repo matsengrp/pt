@@ -14,6 +14,8 @@ namespace pt {
 /// Path to a file with a Newick-format tree string.
 /// @param[in] fasta_path
 /// Path to a FASTA-formatted alignment.
+/// @param[in] RAxML_info_path
+/// Path to a RAxML info file.
 Partition::Partition(std::string newick_path, std::string fasta_path, std::string RAxML_info_path) {
   // Parse the unrooted binary tree in newick format, and store the number of
   // tip nodes in tip_nodes_count.
@@ -99,6 +101,8 @@ std::string Partition::ToNewick() {
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
 /// want to calculate the likelihood, but we'll do that carefully!
+/// @param[in] tree
+/// Parent node from which to update CLV's etc.
 void Partition::FullTraversalUpdate(pll_utree_t* tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   unsigned int traversal_size;
@@ -142,7 +146,7 @@ double Partition::LogLikelihood() {
 }
 
 
-/// @brief Make a traversal and return the log likelihood.
+/// @brief Make a traversal at the root and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood() {
   FullTraversalUpdate(tree_);
@@ -152,6 +156,9 @@ double Partition::FullTraversalLogLikelihood() {
 
 /// @brief Optimize the current branch length.
 /// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
+/// @param[in] tree
+/// Parent node of branch to optimize.
+/// @return Optimized brance length.
 double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   pll_utree_t *parent = tree;
@@ -200,7 +207,9 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
   return len;
 }
 
-///@brief Aux function for optimizing branch lengths accross the whole tree.
+/// @brief Aux function for optimizing branch lengths accross the whole tree.
+/// @param[in] tree
+/// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next){
   FullTraversalUpdate(tree->back);

@@ -31,7 +31,11 @@ void fatal(const char *format, ...) {
 /* a callback function for performing a full traversal */
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
-
+/// @brief Preform a postorder traversal according to callback function cbtrav.
+/// @param[in] node
+/// Node from which to begin traversal.
+/// @param[in] cbtrav
+/// Callback function for traversal.
 static int utree_traverse_check(pll_utree_t * node,
                                  int (*cbtrav)(pll_utree_t *))
 {
@@ -189,7 +193,7 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
   free(data);
   free(tipnodes);
 }
-
+/// @brief Partition string according to delimiter.
 std::vector<std::string> ssplit(const std::string &s, char delim) {
     std::stringstream ss(s);
     std::string item;
@@ -202,8 +206,10 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
 
 
 /// @brief Set up the model parameters of the given partition.
-/// @todo This should take a RAxML_info file, parse it, and insert those values
-/// here.
+/// @param[in] partition
+/// The model for which to set parameters.
+/// @param[in] path
+/// RAxML info file path for retrieving parameters.
 void SetModelParameters(pll_partition_t *partition, std::string path) {
 
   /*Import the info file*/
