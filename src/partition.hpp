@@ -48,6 +48,11 @@ class Partition {
   void TreeBranchLengthsAux(pll_utree_t *tree);
   void TreeBranchLengths();
   void FullBranchOpt();
+  void SetNewickRoot(pll_utree_t* tree);
+  void SetLabelRoot(std::string label, pll_utree_t* root);
+  void RecursiveOrderedNewick(pll_utree_t* tree);
+  std::string RootNewickRecursive(pll_utree_t* tree);
+  void ToOrderedNewick();
 };
 }
 

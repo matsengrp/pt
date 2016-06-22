@@ -97,6 +97,115 @@ std::string Partition::ToNewick() {
 }
 
 
+/// @brief Finds node in tree's subtree with the label that is first alphabetically.
+/// @param[in] tree
+/// Parent node of subtree to root.
+/// @return smallest label
+std::string Partition::RootNewickRecursive(pll_utree_t* tree) {
+  /*Root the tree at parent of lowest-labeled leaf*/
+  std::string minlabel;
+  if(!tree->next)
+  return tree->label;
+  std::string rlabel1= RootNewickRecursive(tree->next->back);
+  std::string rlabel2= RootNewickRecursive(tree->next->next->back);
+  if(rlabel1.compare(rlabel2)<0)
+    minlabel=rlabel1;
+  else
+    minlabel=rlabel2;
+  return minlabel;
+}
+
+
+/// @brief Finds a nod with the given label and sets the current node to the parent of it.
+/// @param[in] label
+/// Label of node to find
+/// @param[in] tree
+/// Node to search at
+void Partition:: SetLabelRoot(std::string label,pll_utree_t* tree){
+  if(!tree->next){
+    if(tree->label==label)
+      tree_=tree->back;
+    else
+      return;
+  }
+  else{
+    SetLabelRoot(label, tree->next->back);
+    SetLabelRoot(label, tree->next->next->back);
+  }
+}
+
+
+/// @brief Sets the label of the root for the entire tree. Sets tree_ to that node.
+/// @param[in] tree
+/// An internal node.
+void Partition:: SetNewickRoot(pll_utree_t* tree){
+  std::string minlabel;
+  std::string rlabel1= RootNewickRecursive(tree);
+  std::string rlabel2= RootNewickRecursive(tree->back);
+  if(rlabel1.compare(rlabel2)<0)
+  minlabel=rlabel1;
+  else
+  minlabel=rlabel2;
+  SetLabelRoot(minlabel,tree);
+  SetLabelRoot(minlabel,tree->back);
+}
+
+
+/// @brief Recursively orders all subtrees of node tree.
+/// @param[in] tree
+/// Node at which to recursively order.
+void Partition::RecursiveOrderedNewick(pll_utree_t* tree){
+  std::string newick;
+  if(!tree->next)
+  {
+  newick.append(tree->label);
+  }
+  else{
+    std::string tree1label;
+    std::string tree2label;
+    tree1label=RootNewickRecursive(tree->next->back);
+    tree2label=RootNewickRecursive(tree->next->next->back);
+    if(tree1label.compare(tree2label)<0){
+      return;
+    }
+    else{
+      pll_utree_t* temp= tree->next;
+      tree->next=tree->next->next;
+      tree->next->next=temp;
+      tree->next->next->next=tree;
+    }
+
+  }
+}
+
+
+/// @brief Determines order for first ternary step, then runs recursive ordering for the two non-root subtrees.
+/// @return Completely ordered newick string.
+void Partition::ToOrderedNewick(){
+  SetNewickRoot(tree_);
+  std::string tree1label=RootNewickRecursive(tree_->next->back);
+  std::string tree2label=RootNewickRecursive(tree_->next->next->back);
+  std::string subtree1;
+  std::string subtree2;
+  if(tree1label.compare(tree2label)<0){
+      return;
+    }
+  else{
+  pll_utree_t* temp= tree_->next;
+      tree_->next=tree_->next->next;
+      tree_->next->next=temp;
+      tree_->next->next->next=tree_;
+  }
+  /*Check tree health after reordering*/
+  if(!pll_utree_check_integrity(tree_))
+  fatal("Tree not healthy, check reordering parameterization.");
+    if(!TreeHealthy(tree_))
+  fatal("Tree not healthy, check reordering parameterization.");
+}
+
+
+
+
 /// @brief Perform a full tree traversal and update CLV's, etc.
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
