@@ -267,7 +267,7 @@ double Partition::FullTraversalLogLikelihood() {
 /// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
 /// @param[in] tree
 /// Parent node of branch to optimize.
-/// @return Optimized brance length.
+/// @return Optimized branch length.
 double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   pll_utree_t *parent = tree;
@@ -286,8 +286,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
 
-    printf("Branch length: %f log-L: %f Derivative: %f\n", len, opt_logl, d1);
-
+    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
     // If derivative is approximately zero then we've found the maximum.
     if (fabs(d1) < EPSILON) break;
 
@@ -298,13 +297,20 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
 
        where x_i is the current branch, f'(x_i) is the first derivative and
        f''(x_i) is the second derivative of the likelihood function. */
-    len -= d1 / d2;
+    if(d2<0)
+      len +=  d1 / d2;
+    else
+      len -=  d1 / d2;
 
     /*Branch optimization was returning negative values, set minimum branch length to be small positive value*/
 
     if(len<0)
     {
     len=EPSILON;
+    double opt_logl = pll_compute_likelihood_derivatives(
+        partition_, parent->scaler_index, child->scaler_index, len,
+        params_indices_, sumtable_, &d1, &d2);
+    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
     break;
     }
   }
@@ -342,7 +348,7 @@ void Partition::TreeBranchLengths(){
     {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
     }
-  TreeBranchLengthsAux(tree_);
+  TreeBranchLengthsAux(tree_->next);
   TreeBranchLengthsAux(tree_->back);
 
 }
@@ -357,14 +363,58 @@ void Partition::FullBranchOpt(){
 
   int i=0;
   while((fabs(loglike_prev-loglike) > EPSILON)&& i<MAX_ITER){
-  TreeBranchLengths();
+    TreeBranchLengths();
 
-  loglike_prev=loglike;
-  loglike=FullTraversalLogLikelihood();
-  i++;
+    loglike_prev=loglike;
+    loglike=FullTraversalLogLikelihood();
+    i++;
 
   }
-
 }
+
+void Partition::BranchLengthsTest1(){
+  FullTraversalUpdate(tree_->back->next->next);
+  pll_utree_t *parent = tree_->back->next->next;
+  pll_utree_t *child = tree_->back->next->next->back;
+double len= EPSILON;
+  double d1;  // First derivative.
+  double d2;
+  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
+                      params_indices_, sumtable_);
+for(int i=0;i<20;i++)
+{
+
+  double opt_logl = pll_compute_likelihood_derivatives(
+        partition_, parent->scaler_index, child->scaler_index, len,
+        params_indices_, sumtable_, &d1, &d2);
+
+    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
+    len+=.2;
+}
+  printf("\n");
+}
+
+
+void Partition::BranchLengthsTest2(){
+  FullTraversalUpdate(tree_->next);
+  pll_utree_t *parent = tree_->next;
+  pll_utree_t *child = tree_->next->back;
+double len= EPSILON;
+  double d1;  // First derivative.
+  double d2;
+  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
+                      params_indices_, sumtable_);
+for(int i=0;i<20;i++)
+  {
+
+  double opt_logl = pll_compute_likelihood_derivatives(
+          partition_, parent->scaler_index, child->scaler_index, len,
+          params_indices_, sumtable_, &d1, &d2);
+
+      printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
+      len+=.2;
+  }
+}
+
 
 }
