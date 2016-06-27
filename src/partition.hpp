@@ -4,8 +4,10 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <pthread.h>
 
 #include "pll-utils.hpp"
+#include "libcuckoo/src/cuckoohash_map.hh"
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
@@ -40,20 +42,24 @@ class Partition {
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
 
-  std::string ToNewick();
+  std::string ToNewick(pll_utree_t* tree);
   void FullTraversalUpdate(pll_utree_t* tree);
-  double LogLikelihood();
-  double FullTraversalLogLikelihood();
+  double LogLikelihood(pll_utree_t* tree);
+  double FullTraversalLogLikelihood(pll_utree_t* tree);
   double OptimizeCurrentBranch(pll_utree_t* tree);
   void TreeBranchLengthsAux(pll_utree_t *tree);
-  void TreeBranchLengths();
-  void FullBranchOpt();
-  void SetNewickRoot(pll_utree_t* tree);
-  void SetLabelRoot(std::string label, pll_utree_t* root);
+  void TreeBranchLengths(pll_utree_t *tree);
+  void FullBranchOpt(pll_utree_t* tree);
+  pll_utree_t* SetNewickRoot(pll_utree_t* tree);
+  bool SetLabelRoot(std::string label, pll_utree_t* tree, pll_utree_t** root);
   void RecursiveOrderedNewick(pll_utree_t* tree);
   std::string RootNewickRecursive(pll_utree_t* tree);
-  void ToOrderedNewick();
-  void NNITest();
+  pll_utree_t* ToOrderedNewick(pll_utree_t* tree);
+  pll_utree_t* NNI1(pll_utree_t* tree);
+  pll_utree_t* NNI2(pll_utree_t* tree);
+  void MakeTables();
+  char* utree_short_newick(pll_utree_t * root);
+  static char * newick_utree_recurse(pll_utree_t * root);
 };
 
 }

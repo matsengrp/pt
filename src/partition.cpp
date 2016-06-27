@@ -1,14 +1,16 @@
 #include "partition.hpp"
 #include "pll-utils.hpp"
+#include <pthread.h>
+#include <math.h>
 
 /// @file partition.cpp
 /// @brief Implementation of the Partition class.
 /// Much of this was directly copied from libpll examples, so parts (c) Thomas
 /// Flouri.
 
+typedef cuckoohash_map<std::string, double> InnerTable;
 
 namespace pt {
-
 /// @brief Constructor for Partition from a tree and an alignment.
 /// @param[in] newick_path
 /// Path to a file with a Newick-format tree string.
@@ -89,11 +91,94 @@ Partition::~Partition() {
   pll_utree_destroy(tree_);
 }
 
-
 /// @brief Returns a the tree as a Newick string.
 /// @return Newick string.
-std::string Partition::ToNewick() {
-  return std::string(pll_utree_export_newick(tree_));
+std::string Partition::ToNewick(pll_utree_t* tree) {
+  return std::string(utree_short_newick(tree));
+}
+
+
+/// @brief Recursive function for newick string without branch lengths.
+char * Partition::newick_utree_recurse(pll_utree_t * root)
+{
+  char * newick;
+  int size_alloced;
+  assert(root != NULL);
+  if (!root->next)
+    size_alloced = asprintf(&newick, "%s", root->label);
+  else
+  {
+    char * subtree1 = newick_utree_recurse(root->next->back);
+    if (subtree1 == NULL)
+      return NULL;
+    char * subtree2 = newick_utree_recurse(root->next->next->back);
+    if (subtree2 == NULL)
+    {
+      free(subtree1);
+      return NULL;
+    }
+    size_alloced = asprintf(&newick,
+                            "(%s,%s)%s",
+                            subtree1,
+                            subtree2,
+                            root->label ? root->label : ""
+                            );
+    free(subtree1);
+    free(subtree2);
+  }
+  if (size_alloced < 0)
+  {
+    pll_errno = PLL_ERROR_MEM_ALLOC;
+    snprintf(pll_errmsg, 200, "memory allocation during newick export failed");
+    return NULL;
+  }
+
+  return newick;
+}
+
+/// @brief Prints newick string without branch lengths.
+char* Partition:: utree_short_newick(pll_utree_t * root)
+{
+  char * newick;
+  int size_alloced;
+  if (!root) return NULL;
+
+  if (!root->next) root=root->back;
+
+  char * subtree1 = newick_utree_recurse(root->back);
+  if (subtree1 == NULL)
+    return NULL;
+  char * subtree2 = newick_utree_recurse(root->next->back);
+  if (subtree2 == NULL)
+  {
+    free(subtree1);
+    return NULL;
+  }
+  char * subtree3 = newick_utree_recurse(root->next->next->back);
+  if (subtree3 == NULL)
+  {
+    free(subtree1);
+    free(subtree2);
+    return NULL;
+  }
+
+  size_alloced = asprintf(&newick,
+                          "(%s,%s,%s)%s;",
+                          subtree1,
+                          subtree2,
+                          subtree3,
+                          root->label ? root->label : "");
+  free(subtree1);
+  free(subtree2);
+  free(subtree3);
+  if (size_alloced < 0)
+  {
+    pll_errno = PLL_ERROR_MEM_ALLOC;
+    snprintf(pll_errmsg, 200, "memory allocation during newick export failed");
+    return NULL;
+  }
+
+  return (newick);
 }
 
 
@@ -128,24 +213,27 @@ std::string Partition::RootNewickRecursive(pll_utree_t* tree) {
 /// Label of node to find
 /// @param[in] tree
 /// Node to search at
-void Partition:: SetLabelRoot(std::string label,pll_utree_t* tree){
+bool Partition:: SetLabelRoot(std::string label, pll_utree_t* tree, pll_utree_t** root){
   if(!tree->next){
-    if(tree->label==label)
-      tree_=tree->back;
+    if(tree->label==label){
+      root[0]=tree->back;
+      return true;
+    }
     else
-      return;
+      return false;
   }
-  else{
-    SetLabelRoot(label, tree->next->back);
-    SetLabelRoot(label, tree->next->next->back);
-  }
+  if(SetLabelRoot(label, tree->next->back,root))
+            return true;
+  if(SetLabelRoot(label, tree->next->next->back,root))
+          return true;
+  return false;
 }
 
 
 /// @brief Sets the label of the root for the entire tree. Sets tree_ to that node.
 /// @param[in] tree
 /// An internal node.
-void Partition:: SetNewickRoot(pll_utree_t* tree){
+pll_utree_t* Partition:: SetNewickRoot(pll_utree_t* tree){
   std::string minlabel;
   std::string rlabel1= RootNewickRecursive(tree);
   std::string rlabel2= RootNewickRecursive(tree->back);
@@ -153,22 +241,26 @@ void Partition:: SetNewickRoot(pll_utree_t* tree){
   minlabel=rlabel1;
   else
   minlabel=rlabel2;
-  SetLabelRoot(minlabel,tree);
-  SetLabelRoot(minlabel,tree->back);
+  pll_utree_t** root;
+  root=(pll_utree_t**) malloc(sizeof(pll_utree_t*));
+  SetLabelRoot(minlabel,tree,root);
+  SetLabelRoot(minlabel,tree->back,root);
+  return root[0];
 }
 
 
 /// @brief Determines order for first ternary step, then runs recursive ordering for the two non-root subtrees.
 /// @return Completely ordered newick string.
-void Partition::ToOrderedNewick(){
-  SetNewickRoot(tree_);
-  RootNewickRecursive(tree_);
+pll_utree_t* Partition::ToOrderedNewick(pll_utree_t* tree){
+  tree=SetNewickRoot(tree);
+  RootNewickRecursive(tree);
 
   /*Check tree health after reordering*/
-  if(!pll_utree_check_integrity(tree_))
+  if(!pll_utree_check_integrity(tree))
   fatal("Tree not healthy, check reordering parameterization.");
-    if(!TreeHealthy(tree_))
+    if(!TreeHealthy(tree))
   fatal("Tree not healthy, check reordering parameterization.");
+  return tree;
 }
 
 
@@ -213,10 +305,10 @@ void Partition::FullTraversalUpdate(pll_utree_t* tree) {
 /// @brief Just calculate log likelihood.
 /// NOTE: This will return nonsense if you haven't updated CLV's, etc.
 /// @return Log likelihood.
-double Partition::LogLikelihood() {
+double Partition::LogLikelihood(pll_utree_t* tree) {
   double logl = pll_compute_edge_loglikelihood(
-      partition_, tree_->clv_index, tree_->scaler_index, tree_->back->clv_index,
-      tree_->back->scaler_index, tree_->pmatrix_index, params_indices_,
+      partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
+      tree->back->scaler_index, tree->pmatrix_index, params_indices_,
       NULL);  // Can supply a persite_lnl parameter as last argument.
 
   return logl;
@@ -225,9 +317,9 @@ double Partition::LogLikelihood() {
 
 /// @brief Make a traversal at the root and return the log likelihood.
 /// @return Log likelihood.
-double Partition::FullTraversalLogLikelihood() {
-  FullTraversalUpdate(tree_);
-  return LogLikelihood();
+double Partition::FullTraversalLogLikelihood(pll_utree_t* tree) {
+  FullTraversalUpdate(tree);
+  return LogLikelihood(tree);
 }
 
 
@@ -311,42 +403,104 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 
 ///@brief Perform a postorder tree traversal, optimizing the branch length at every edge.
 ///NOTE: This optimizes internal branches twice per traversal.
-void Partition::TreeBranchLengths(){
-  if(!tree_->next)
+void Partition::TreeBranchLengths(pll_utree_t* tree){
+  if(!tree->next)
     {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
     }
-  TreeBranchLengthsAux(tree_);
-  TreeBranchLengthsAux(tree_->back);
+  TreeBranchLengthsAux(tree);
+  TreeBranchLengthsAux(tree->back);
 
 }
 
 ///@brief Repeat branch length optimization until log likelihood changes very little or MAX_ITER is reached.
-void Partition::FullBranchOpt(){
-  double loglike_prev=FullTraversalLogLikelihood();
+void Partition::FullBranchOpt(pll_utree_t* tree){
+  double loglike_prev=FullTraversalLogLikelihood(tree);
 
-  TreeBranchLengths();
+  TreeBranchLengths(tree);
 
-  double loglike=FullTraversalLogLikelihood();
+  double loglike=FullTraversalLogLikelihood(tree);
 
   int i=0;
   while((fabs(loglike_prev-loglike) > EPSILON)&& i<MAX_ITER){
-    TreeBranchLengths();
+    TreeBranchLengths(tree);
 
     loglike_prev=loglike;
-    loglike=FullTraversalLogLikelihood();
+    loglike=FullTraversalLogLikelihood(tree);
     i++;
 
   }
 }
-void Partition:: NNITest(){
+pll_utree_t* Partition:: NNI1(pll_utree_t* tree){
   pll_utree_rb_t* rb;
   rb=(pll_utree_rb_t*) malloc(sizeof(pll_utree_t*)+sizeof(int));
-  pll_utree_nni(tree_->next->next,1,rb);
-  FullTraversalUpdate(tree_);
-  FullBranchOpt();
-  ToOrderedNewick();
+  pll_utree_nni(tree,1,rb);
+  FullTraversalUpdate(tree);
+  FullBranchOpt(tree);
+  tree=ToOrderedNewick(tree);
+  return tree;
 }
+
+pll_utree_t* Partition::NNI2(pll_utree_t* tree){
+  pll_utree_rb_t* rb;
+  rb=(pll_utree_rb_t*) malloc(sizeof(pll_utree_t*)+sizeof(int));
+  pll_utree_nni(tree,2,rb);
+  FullTraversalUpdate(tree);
+  FullBranchOpt(tree);
+  tree=ToOrderedNewick(tree);
+  return tree;
+}
+
+void Partition:: MakeTables(){
+  //Create libcuckoo tables and do first optimization.
+  InnerTable good;
+  InnerTable bad;
+  FullTraversalUpdate(tree_);
+  FullBranchOpt(tree_);
+
+  //Create a clone of the original tree to perform NNI and reordering on.
+  pll_utree_t* clone= pll_utree_clone(tree_);
+  clone=ToOrderedNewick(clone);
+  //Initialize likelihood threshold from ML tree.
+  double lambda=exp(FullTraversalLogLikelihood(clone));
+  //Set scaler parameter to determine if tree is good/bad.
+  double c=.7;
+  //Put ML tree into "good" table.
+  good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  //Reset the clone to the base tree
+  clone=pll_utree_clone(tree_);
+  //Perform first NNI and reordering on first edge.
+  clone=NNI1(clone);
+  double lambda_1=exp(FullTraversalLogLikelihood(clone));
+  //Compare new likelihood to ML, then decide which table to put in.
+  if(lambda_1>c*lambda)
+    good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  else{
+    bad.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  }
+  //Repeat for 2nd NNI move.
+  clone=pll_utree_clone(tree_);
+  clone=NNI2(clone);
+  lambda_1=exp(FullTraversalLogLikelihood(clone));
+  if(lambda_1>c*lambda)
+    good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  else{
+    bad.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  }
+ //Print Tables.
+ std::cout<<"Good: "<<std::endl;
+
+  auto lt = good.lock_table();
+    for ( auto& item : lt)
+      std::cout << "Log Likelihood for " << item.first<< " : "<<item.second<< std::endl;
+
+  std::cout<<"Bad: "<<std::endl;
+
+  auto lt1 = bad.lock_table();
+    for ( auto& item : lt1)
+      std::cout << "Log Likelihood for " << item.first<< " : "<<item.second<< std::endl;
+}
+
 
 
 }
