@@ -110,13 +110,20 @@ std::string Partition::RootNewickRecursive(pll_utree_t* tree) {
   std::string rlabel2= RootNewickRecursive(tree->next->next->back);
   if(rlabel1.compare(rlabel2)<0)
     minlabel=rlabel1;
-  else
-    minlabel=rlabel2;
+  else{
+      minlabel=rlabel2;
+      pll_utree_t* temp= tree->next;
+      tree->next=tree->next->next;
+      tree->next->next=temp;
+      tree->next->next->next=tree;
+  }
+
+
   return minlabel;
 }
 
 
-/// @brief Finds a nod with the given label and sets the current node to the parent of it.
+/// @brief Finds a node with the given label and sets the current node to the parent of it.
 /// @param[in] label
 /// Label of node to find
 /// @param[in] tree
@@ -151,51 +158,12 @@ void Partition:: SetNewickRoot(pll_utree_t* tree){
 }
 
 
-/// @brief Recursively orders all subtrees of node tree.
-/// @param[in] tree
-/// Node at which to recursively order.
-void Partition::RecursiveOrderedNewick(pll_utree_t* tree){
-  std::string newick;
-  if(!tree->next)
-  {
-  newick.append(tree->label);
-  }
-  else{
-    std::string tree1label;
-    std::string tree2label;
-    tree1label=RootNewickRecursive(tree->next->back);
-    tree2label=RootNewickRecursive(tree->next->next->back);
-    if(tree1label.compare(tree2label)<0){
-      return;
-    }
-    else{
-      pll_utree_t* temp= tree->next;
-      tree->next=tree->next->next;
-      tree->next->next=temp;
-      tree->next->next->next=tree;
-    }
-
-  }
-}
-
-
 /// @brief Determines order for first ternary step, then runs recursive ordering for the two non-root subtrees.
 /// @return Completely ordered newick string.
 void Partition::ToOrderedNewick(){
   SetNewickRoot(tree_);
-  std::string tree1label=RootNewickRecursive(tree_->next->back);
-  std::string tree2label=RootNewickRecursive(tree_->next->next->back);
-  std::string subtree1;
-  std::string subtree2;
-  if(tree1label.compare(tree2label)<0){
-      return;
-    }
-  else{
-  pll_utree_t* temp= tree_->next;
-      tree_->next=tree_->next->next;
-      tree_->next->next=temp;
-      tree_->next->next->next=tree_;
-  }
+  RootNewickRecursive(tree_);
+
   /*Check tree health after reordering*/
   if(!pll_utree_check_integrity(tree_))
   fatal("Tree not healthy, check reordering parameterization.");
@@ -286,7 +254,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
 
-    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
+    ///printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
     // If derivative is approximately zero then we've found the maximum.
     if (fabs(d1) < EPSILON) break;
 
@@ -297,20 +265,20 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
 
        where x_i is the current branch, f'(x_i) is the first derivative and
        f''(x_i) is the second derivative of the likelihood function. */
-    if(d2<0)
+    if (d2 < 0)
       len +=  d1 / d2;
     else
       len -=  d1 / d2;
 
     /*Branch optimization was returning negative values, set minimum branch length to be small positive value*/
 
-    if(len<0)
+    if(len < 0)
     {
-    len=EPSILON;
+    len = EPSILON;
     double opt_logl = pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
-    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
+    ///printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
     break;
     }
   }
@@ -329,12 +297,12 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next){
   FullTraversalUpdate(tree->back);
   OptimizeCurrentBranch(tree->back);
-  std::cout<<"DONE"<<std::endl;
+  //std::cout<<"DONE"<<std::endl;
   }
   else{
   FullTraversalUpdate(tree);
   OptimizeCurrentBranch(tree);
-  std::cout<<"DONE"<<std::endl;
+  //std::cout<<"DONE"<<std::endl;
 
   TreeBranchLengthsAux(tree->next->back);
   TreeBranchLengthsAux(tree->next->next->back);
@@ -348,7 +316,7 @@ void Partition::TreeBranchLengths(){
     {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
     }
-  TreeBranchLengthsAux(tree_->next);
+  TreeBranchLengthsAux(tree_);
   TreeBranchLengthsAux(tree_->back);
 
 }
@@ -371,49 +339,13 @@ void Partition::FullBranchOpt(){
 
   }
 }
-
-void Partition::BranchLengthsTest1(){
-  FullTraversalUpdate(tree_->back->next->next);
-  pll_utree_t *parent = tree_->back->next->next;
-  pll_utree_t *child = tree_->back->next->next->back;
-double len= EPSILON;
-  double d1;  // First derivative.
-  double d2;
-  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
-                      params_indices_, sumtable_);
-for(int i=0;i<20;i++)
-{
-
-  double opt_logl = pll_compute_likelihood_derivatives(
-        partition_, parent->scaler_index, child->scaler_index, len,
-        params_indices_, sumtable_, &d1, &d2);
-
-    printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
-    len+=.2;
-}
-  printf("\n");
-}
-
-
-void Partition::BranchLengthsTest2(){
-  FullTraversalUpdate(tree_->next);
-  pll_utree_t *parent = tree_->next;
-  pll_utree_t *child = tree_->next->back;
-double len= EPSILON;
-  double d1;  // First derivative.
-  double d2;
-  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
-                      params_indices_, sumtable_);
-for(int i=0;i<20;i++)
-  {
-
-  double opt_logl = pll_compute_likelihood_derivatives(
-          partition_, parent->scaler_index, child->scaler_index, len,
-          params_indices_, sumtable_, &d1, &d2);
-
-      printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
-      len+=.2;
-  }
+void Partition:: NNITest(){
+  pll_utree_rb_t* rb;
+  rb=(pll_utree_rb_t*) malloc(sizeof(pll_utree_t*)+sizeof(int));
+  pll_utree_nni(tree_->next->next,1,rb);
+  FullTraversalUpdate(tree_);
+  FullBranchOpt();
+  ToOrderedNewick();
 }
 
 

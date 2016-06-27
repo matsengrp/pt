@@ -53,8 +53,7 @@ class Partition {
   void RecursiveOrderedNewick(pll_utree_t* tree);
   std::string RootNewickRecursive(pll_utree_t* tree);
   void ToOrderedNewick();
-  void BranchLengthsTest1();
-  void BranchLengthsTest2();
+  void NNITest();
 };
 
 }
