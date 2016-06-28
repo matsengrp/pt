@@ -17,7 +17,6 @@ namespace pt {
 /// @brief The representation of a tree, alignment, and all associated data.
 ///
 class Partition {
-typedef cuckoohash_map<std::string, double> InnerTable;
  private:
   unsigned int tip_nodes_count_;
   pll_utree_t *tree_;
@@ -60,10 +59,6 @@ typedef cuckoohash_map<std::string, double> InnerTable;
   void MakeTables();
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
-  void NNITraverse(pll_utree_t* tree, double lambda);
-  void NNIComputeEdge(pll_utree_t* tree, double lambda);
-  InnerTable good_;
-  InnerTable bad_;
 };
 }
 
