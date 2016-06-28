@@ -1,8 +1,8 @@
 #include "pll-utils.hpp"
-#include <search.h>
 #include <cstdarg>
 #include <fstream>
 #include <iomanip>
+#include <search.h>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -39,7 +39,8 @@ static int utree_traverse_check(pll_utree_t *node,
   if (!node->next) {
     return cbtrav(node);
   }
-  if (!cbtrav(node)) return 0;
+  if (!cbtrav(node))
+    return 0;
 
   return utree_traverse_check(node->next->back, cbtrav) &&
          utree_traverse_check(node->next->next->back, cbtrav);
@@ -49,10 +50,12 @@ static int utree_traverse_check(pll_utree_t *node,
 /// @param[in] tree
 /// A pll_utree_t to check.
 int cb_branch_healthy(pll_utree_t *tree) {
-  if (!tree->length) return 0;
+  if (!tree->length)
+    return 0;
 
   if (tree->next) {
-    if (!tree->next->length || !tree->next->next->length) return 0;
+    if (!tree->next->length || !tree->next->next->length)
+      return 0;
 
     return (cb_branch_healthy(tree->next->back) &&
             cb_branch_healthy(tree->next->next->back));
@@ -79,7 +82,8 @@ bool TreeHealthy(pll_utree_t *tree) {
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
                         char ***headers_out, char ***seqdata_out) {
   pll_fasta_t *fp = pll_fasta_open(&path[0], pll_map_fasta);
-  if (!fp) fatal("Error opening file %s", &path[0]);
+  if (!fp)
+    fatal("Error opening file %s", &path[0]);
 
   char *seq = NULL;
   char *hdr = NULL;
@@ -102,7 +106,8 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
     if (sites != -1 && sites != seqlen)
       fatal("FASTA file does not contain equal size sequences\n");
 
-    if (sites == -1) sites = seqlen;
+    if (sites == -1)
+      sites = seqlen;
 
     headers[i] = hdr;
     seqdata[i] = seq;
@@ -115,9 +120,11 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   /* close FASTA file */
   pll_fasta_close(fp);
 
-  if (sites < 0) fatal("Unable to read alignment");
+  if (sites < 0)
+    fatal("Unable to read alignment");
 
-  if (i != seq_count) fatal("Some taxa are missing from FASTA file");
+  if (i != seq_count)
+    fatal("Some taxa are missing from FASTA file");
 
   *headers_out = headers;
   *seqdata_out = seqdata;

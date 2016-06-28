@@ -1,9 +1,9 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
-#include <pthread.h>
 #include <iostream>
 #include <memory>
+#include <pthread.h>
 #include <string>
 
 #include "libcuckoo/src/cuckoohash_map.hh"
@@ -17,8 +17,9 @@ namespace pt {
 /// @brief The representation of a tree, alignment, and all associated data.
 ///
 class Partition {
-typedef cuckoohash_map<std::string, double> InnerTable;
- private:
+  typedef cuckoohash_map<std::string, double> InnerTable;
+
+private:
   unsigned int tip_nodes_count_;
   pll_utree_t *tree_;
   // Stores probability matrices, scalers, etc.
@@ -31,7 +32,7 @@ typedef cuckoohash_map<std::string, double> InnerTable;
   unsigned int *params_indices_;
   double *sumtable_;
 
- public:
+public:
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
   virtual ~Partition();
@@ -60,11 +61,11 @@ typedef cuckoohash_map<std::string, double> InnerTable;
   void MakeTables();
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
-  void NNITraverse(pll_utree_t* tree, double lambda);
-  void NNIComputeEdge(pll_utree_t* tree, double lambda);
+  void NNITraverse(pll_utree_t *tree, double lambda);
+  void NNIComputeEdge(pll_utree_t *tree, double lambda);
   InnerTable good_;
   InnerTable bad_;
 };
 }
 
-#endif  // PT_PARTITION_
+#endif // PT_PARTITION_

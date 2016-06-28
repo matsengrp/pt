@@ -18,7 +18,8 @@ TEST_CASE("Partition", "[partition]") {
   // Value reported by running newton PLL example.
   // REQUIRE(-33.387713 - p_newton->FullTraversalLogLikelihood() < 1e-6);
 
-  // Tree topologies and likelihoods for all possible NNI moves at DS1 best tree.
+  // Tree topologies and likelihoods for all possible NNI moves at DS1 best
+  // tree.
   p_DS1->MakeTables();
 }
 }
