@@ -1,11 +1,11 @@
 #include "pll-utils.hpp"
-#include <cstdarg>
 #include <search.h>
+#include <cstdarg>
 #include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include <iomanip>
+#include <sstream>
+#include <string>
+#include <vector>
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.
@@ -13,7 +13,6 @@
 /// Flouri.
 /// Note that here we have a confluence of the pt C++ and the libpll C.
 /// Thus this is the only place where we have mixed the two style conventions.
-
 
 namespace pt {
 
@@ -27,7 +26,6 @@ void fatal(const char *format, ...) {
   exit(EXIT_FAILURE);
 }
 
-
 /* a callback function for performing a full traversal */
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
@@ -36,27 +34,22 @@ int cb_full_traversal(pll_utree_t *node) { return 1; }
 /// Node from which to begin traversal.
 /// @param[in] cbtrav
 /// Callback function for traversal.
-static int utree_traverse_check(pll_utree_t * node,
-                                 int (*cbtrav)(pll_utree_t *))
-{
-  if (!node->next)
-  {
+static int utree_traverse_check(pll_utree_t *node,
+                                int (*cbtrav)(pll_utree_t *)) {
+  if (!node->next) {
     return cbtrav(node);
   }
-  if (!cbtrav(node))
-    return 0;
+  if (!cbtrav(node)) return 0;
 
   return utree_traverse_check(node->next->back, cbtrav) &&
          utree_traverse_check(node->next->next->back, cbtrav);
 }
 
-
 /// @brief Determine if a tree is healthy, i.e. has branch lengths.
 /// @param[in] tree
 /// A pll_utree_t to check.
-int cb_branch_healthy(pll_utree_t *tree)
-{
-if (!tree->length) return 0;
+int cb_branch_healthy(pll_utree_t *tree) {
+  if (!tree->length) return 0;
 
   if (tree->next) {
     if (!tree->next->length || !tree->next->next->length) return 0;
@@ -66,12 +59,11 @@ if (!tree->length) return 0;
   }
 
   return true;
-
 }
 bool TreeHealthy(pll_utree_t *tree) {
-  return (utree_traverse_check(tree,cb_branch_healthy) && utree_traverse_check(tree,cb_branch_healthy));
+  return (utree_traverse_check(tree, cb_branch_healthy) &&
+          utree_traverse_check(tree, cb_branch_healthy));
 }
-
 
 /// @brief Parse a Fasta file.
 /// @param[in] path
@@ -131,7 +123,6 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   *seqdata_out = seqdata;
   return (unsigned int)sites;
 }
-
 
 /// @brief Add tip data to a partition.
 /// Look up every sequence by its name and set the corresponding CLV in the
@@ -195,15 +186,14 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
 }
 /// @brief Partition string according to delimiter.
 std::vector<std::string> ssplit(const std::string &s, char delim) {
-    std::stringstream ss(s);
-    std::string item;
-    std::vector<std::string> tokens;
-    while (getline(ss, item, delim)) {
-        tokens.push_back(item);
-    }
-    return tokens;
+  std::stringstream ss(s);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (getline(ss, item, delim)) {
+    tokens.push_back(item);
+  }
+  return tokens;
 }
-
 
 /// @brief Set up the model parameters of the given partition.
 /// @param[in] partition
@@ -211,54 +201,49 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
 /// @param[in] path
 /// RAxML info file path for retrieving parameters.
 void SetModelParameters(pll_partition_t *partition, std::string path) {
-
   /*Import the info file*/
   std::ifstream file(path);
   std::string read;
   std::string contents;
 
-  while(std::getline(file,read))
-  {
-    contents+=read;
+  while (std::getline(file, read)) {
+    contents += read;
     contents.push_back('\n');
-   }
+  }
   /* initialize the array of base frequencies */
-  std::size_t pos1= contents.find("frequencies: ");
-  std::size_t pos2= contents.find('\n',pos1);
+  std::size_t pos1 = contents.find("frequencies: ");
+  std::size_t pos2 = contents.find('\n', pos1);
 
-  std::string sstr=contents.substr(pos1+13,pos2-pos1-13);
+  std::string sstr = contents.substr(pos1 + 13, pos2 - pos1 - 13);
 
-  std::vector<std::string> freqvector=ssplit(sstr,' ');
+  std::vector<std::string> freqvector = ssplit(sstr, ' ');
   double frequencies[freqvector.size()];
 
-  for(int i=0; i<freqvector.size(); i++)
-    frequencies[i]=std::stod(freqvector.at(i));
+  for (int i = 0; i < freqvector.size(); i++)
+    frequencies[i] = std::stod(freqvector.at(i));
 
   /*initialize the array of subst_params*/
-  pos1= contents.find("ac ag at cg ct gt:");
-  pos2= contents.find('\n',pos1);
-  sstr=contents.substr(pos1+19,pos2-pos1-19);
-  std::vector<std::string> ratevector=ssplit(sstr,' ');
+  pos1 = contents.find("ac ag at cg ct gt:");
+  pos2 = contents.find('\n', pos1);
+  sstr = contents.substr(pos1 + 19, pos2 - pos1 - 19);
+  std::vector<std::string> ratevector = ssplit(sstr, ' ');
   double subst_params[ratevector.size()];
 
-  for(int i=0; i<ratevector.size(); i++)
-    subst_params[i]=std::stod(ratevector.at(i));
-  if(ratevector.size()!=(((freqvector.size())*freqvector.size() -4)/2))
+  for (int i = 0; i < ratevector.size(); i++)
+    subst_params[i] = std::stod(ratevector.at(i));
+  if (ratevector.size() != (((freqvector.size()) * freqvector.size() - 4) / 2))
     fatal("Wrong number of rate values.");
-
 
   /* we'll use RATE_CATS rate categories, and currently initialize them to 0 */
   double rate_cats[RATE_CATS] = {0};
 
   /*initialize the alpha value*/
-  pos1= contents.find("alpha[0]: ");
-  pos2= contents.find(' ', pos1+10);
-  sstr=contents.substr(pos1+10,pos2-pos1-10);
-  double alpha= stod(sstr);
-
+  pos1 = contents.find("alpha[0]: ");
+  pos2 = contents.find(' ', pos1 + 10);
+  sstr = contents.substr(pos1 + 10, pos2 - pos1 - 10);
+  double alpha = stod(sstr);
 
   pll_compute_gamma_cats(alpha, RATE_CATS, rate_cats);
-
 
   file.close();
 
@@ -271,6 +256,4 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   /* set rate categories */
   pll_set_category_rates(partition, rate_cats);
 }
-
-
 }

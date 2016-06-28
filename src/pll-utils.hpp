@@ -10,7 +10,6 @@
 /// Much of this was directly copied from libpll examples, so parts (c) Thomas
 /// Flouri.
 
-
 namespace pt {
 
 const unsigned int STATES = 4;
@@ -21,21 +20,20 @@ const unsigned int ARCH_FLAGS = PLL_ATTRIB_ARCH_AVX;
 const unsigned int MAX_ITER = 32;
 const double EPSILON = 1e-10;  // Threshold for detecting zero.
 
-void fatal(const char* format, ...);
-int cb_full_traversal(pll_utree_t* node);
+void fatal(const char *format, ...);
+int cb_full_traversal(pll_utree_t *node);
 
-bool TreeHealthy(pll_utree_t* tree);
+bool TreeHealthy(pll_utree_t *tree);
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
-                        char*** headers_out, char*** seqdata_out);
-void EquipPartitionWithData(pll_partition_t* partition, pll_utree_t* tree,
-                            unsigned int tip_nodes_count, char** headers,
-                            char** seqdata);
+                        char ***headers_out, char ***seqdata_out);
+void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
+                            unsigned int tip_nodes_count, char **headers,
+                            char **seqdata);
 std::vector<std::string> ssplit(const std::string &s, char delim);
-void SetModelParameters(pll_partition_t* partition, std::string path);
+void SetModelParameters(pll_partition_t *partition, std::string path);
 
-static int utree_traverse_check(pll_utree_t * node,
-                                 int (*cbtrav)(pll_utree_t *));
-
+static int utree_traverse_check(pll_utree_t *node,
+                                int (*cbtrav)(pll_utree_t *));
 }
 
 #endif  // PT_PLL_UTILS_

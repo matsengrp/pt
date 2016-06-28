@@ -1,7 +1,7 @@
 #include "partition.hpp"
-#include "pll-utils.hpp"
-#include <pthread.h>
 #include <math.h>
+#include <pthread.h>
+#include "pll-utils.hpp"
 
 /// @file partition.cpp
 /// @brief Implementation of the Partition class.
@@ -18,7 +18,8 @@ namespace pt {
 /// Path to a FASTA-formatted alignment.
 /// @param[in] RAxML_info_path
 /// Path to a RAxML info file.
-Partition::Partition(std::string newick_path, std::string fasta_path, std::string RAxML_info_path) {
+Partition::Partition(std::string newick_path, std::string fasta_path,
+                     std::string RAxML_info_path) {
   // Parse the unrooted binary tree in newick format, and store the number of
   // tip nodes in tip_nodes_count.
   tree_ = pll_utree_parse_newick(&newick_path[0], &tip_nodes_count_);
@@ -48,7 +49,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path, std::strin
       inner_nodes_count(),  // How many scale buffers to use.
       ARCH_FLAGS);          // List of flags for hardware acceleration.
 
-  SetModelParameters(partition_,RAxML_info_path);
+  SetModelParameters(partition_, RAxML_info_path);
 
   EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
                          seqdata);
@@ -74,10 +75,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path, std::strin
       partition_->sites * partition_->rate_cats * partition_->states_padded *
           sizeof(double),
       ALIGNMENT);
-
-
 }
-
 
 /// @brief Destructor for Partition.
 Partition::~Partition() {
@@ -93,41 +91,31 @@ Partition::~Partition() {
 
 /// @brief Returns a the tree as a Newick string.
 /// @return Newick string.
-std::string Partition::ToNewick(pll_utree_t* tree) {
+std::string Partition::ToNewick(pll_utree_t *tree) {
   return std::string(utree_short_newick(tree));
 }
 
-
 /// @brief Recursive function for newick string without branch lengths.
-char * Partition::newick_utree_recurse(pll_utree_t * root)
-{
-  char * newick;
+char *Partition::newick_utree_recurse(pll_utree_t *root) {
+  char *newick;
   int size_alloced;
   assert(root != NULL);
   if (!root->next)
     size_alloced = asprintf(&newick, "%s", root->label);
-  else
-  {
-    char * subtree1 = newick_utree_recurse(root->next->back);
-    if (subtree1 == NULL)
-      return NULL;
-    char * subtree2 = newick_utree_recurse(root->next->next->back);
-    if (subtree2 == NULL)
-    {
+  else {
+    char *subtree1 = newick_utree_recurse(root->next->back);
+    if (subtree1 == NULL) return NULL;
+    char *subtree2 = newick_utree_recurse(root->next->next->back);
+    if (subtree2 == NULL) {
       free(subtree1);
       return NULL;
     }
-    size_alloced = asprintf(&newick,
-                            "(%s,%s)%s",
-                            subtree1,
-                            subtree2,
-                            root->label ? root->label : ""
-                            );
+    size_alloced = asprintf(&newick, "(%s,%s)%s", subtree1, subtree2,
+                            root->label ? root->label : "");
     free(subtree1);
     free(subtree2);
   }
-  if (size_alloced < 0)
-  {
+  if (size_alloced < 0) {
     pll_errno = PLL_ERROR_MEM_ALLOC;
     snprintf(pll_errmsg, 200, "memory allocation during newick export failed");
     return NULL;
@@ -137,42 +125,33 @@ char * Partition::newick_utree_recurse(pll_utree_t * root)
 }
 
 /// @brief Prints newick string without branch lengths.
-char* Partition:: utree_short_newick(pll_utree_t * root)
-{
-  char * newick;
+char *Partition::utree_short_newick(pll_utree_t *root) {
+  char *newick;
   int size_alloced;
   if (!root) return NULL;
 
-  if (!root->next) root=root->back;
+  if (!root->next) root = root->back;
 
-  char * subtree1 = newick_utree_recurse(root->back);
-  if (subtree1 == NULL)
-    return NULL;
-  char * subtree2 = newick_utree_recurse(root->next->back);
-  if (subtree2 == NULL)
-  {
+  char *subtree1 = newick_utree_recurse(root->back);
+  if (subtree1 == NULL) return NULL;
+  char *subtree2 = newick_utree_recurse(root->next->back);
+  if (subtree2 == NULL) {
     free(subtree1);
     return NULL;
   }
-  char * subtree3 = newick_utree_recurse(root->next->next->back);
-  if (subtree3 == NULL)
-  {
+  char *subtree3 = newick_utree_recurse(root->next->next->back);
+  if (subtree3 == NULL) {
     free(subtree1);
     free(subtree2);
     return NULL;
   }
 
-  size_alloced = asprintf(&newick,
-                          "(%s,%s,%s)%s;",
-                          subtree1,
-                          subtree2,
-                          subtree3,
-                          root->label ? root->label : "");
+  size_alloced = asprintf(&newick, "(%s,%s,%s)%s;", subtree1, subtree2,
+                          subtree3, root->label ? root->label : "");
   free(subtree1);
   free(subtree2);
   free(subtree3);
-  if (size_alloced < 0)
-  {
+  if (size_alloced < 0) {
     pll_errno = PLL_ERROR_MEM_ALLOC;
     snprintf(pll_errmsg, 200, "memory allocation during newick export failed");
     return NULL;
@@ -181,90 +160,83 @@ char* Partition:: utree_short_newick(pll_utree_t * root)
   return (newick);
 }
 
-
-/// @brief Finds node in tree's subtree with the label that is first alphabetically.
+/// @brief Finds node in tree's subtree with the label that is first
+/// alphabetically.
 /// @param[in] tree
 /// Parent node of subtree to root.
 /// @return smallest label
-std::string Partition::RootNewickRecursive(pll_utree_t* tree) {
+std::string Partition::RootNewickRecursive(pll_utree_t *tree) {
   /*Root the tree at parent of lowest-labeled leaf*/
   std::string minlabel;
-  if(!tree->next)
-  return tree->label;
-  std::string rlabel1= RootNewickRecursive(tree->next->back);
-  std::string rlabel2= RootNewickRecursive(tree->next->next->back);
-  if(rlabel1.compare(rlabel2)<0)
-    minlabel=rlabel1;
-  else{
-      minlabel=rlabel2;
-      pll_utree_t* temp= tree->next;
-      tree->next=tree->next->next;
-      tree->next->next=temp;
-      tree->next->next->next=tree;
+  if (!tree->next) return tree->label;
+  std::string rlabel1 = RootNewickRecursive(tree->next->back);
+  std::string rlabel2 = RootNewickRecursive(tree->next->next->back);
+  if (rlabel1.compare(rlabel2) < 0)
+    minlabel = rlabel1;
+  else {
+    minlabel = rlabel2;
+    pll_utree_t *temp = tree->next;
+    tree->next = tree->next->next;
+    tree->next->next = temp;
+    tree->next->next->next = tree;
   }
-
 
   return minlabel;
 }
 
-
-/// @brief Finds a node with the given label and sets the current node to the parent of it.
+/// @brief Finds a node with the given label and sets the current node to the
+/// parent of it.
 /// @param[in] label
 /// Label of node to find
 /// @param[in] tree
 /// Node to search at
-bool Partition:: SetLabelRoot(std::string label, pll_utree_t* tree, pll_utree_t** root){
-  if(!tree->next){
-    if(tree->label==label){
-      root[0]=tree->back;
+bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
+                             pll_utree_t **root) {
+  if (!tree->next) {
+    if (tree->label == label) {
+      root[0] = tree->back;
       return true;
-    }
-    else
+    } else
       return false;
   }
-  if(SetLabelRoot(label, tree->next->back,root))
-            return true;
-  if(SetLabelRoot(label, tree->next->next->back,root))
-          return true;
+  if (SetLabelRoot(label, tree->next->back, root)) return true;
+  if (SetLabelRoot(label, tree->next->next->back, root)) return true;
   return false;
 }
 
-
-/// @brief Sets the label of the root for the entire tree. Sets tree_ to that node.
+/// @brief Sets the label of the root for the entire tree. Sets tree_ to that
+/// node.
 /// @param[in] tree
 /// An internal node.
-pll_utree_t* Partition:: SetNewickRoot(pll_utree_t* tree){
+pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
   std::string minlabel;
-  std::string rlabel1= RootNewickRecursive(tree);
-  std::string rlabel2= RootNewickRecursive(tree->back);
-  if(rlabel1.compare(rlabel2)<0)
-  minlabel=rlabel1;
+  std::string rlabel1 = RootNewickRecursive(tree);
+  std::string rlabel2 = RootNewickRecursive(tree->back);
+  if (rlabel1.compare(rlabel2) < 0)
+    minlabel = rlabel1;
   else
-  minlabel=rlabel2;
-  pll_utree_t** root;
-  root=(pll_utree_t**) malloc(sizeof(pll_utree_t*));
-  SetLabelRoot(minlabel,tree,root);
-  SetLabelRoot(minlabel,tree->back,root);
+    minlabel = rlabel2;
+  pll_utree_t **root;
+  root = (pll_utree_t **)malloc(sizeof(pll_utree_t *));
+  SetLabelRoot(minlabel, tree, root);
+  SetLabelRoot(minlabel, tree->back, root);
   return root[0];
 }
 
-
-/// @brief Determines order for first ternary step, then runs recursive ordering for the two non-root subtrees.
+/// @brief Determines order for first ternary step, then runs recursive ordering
+/// for the two non-root subtrees.
 /// @return Completely ordered newick string.
-pll_utree_t* Partition::ToOrderedNewick(pll_utree_t* tree){
-  tree=SetNewickRoot(tree);
+pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
+  tree = SetNewickRoot(tree);
   RootNewickRecursive(tree);
 
   /*Check tree health after reordering*/
-  if(!pll_utree_check_integrity(tree))
-  fatal("Tree not healthy, check reordering parameterization.");
-    if(!TreeHealthy(tree))
-  fatal("Tree not healthy, check reordering parameterization.");
+  if (!pll_utree_check_integrity(tree))
+    fatal("Tree not healthy, check reordering parameterization.");
+  if (!TreeHealthy(tree))
+    fatal("Tree not healthy, check reordering parameterization.");
   return tree;
 }
-
-
-
 
 /// @brief Perform a full tree traversal and update CLV's, etc.
 /// Eventually, we will want to break this up for efficiency gains
@@ -272,7 +244,7 @@ pll_utree_t* Partition::ToOrderedNewick(pll_utree_t* tree){
 /// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
-void Partition::FullTraversalUpdate(pll_utree_t* tree) {
+void Partition::FullTraversalUpdate(pll_utree_t *tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
@@ -301,11 +273,10 @@ void Partition::FullTraversalUpdate(pll_utree_t* tree) {
   pll_update_partials(partition_, operations_, ops_count);
 }
 
-
 /// @brief Just calculate log likelihood.
 /// NOTE: This will return nonsense if you haven't updated CLV's, etc.
 /// @return Log likelihood.
-double Partition::LogLikelihood(pll_utree_t* tree) {
+double Partition::LogLikelihood(pll_utree_t *tree) {
   double logl = pll_compute_edge_loglikelihood(
       partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
       tree->back->scaler_index, tree->pmatrix_index, params_indices_,
@@ -314,21 +285,19 @@ double Partition::LogLikelihood(pll_utree_t* tree) {
   return logl;
 }
 
-
 /// @brief Make a traversal at the root and return the log likelihood.
 /// @return Log likelihood.
-double Partition::FullTraversalLogLikelihood(pll_utree_t* tree) {
+double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
   FullTraversalUpdate(tree);
   return LogLikelihood(tree);
 }
-
 
 /// @brief Optimize the current branch length.
 /// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
 /// @param[in] tree
 /// Parent node of branch to optimize.
 /// @return Optimized branch length.
-double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
+double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   /* Perform a full postorder traversal of the unrooted tree. */
   pll_utree_t *parent = tree;
   pll_utree_t *child = tree->back;
@@ -346,7 +315,8 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
 
-    ///printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
+    /// printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
+    /// opt_logl, d1,d2);
     // If derivative is approximately zero then we've found the maximum.
     if (fabs(d1) < EPSILON) break;
 
@@ -358,20 +328,21 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
        where x_i is the current branch, f'(x_i) is the first derivative and
        f''(x_i) is the second derivative of the likelihood function. */
     if (d2 < 0)
-      len +=  d1 / d2;
+      len += d1 / d2;
     else
-      len -=  d1 / d2;
+      len -= d1 / d2;
 
-    /*Branch optimization was returning negative values, set minimum branch length to be small positive value*/
+    /*Branch optimization was returning negative values, set minimum branch
+     * length to be small positive value*/
 
-    if(len < 0)
-    {
-    len = EPSILON;
-    double opt_logl = pll_compute_likelihood_derivatives(
-        partition_, parent->scaler_index, child->scaler_index, len,
-        params_indices_, sumtable_, &d1, &d2);
-    ///printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len, opt_logl, d1,d2);
-    break;
+    if (len < 0) {
+      len = EPSILON;
+      double opt_logl = pll_compute_likelihood_derivatives(
+          partition_, parent->scaler_index, child->scaler_index, len,
+          params_indices_, sumtable_, &d1, &d2);
+      /// printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
+      /// opt_logl, d1,d2);
+      break;
     }
   }
 
@@ -386,121 +357,109 @@ double Partition::OptimizeCurrentBranch(pll_utree_t* tree) {
 /// @param[in] tree
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
-  if (!tree->next){
-  FullTraversalUpdate(tree->back);
-  OptimizeCurrentBranch(tree->back);
-  //std::cout<<"DONE"<<std::endl;
-  }
-  else{
-  FullTraversalUpdate(tree);
-  OptimizeCurrentBranch(tree);
-  //std::cout<<"DONE"<<std::endl;
+  if (!tree->next) {
+    FullTraversalUpdate(tree->back);
+    OptimizeCurrentBranch(tree->back);
+    // std::cout<<"DONE"<<std::endl;
+  } else {
+    FullTraversalUpdate(tree);
+    OptimizeCurrentBranch(tree);
+    // std::cout<<"DONE"<<std::endl;
 
-  TreeBranchLengthsAux(tree->next->back);
-  TreeBranchLengthsAux(tree->next->next->back);
+    TreeBranchLengthsAux(tree->next->back);
+    TreeBranchLengthsAux(tree->next->next->back);
   }
 }
 
-///@brief Perform a postorder tree traversal, optimizing the branch length at every edge.
-///NOTE: This optimizes internal branches twice per traversal.
-void Partition::TreeBranchLengths(pll_utree_t* tree){
-  if(!tree->next)
-    {
+///@brief Perform a postorder tree traversal, optimizing the branch length at
+/// every edge.
+/// NOTE: This optimizes internal branches twice per traversal.
+void Partition::TreeBranchLengths(pll_utree_t *tree) {
+  if (!tree->next) {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
-    }
+  }
   TreeBranchLengthsAux(tree);
   TreeBranchLengthsAux(tree->back);
-
 }
 
-///@brief Repeat branch length optimization until log likelihood changes very little or MAX_ITER is reached.
-void Partition::FullBranchOpt(pll_utree_t* tree){
-  double loglike_prev=FullTraversalLogLikelihood(tree);
+///@brief Repeat branch length optimization until log likelihood changes very
+/// little or MAX_ITER is reached.
+void Partition::FullBranchOpt(pll_utree_t *tree) {
+  double loglike_prev = FullTraversalLogLikelihood(tree);
 
   TreeBranchLengths(tree);
 
-  double loglike=FullTraversalLogLikelihood(tree);
+  double loglike = FullTraversalLogLikelihood(tree);
 
-  int i=0;
-  while((fabs(loglike_prev-loglike) > EPSILON)&& i<MAX_ITER){
+  int i = 0;
+  while ((fabs(loglike_prev - loglike) > EPSILON) && i < MAX_ITER) {
     TreeBranchLengths(tree);
 
-    loglike_prev=loglike;
-    loglike=FullTraversalLogLikelihood(tree);
+    loglike_prev = loglike;
+    loglike = FullTraversalLogLikelihood(tree);
     i++;
-
   }
 }
-pll_utree_t* Partition:: NNI1(pll_utree_t* tree){
-  pll_utree_rb_t* rb;
-  rb=(pll_utree_rb_t*) malloc(sizeof(pll_utree_t*)+sizeof(int));
-  pll_utree_nni(tree,1,rb);
+pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
+  pll_utree_rb_t *rb;
+  rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
+  pll_utree_nni(tree, move_type, rb);
   FullTraversalUpdate(tree);
   FullBranchOpt(tree);
-  tree=ToOrderedNewick(tree);
+  tree = ToOrderedNewick(tree);
   return tree;
 }
 
-pll_utree_t* Partition::NNI2(pll_utree_t* tree){
-  pll_utree_rb_t* rb;
-  rb=(pll_utree_rb_t*) malloc(sizeof(pll_utree_t*)+sizeof(int));
-  pll_utree_nni(tree,2,rb);
-  FullTraversalUpdate(tree);
-  FullBranchOpt(tree);
-  tree=ToOrderedNewick(tree);
-  return tree;
-}
 
-void Partition:: MakeTables(){
-  //Create libcuckoo tables and do first optimization.
+void Partition::MakeTables() {
+  // Create libcuckoo tables and do first optimization.
   InnerTable good;
   InnerTable bad;
   FullTraversalUpdate(tree_);
   FullBranchOpt(tree_);
 
-  //Create a clone of the original tree to perform NNI and reordering on.
-  pll_utree_t* clone= pll_utree_clone(tree_);
-  clone=ToOrderedNewick(clone);
-  //Initialize likelihood threshold from ML tree.
-  double lambda=exp(FullTraversalLogLikelihood(clone));
-  //Set scaler parameter to determine if tree is good/bad.
-  double c=.7;
-  //Put ML tree into "good" table.
-  good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
-  //Reset the clone to the base tree
-  clone=pll_utree_clone(tree_);
-  //Perform first NNI and reordering on first edge.
-  clone=NNI1(clone);
-  double lambda_1=exp(FullTraversalLogLikelihood(clone));
-  //Compare new likelihood to ML, then decide which table to put in.
-  if(lambda_1>c*lambda)
-    good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
-  else{
-    bad.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  // Create a clone of the original tree to perform NNI and reordering on.
+  pll_utree_t *clone = pll_utree_clone(tree_);
+  clone = ToOrderedNewick(clone);
+  // Initialize likelihood threshold from ML tree.
+  double lambda = FullTraversalLogLikelihood(clone);
+  // Set scaler parameter to determine if tree is good/bad.
+  double c = 1.0105;
+  // Put ML tree into "good" table.
+  good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  // Reset the clone to the base tree
+  clone = pll_utree_clone(tree_);
+  // Perform first NNI and reordering on first edge.
+  clone = NNIUpdate(clone, 1);
+  double lambda_1 = FullTraversalLogLikelihood(clone);
+  // Compare new likelihood to ML, then decide which table to put in.
+  if (lambda_1 > c * lambda)
+    good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  else {
+    bad.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
   }
-  //Repeat for 2nd NNI move.
-  clone=pll_utree_clone(tree_);
-  clone=NNI2(clone);
-  lambda_1=exp(FullTraversalLogLikelihood(clone));
-  if(lambda_1>c*lambda)
-    good.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
-  else{
-    bad.insert(ToNewick(clone),FullTraversalLogLikelihood(clone));
+  // Repeat for 2nd NNI move.
+  clone = pll_utree_clone(tree_);
+  clone = NNIUpdate(clone, 2);
+  lambda_1 = FullTraversalLogLikelihood(clone);
+  if (lambda_1 > c * lambda)
+    good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  else {
+    bad.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
   }
- //Print Tables.
- std::cout<<"Good: "<<std::endl;
+  // Print Tables.
+  std::cout << "Good: " << std::endl;
 
   auto lt = good.lock_table();
-    for ( auto& item : lt)
-      std::cout << "Log Likelihood for " << item.first<< " : "<<item.second<< std::endl;
+  for (auto &item : lt)
+    std::cout << "Log Likelihood for " << item.first << " : " << item.second
+              << std::endl;
 
-  std::cout<<"Bad: "<<std::endl;
+  std::cout << "Bad: " << std::endl;
 
   auto lt1 = bad.lock_table();
-    for ( auto& item : lt1)
-      std::cout << "Log Likelihood for " << item.first<< " : "<<item.second<< std::endl;
+  for (auto &item : lt1)
+    std::cout << "Log Likelihood for " << item.first << " : " << item.second
+              << std::endl;
 }
-
-
-
 }
