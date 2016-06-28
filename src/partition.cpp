@@ -1,6 +1,5 @@
 #include "partition.hpp"
-#include <math.h>
-#include <pthread.h>
+#include <thread>
 #include "pll-utils.hpp"
 
 /// @file partition.cpp
@@ -8,7 +7,6 @@
 /// Much of this was directly copied from libpll examples, so parts (c) Thomas
 /// Flouri.
 
-typedef cuckoohash_map<std::string, double> InnerTable;
 
 namespace pt {
 /// @brief Constructor for Partition from a tree and an alignment.
@@ -400,6 +398,13 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
     i++;
   }
 }
+
+///@brief Perform an NNI move at the current edge, optimize branch lengths, and order the tree.
+///@param[in] tree
+///Node at edge on which to perform NNI.
+///@param[in] move_type
+/// Type of NNI move to perform.
+///@return Ordered, optimized new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   pll_utree_rb_t *rb;
   rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
@@ -410,56 +415,72 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   return tree;
 }
 
-
+///@brief Perform every possible NNI move from the current state, and sort them into good and bad tables.
 void Partition::MakeTables() {
-  // Create libcuckoo tables and do first optimization.
-  InnerTable good;
-  InnerTable bad;
+  //Update and optimize the ML tree, store its logl for comparison, and add it to the good table.
   FullTraversalUpdate(tree_);
   FullBranchOpt(tree_);
-
-  // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree_);
-  clone = ToOrderedNewick(clone);
-  // Initialize likelihood threshold from ML tree.
-  double lambda = FullTraversalLogLikelihood(clone);
-  // Set scaler parameter to determine if tree is good/bad.
-  double c = 1.0105;
-  // Put ML tree into "good" table.
-  good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
-  // Reset the clone to the base tree
-  clone = pll_utree_clone(tree_);
-  // Perform first NNI and reordering on first edge.
-  clone = NNIUpdate(clone, 1);
-  double lambda_1 = FullTraversalLogLikelihood(clone);
-  // Compare new likelihood to ML, then decide which table to put in.
-  if (lambda_1 > c * lambda)
-    good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
-  else {
-    bad.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
-  }
-  // Repeat for 2nd NNI move.
-  clone = pll_utree_clone(tree_);
-  clone = NNIUpdate(clone, 2);
-  lambda_1 = FullTraversalLogLikelihood(clone);
-  if (lambda_1 > c * lambda)
-    good.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
-  else {
-    bad.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
-  }
+  clone=ToOrderedNewick(clone);
+  double logl=FullTraversalLogLikelihood(clone);
+  good_.insert(ToNewick(clone),logl);
+
+  //Traverse the tree, performing both possible NNI moves, and sorting into tables at each internal edge.
+  NNITraverse(tree_ , logl);
+  NNITraverse(tree_->back , logl);
+
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
-  auto lt = good.lock_table();
+  auto lt = good_.lock_table();
   for (auto &item : lt)
     std::cout << "Log Likelihood for " << item.first << " : " << item.second
               << std::endl;
 
   std::cout << "Bad: " << std::endl;
 
-  auto lt1 = bad.lock_table();
+  auto lt1 = bad_.lock_table();
   for (auto &item : lt1)
     std::cout << "Log Likelihood for " << item.first << " : " << item.second
               << std::endl;
 }
+/// @brief Perform both NNI moves at an edge and compare their log-likelihoods to the ML, sort accordingly.
+///@param[in] tree
+/// The current edge.
+///@param[in] lambda
+///The likelihood of ML tree.
+void Partition:: NNIComputeEdge(pll_utree_t* tree, double lambda){
+  FullTraversalUpdate(tree);
+  // Create a clone of the original tree to perform NNI and reordering on.
+  pll_utree_t *clone = pll_utree_clone(tree);
+  // Set scaler parameter to determine if tree is good/bad.
+  double c = 1.0105;
+  // Perform first NNI and reordering on first edge.
+  clone = NNIUpdate(clone, 1);
+  double lambda_1 = FullTraversalLogLikelihood(clone);
+  // Compare new likelihood to ML, then decide which table to put in.
+  if (lambda_1 > c * lambda)
+    good_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  else {
+    bad_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  }
+  // Repeat for 2nd NNI move.
+  clone = pll_utree_clone(tree);
+  clone = NNIUpdate(clone, 2);
+  lambda_1 = FullTraversalLogLikelihood(clone);
+  if (lambda_1 > c * lambda)
+    good_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  else {
+    bad_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+  }
+}
+/// @brief Traverse the tree and perform NNI moves at each internal edge.
+void Partition:: NNITraverse(pll_utree_t *tree, double lambda) {
+  if (!tree->next) return;
+  NNIComputeEdge(tree, lambda);
+  NNITraverse(tree->next->back, lambda);
+  NNITraverse(tree->next->next->back, lambda);
+}
+
+
 }

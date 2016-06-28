@@ -22,6 +22,7 @@ const double EPSILON = 1e-10;  // Threshold for detecting zero.
 
 void fatal(const char *format, ...);
 int cb_full_traversal(pll_utree_t *node);
+int cb_branch_healthy(pll_utree_t* tree);
 
 bool TreeHealthy(pll_utree_t *tree);
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
