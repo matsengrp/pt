@@ -43,7 +43,9 @@ public:
   unsigned int branch_count() { return (nodes_count() - 1); };
 
   std::string ToNewick(pll_utree_t *tree);
+  void TraversalUpdate(pll_utree_t *tree, bool is_full);
   void FullTraversalUpdate(pll_utree_t *tree);
+  void FastUpdate(pll_utree_t *tree);
   double LogLikelihood(pll_utree_t *tree);
   double FullTraversalLogLikelihood(pll_utree_t *tree);
   double OptimizeCurrentBranch(pll_utree_t *tree);

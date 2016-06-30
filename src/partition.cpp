@@ -249,8 +249,15 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
 /// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
-void Partition::FullTraversalUpdate(pll_utree_t *tree) {
+void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   /* Perform a full postorder traversal of the unrooted tree. */
+  if (is_full)
+    FullTraversalUpdate(tree);
+  else
+    FastUpdate(tree);
+}
+
+void Partition::FullTraversalUpdate(pll_utree_t *tree) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
   if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
@@ -278,6 +285,10 @@ void Partition::FullTraversalUpdate(pll_utree_t *tree) {
   pll_update_partials(partition_, operations_, ops_count);
 }
 
+void Partition::FastUpdate(pll_utree_t *tree) {
+  // Some other type of updating here.
+}
+
 /// @brief Just calculate log likelihood.
 /// NOTE: This will return nonsense if you haven't updated CLV's, etc.
 /// @return Log likelihood.
@@ -293,7 +304,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at the root and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  FullTraversalUpdate(tree);
+  TraversalUpdate(tree, 1);
   return LogLikelihood(tree);
 }
 
@@ -365,11 +376,11 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
 
-    FullTraversalUpdate(tree->back);
+    TraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
     // std::cout<<"DONE"<<std::endl;
   } else {
-    FullTraversalUpdate(tree);
+    TraversalUpdate(tree, 1);
     OptimizeCurrentBranch(tree);
     // std::cout<<"DONE"<<std::endl;
     TreeBranchLengthsAux(tree->next->back);
@@ -461,28 +472,34 @@ void Partition::MakeTables() {
 ///@param[in] lambda
 /// The likelihood of ML tree.
 void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda) {
-  FullTraversalUpdate(tree);
+  TraversalUpdate(tree, 1);
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Set scaler parameter to determine if tree is good/bad.
-  double c = 1.001;
+  double c = 1.0105;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
-  double lambda_1 = FullTraversalLogLikelihood(clone);
-  // Compare new likelihood to ML, then decide which table to put in.
-  if (lambda_1 > c * lambda)
-    good_.insert(ToNewick(clone), lambda_1);
-  else {
-    bad_.insert(ToNewick(clone), lambda_1);
+  std::string label = ToNewick(clone);
+  if (!(good_.contains(label) || bad_.contains(label))) {
+    double lambda_1 = FullTraversalLogLikelihood(clone);
+    // Compare new likelihood to ML, then decide which table to put in.
+    if (lambda_1 > c * lambda) {
+      good_.insert(ToNewick(clone), lambda_1);
+    } else {
+      bad_.insert(ToNewick(clone), lambda_1);
+    }
   }
   // Repeat for 2nd NNI move.
   clone = pll_utree_clone(tree);
   clone = NNIUpdate(clone, 2);
-  lambda_1 = FullTraversalLogLikelihood(clone);
-  if (lambda_1 > c * lambda)
-    good_.insert(ToNewick(clone), lambda_1);
-  else {
-    bad_.insert(ToNewick(clone), lambda_1);
+  label = ToNewick(clone);
+  if (!(good_.contains(label) || bad_.contains(label))) {
+    double lambda_1 = FullTraversalLogLikelihood(clone);
+    if (lambda_1 > c * lambda) {
+      good_.insert(ToNewick(clone), lambda_1);
+    } else {
+      bad_.insert(ToNewick(clone), lambda_1);
+    }
   }
 }
 /// @brief Traverse the tree and perform NNI moves at each internal edge.

@@ -223,6 +223,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
 
   std::string sstr = contents.substr(pos1 + 13, pos2 - pos1 - 13);
 
+
   std::vector<std::string> freqvector = ssplit(sstr, ' ');
   double frequencies[freqvector.size()];
 
