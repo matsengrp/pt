@@ -1,23 +1,21 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
+#include "libcuckoo/src/cuckoohash_map.hh"
+#include "pll-utils.hpp"
 #include <iostream>
 #include <memory>
 #include <pthread.h>
 #include <string>
 
-#include "libcuckoo/src/cuckoohash_map.hh"
-#include "pll-utils.hpp"
-
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
 
 namespace pt {
-
+typedef cuckoohash_map<std::string, double> InnerTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 ///
 class Partition {
-  typedef cuckoohash_map<std::string, double> InnerTable;
 
 private:
   unsigned int tip_nodes_count_;

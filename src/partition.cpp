@@ -364,6 +364,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
+
     FullTraversalUpdate(tree->back);
     OptimizeCurrentBranch(tree->back);
     // std::cout<<"DONE"<<std::endl;
@@ -371,7 +372,6 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
     FullTraversalUpdate(tree);
     OptimizeCurrentBranch(tree);
     // std::cout<<"DONE"<<std::endl;
-
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
   }
@@ -379,7 +379,7 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 
 ///@brief Perform a postorder tree traversal, optimizing the branch length at
 /// every edge.
-/// NOTE: This optimizes internal branches twice per traversal.
+/// NOTE: This optimizes initial branch twice per traversal.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
@@ -408,7 +408,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 }
 
 ///@brief Perform an NNI move at the current edge, optimize branch lengths, and
-///order the tree.
+/// order the tree.
 ///@param[in] tree
 /// Node at edge on which to perform NNI.
 ///@param[in] move_type
@@ -418,18 +418,16 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   pll_utree_rb_t *rb;
   rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
   pll_utree_nni(tree, move_type, rb);
-  FullTraversalUpdate(tree);
   FullBranchOpt(tree);
   tree = ToOrderedNewick(tree);
   return tree;
 }
 
 ///@brief Perform every possible NNI move from the current state, and sort them
-///into good and bad tables.
+/// into good and bad tables.
 void Partition::MakeTables() {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  FullTraversalUpdate(tree_);
   FullBranchOpt(tree_);
   pll_utree_t *clone = pll_utree_clone(tree_);
   clone = ToOrderedNewick(clone);
@@ -467,24 +465,24 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Set scaler parameter to determine if tree is good/bad.
-  double c = 1.0105;
+  double c = 1.001;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   double lambda_1 = FullTraversalLogLikelihood(clone);
   // Compare new likelihood to ML, then decide which table to put in.
   if (lambda_1 > c * lambda)
-    good_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+    good_.insert(ToNewick(clone), lambda_1);
   else {
-    bad_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+    bad_.insert(ToNewick(clone), lambda_1);
   }
   // Repeat for 2nd NNI move.
   clone = pll_utree_clone(tree);
   clone = NNIUpdate(clone, 2);
   lambda_1 = FullTraversalLogLikelihood(clone);
   if (lambda_1 > c * lambda)
-    good_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+    good_.insert(ToNewick(clone), lambda_1);
   else {
-    bad_.insert(ToNewick(clone), FullTraversalLogLikelihood(clone));
+    bad_.insert(ToNewick(clone), lambda_1);
   }
 }
 /// @brief Traverse the tree and perform NNI moves at each internal edge.

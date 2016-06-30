@@ -17,8 +17,8 @@ const unsigned int RATE_CATS = 4;
 const unsigned int ALIGNMENT = PLL_ALIGNMENT_AVX;
 const unsigned int ARCH_FLAGS = PLL_ATTRIB_ARCH_AVX;
 // MAX_ITER: Max iterations when optimizing branch lengths.
-const unsigned int MAX_ITER = 32;
-const double EPSILON = 1e-10; // Threshold for detecting zero.
+const unsigned int MAX_ITER = 31;
+const double EPSILON = 1e-6; // Threshold for detecting zero.
 
 void fatal(const char *format, ...);
 int cb_full_traversal(pll_utree_t *node);
