@@ -29,23 +29,6 @@ void fatal(const char *format, ...) {
 /* a callback function for performing a full traversal */
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
-/// @brief Preform a postorder traversal according to callback function cbtrav.
-/// @param[in] node
-/// Node from which to begin traversal.
-/// @param[in] cbtrav
-/// Callback function for traversal.
-static int utree_traverse_check(pll_utree_t *node,
-                                int (*cbtrav)(pll_utree_t *)) {
-  if (!node->next) {
-    return cbtrav(node);
-  }
-  if (!cbtrav(node))
-    return 0;
-
-  return utree_traverse_check(node->next->back, cbtrav) &&
-         utree_traverse_check(node->next->next->back, cbtrav);
-}
-
 /// @brief Determine if a tree is healthy, i.e. has branch lengths.
 /// @param[in] tree
 /// A pll_utree_t to check.
@@ -56,16 +39,14 @@ int cb_branch_healthy(pll_utree_t *tree) {
   if (tree->next) {
     if (!tree->next->length || !tree->next->next->length)
       return 0;
-
-    return (cb_branch_healthy(tree->next->back) &&
-            cb_branch_healthy(tree->next->next->back));
   }
-
-  return true;
+  if (tree->length != tree->back->length)
+    return 0;
+  return 1;
 }
+
 bool TreeHealthy(pll_utree_t *tree) {
-  return (utree_traverse_check(tree, cb_branch_healthy) &&
-          utree_traverse_check(tree, cb_branch_healthy));
+  return pll_utree_every(tree, cb_branch_healthy);
 }
 
 /// @brief Parse a Fasta file.
@@ -222,7 +203,6 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   std::size_t pos2 = contents.find('\n', pos1);
 
   std::string sstr = contents.substr(pos1 + 13, pos2 - pos1 - 13);
-
 
   std::vector<std::string> freqvector = ssplit(sstr, ' ');
   double frequencies[freqvector.size()];

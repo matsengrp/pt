@@ -3,11 +3,10 @@
 
 //#include "catch.hpp"
 #include "partition.hpp"
+#include <thread>
 // namespace pt {
-
 // TEST_CASE("Partition", "[partition]") {
 int main() {
-
   auto p_DS1 = std::unique_ptr<pt::Partition>(
       new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
                         "test-data/hohna_datasets_fasta/DS1.fasta",
@@ -22,6 +21,7 @@ int main() {
   // Tree topologies and likelihoods for all possible NNI moves at DS1 best
   // tree.
   p_DS1->MakeTables();
+
   return 0;
 }
 //}

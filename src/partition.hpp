@@ -65,6 +65,7 @@ public:
   void NNIComputeEdge(pll_utree_t *tree, double lambda);
   InnerTable good_;
   InnerTable bad_;
+  int cb_branch_lengths(pll_utree_t *tree);
 };
 }
 

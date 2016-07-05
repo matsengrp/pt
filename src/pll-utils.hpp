@@ -32,9 +32,6 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
                             char **seqdata);
 std::vector<std::string> ssplit(const std::string &s, char delim);
 void SetModelParameters(pll_partition_t *partition, std::string path);
-
-static int utree_traverse_check(pll_utree_t *node,
-                                int (*cbtrav)(pll_utree_t *));
 }
 
 #endif // PT_PLL_UTILS_
