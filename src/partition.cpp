@@ -93,7 +93,7 @@ std::string Partition::ToNewick(pll_utree_t *tree) {
   return std::string(utree_short_newick(tree));
 }
 
-/// @brief Recursive function for newick string without branch lengths.
+/// @brief Recursive function to generate newick string without branch lengths.
 char *Partition::newick_utree_recurse(pll_utree_t *root) {
   char *newick;
   int size_alloced;
@@ -167,13 +167,12 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
 /// @param[in] tree
 /// Parent node of subtree to root.
 /// @return smallest label
-std::string Partition::RootNewickRecursive(pll_utree_t *tree) {
-  /*Root the tree at parent of lowest-labeled leaf*/
+std::string Partition::FindRootNode(pll_utree_t *tree) {
   std::string minlabel;
   if (!tree->next)
     return tree->label;
-  std::string rlabel1 = RootNewickRecursive(tree->next->back);
-  std::string rlabel2 = RootNewickRecursive(tree->next->next->back);
+  std::string rlabel1 = FindRootNode(tree->next->back);
+  std::string rlabel2 = FindRootNode(tree->next->next->back);
   if (rlabel1.compare(rlabel2) < 0)
     minlabel = rlabel1;
   else {
@@ -193,6 +192,8 @@ std::string Partition::RootNewickRecursive(pll_utree_t *tree) {
 /// Label of node to find
 /// @param[in] tree
 /// Node to search at
+/// @param[in] root
+/// Buffer for storing root node
 bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
                              pll_utree_t **root) {
   if (!tree->next) {
@@ -202,21 +203,20 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
     } else
       return false;
   }
-  if (SetLabelRoot(label, tree->next->back, root))
-    return true;
-  if (SetLabelRoot(label, tree->next->next->back, root))
+  if (SetLabelRoot(label, tree->next->back, root) ||
+      SetLabelRoot(label, tree->next->next->back, root))
     return true;
   return false;
 }
 
-/// @brief Sets the label of the root for the entire tree. Sets tree_ to that
-/// node.
+/// @brief Sets the label of the root for the entire tree.
 /// @param[in] tree
 /// An internal node.
+/// @return Parent of the first node alphabetically.
 pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
   std::string minlabel;
-  std::string rlabel1 = RootNewickRecursive(tree);
-  std::string rlabel2 = RootNewickRecursive(tree->back);
+  std::string rlabel1 = FindRootNode(tree);
+  std::string rlabel2 = FindRootNode(tree->back);
   if (rlabel1.compare(rlabel2) < 0)
     minlabel = rlabel1;
   else
@@ -233,22 +233,15 @@ pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
 /// @return Completely ordered newick string.
 pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
   tree = SetNewickRoot(tree);
-  RootNewickRecursive(tree);
-
-  /*Check tree health after reordering*/
-  if (!pll_utree_check_integrity(tree))
-    fatal("Tree not healthy, check reordering parameterization.");
-  if (!TreeHealthy(tree))
-    fatal("Tree not healthy, check reordering parameterization.");
+  FindRootNode(tree);
   return tree;
 }
 
-/// @brief Perform a full tree traversal and update CLV's, etc.
-/// Eventually, we will want to break this up for efficiency gains
-/// so that we aren't always doing a full traversal every time we
-/// want to calculate the likelihood, but we'll do that carefully!
+/// @brief Perform either a full or fast traversal update.
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
+/// @param[in] is_full
+/// Which type of traversal update to perform. (1 = full)
 void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   /* Perform a full postorder traversal of the unrooted tree. */
   if (is_full)
@@ -257,6 +250,12 @@ void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
     FastUpdate(tree);
 }
 
+/// @brief Perform a full tree traversal and update CLV's, etc.
+/// Eventually, we will want to break this up for efficiency gains
+/// so that we aren't always doing a full traversal every time we
+/// want to calculate the likelihood, but we'll do that carefully!
+/// @param[in] tree
+/// Parent node from which to update CLV's etc.
 void Partition::FullTraversalUpdate(pll_utree_t *tree) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
@@ -370,7 +369,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   return len;
 }
 
-/// @brief Aux function for optimizing branch lengths accross the whole tree.
+/// @brief Aux function for optimizing branch lengths across the whole tree.
 /// @param[in] tree
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
@@ -378,19 +377,17 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 
     TraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
-    // std::cout<<"DONE"<<std::endl;
   } else {
     TraversalUpdate(tree, 1);
     OptimizeCurrentBranch(tree);
-    // std::cout<<"DONE"<<std::endl;
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
   }
 }
 
-///@brief Perform a postorder tree traversal, optimizing the branch length at
-/// every edge.
-/// NOTE: This optimizes initial branch twice per traversal.
+///@brief Perform a postorder tree traversal which optimizes the branch length
+///at every edge.
+/// NOTE: This optimizes the initial branch twice per traversal.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
@@ -409,7 +406,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
   double loglike = FullTraversalLogLikelihood(tree);
 
   int i = 0;
-  while ((fabs(loglike_prev - loglike) > EPSILON) && i < MAX_ITER) {
+  while (fabs(loglike_prev - loglike) > EPSILON && i < MAX_ITER) {
     TreeBranchLengths(tree);
 
     loglike_prev = loglike;

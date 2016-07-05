@@ -55,7 +55,7 @@ public:
   pll_utree_t *SetNewickRoot(pll_utree_t *tree);
   bool SetLabelRoot(std::string label, pll_utree_t *tree, pll_utree_t **root);
   void RecursiveOrderedNewick(pll_utree_t *tree);
-  std::string RootNewickRecursive(pll_utree_t *tree);
+  std::string FindRootNode(pll_utree_t *tree);
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables();
