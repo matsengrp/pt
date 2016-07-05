@@ -433,6 +433,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 
 ///@brief Perform every possible NNI move from the current state, and sort them
 /// into good and bad tables.
+/// NOTE: This function assumes that the current topology is "good" (i.e. it is the ML tree).
 void Partition::MakeTables() {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
