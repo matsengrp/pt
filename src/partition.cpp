@@ -433,7 +433,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// into good and bad tables.
 /// NOTE: This function assumes that the current topology is "good" (i.e. it is
 /// the ML tree).
-void Partition::MakeTables() {
+void Partition::MakeTables(double cutoff) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
   FullBranchOpt(tree_);
@@ -444,8 +444,8 @@ void Partition::MakeTables() {
 
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
-  NNITraverse(tree_, logl);
-  NNITraverse(tree_->back, logl);
+  NNITraverse(tree_, logl, cutoff);
+  NNITraverse(tree_->back, logl, cutoff);
 
   // Print Tables.
   std::cout << "Good: " << std::endl;
@@ -503,11 +503,11 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
   }
 }
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
-void Partition::NNITraverse(pll_utree_t *tree, double lambda) {
+void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff) {
   if (!tree->next)
     return;
-  NNIComputeEdge(tree, lambda, cutoff_);
-  NNITraverse(tree->next->back, lambda);
-  NNITraverse(tree->next->next->back, lambda);
+  NNIComputeEdge(tree, lambda, cutoff);
+  NNITraverse(tree->next->back, lambda, cutoff);
+  NNITraverse(tree->next->next->back, lambda, cutoff);
 }
 }

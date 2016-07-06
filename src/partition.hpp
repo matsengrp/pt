@@ -28,7 +28,6 @@ private:
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
-  double cutoff_ = 1.0105;
 
 public:
   pll_utree_t *tree_;
@@ -59,10 +58,10 @@ public:
   std::string FindRootNode(pll_utree_t *tree);
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
-  void MakeTables();
+  void MakeTables(double cutoff);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
-  void NNITraverse(pll_utree_t *tree, double lambda);
+  void NNITraverse(pll_utree_t *tree, double lambda, double cutoff);
   void NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff);
   InnerTable good_;
   InnerTable bad_;

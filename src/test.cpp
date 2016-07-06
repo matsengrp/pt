@@ -31,7 +31,7 @@ TEST_CASE("Partition", "[partition]") {
   REQUIRE(p_newton->ToNewick(p_newton->tree_) == "(0,1,(2,3));");
 
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.
-  p_newton->MakeTables();
+  p_newton->MakeTables(1.0105);
   // Check that good tree is in newton good table.
   // NOTE: Changing the cutoff_ global parameter affects this test.
   REQUIRE(p_newton->good_.contains("(0,(1,3),2);"));
