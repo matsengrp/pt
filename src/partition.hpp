@@ -28,7 +28,7 @@ private:
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
-  double cutoff_=1.0105;
+  double cutoff_ = 1.0105;
 
 public:
   pll_utree_t *tree_;

@@ -26,7 +26,7 @@ void fatal(const char *format, ...) {
   exit(EXIT_FAILURE);
 }
 
-//a callback function for performing a full traversal
+// a callback function for performing a full traversal
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
 /// @brief Determine if a tree is healthy, i.e. has branch lengths.
@@ -40,7 +40,7 @@ int cb_branch_healthy(pll_utree_t *tree) {
     if (!tree->next->length || !tree->next->next->length)
       return 0;
   }
-  return(tree->length == tree->back->length);
+  return (tree->length == tree->back->length);
 }
 
 bool TreeHealthy(pll_utree_t *tree) {
@@ -70,11 +70,11 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   long hdrlen;
   long seqno;
 
-  //allocate arrays to store FASTA headers and sequences
+  // allocate arrays to store FASTA headers and sequences
   char **headers = (char **)calloc(seq_count, sizeof(char *));
   char **seqdata = (char **)calloc(seq_count, sizeof(char *));
 
-  //read FASTA sequences and make sure they are all of the same length
+  // read FASTA sequences and make sure they are all of the same length
   unsigned int i;
   int sites = -1;
   for (i = 0; pll_fasta_getnext(fp, &hdr, &hdrlen, &seq, &seqlen, &seqno);
@@ -92,11 +92,11 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
     seqdata[i] = seq;
   }
 
-  //did we stop reading the file because we reached EOF?
+  // did we stop reading the file because we reached EOF?
   if (pll_errno != PLL_ERROR_FILE_EOF)
     fatal("Error while reading file %s", &path[0]);
 
-  //close FASTA file
+  // close FASTA file
   pll_fasta_close(fp);
 
   if (sites < 0)
@@ -126,15 +126,15 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
 void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
                             unsigned int tip_nodes_count, char **headers,
                             char **seqdata) {
-  //obtain an array of pointers to tip nodes
+  // obtain an array of pointers to tip nodes
   pll_utree_t **tipnodes =
       (pll_utree_t **)calloc(tip_nodes_count, sizeof(pll_utree_t *));
   pll_utree_query_tipnodes(tree, tipnodes);
 
-  //create a libc hash table of size tip_nodes_count
+  // create a libc hash table of size tip_nodes_count
   hcreate(tip_nodes_count);
 
-  //populate a libc hash table with tree tip labels
+  // populate a libc hash table with tree tip labels
 
   unsigned int *data =
       (unsigned int *)malloc(tip_nodes_count * sizeof(unsigned int));
@@ -147,7 +147,7 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
     hsearch(entry, ENTER);
   }
 
-  //find sequences in hash table and link them with the corresponding taxa
+  // find sequences in hash table and link them with the corresponding taxa
   for (i = 0; i < tip_nodes_count; ++i) {
     ENTRY query;
     query.key = headers[i];
@@ -163,10 +163,10 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
     pll_set_tip_states(partition, tip_clv_index, pll_map_nt, seqdata[i]);
   }
 
-  //destroy hash table
+  // destroy hash table
   hdestroy();
 
-  //we no longer need these two arrays (keys and values of hash table...
+  // we no longer need these two arrays (keys and values of hash table...
   free(data);
   free(tipnodes);
 }
@@ -187,7 +187,7 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
 /// @param[in] path
 /// RAxML info file path for retrieving parameters.
 void SetModelParameters(pll_partition_t *partition, std::string path) {
-  //Import the info file
+  // Import the info file
   std::ifstream file(path);
   std::string read;
   std::string contents;
@@ -196,7 +196,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
     contents += read;
     contents.push_back('\n');
   }
-  //initialize the array of base frequencies
+  // initialize the array of base frequencies
   std::size_t pos1 = contents.find("frequencies: ");
   std::size_t pos2 = contents.find('\n', pos1);
 
@@ -208,7 +208,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   for (int i = 0; i < freqvector.size(); i++)
     frequencies[i] = std::stod(freqvector.at(i));
 
-  //initialize the array of subst_params
+  // initialize the array of subst_params
   pos1 = contents.find("ac ag at cg ct gt:");
   pos2 = contents.find('\n', pos1);
   sstr = contents.substr(pos1 + 19, pos2 - pos1 - 19);
@@ -220,10 +220,10 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   if (ratevector.size() != (((freqvector.size()) * freqvector.size() - 4) / 2))
     fatal("Wrong number of rate values.");
 
-  //we'll use RATE_CATS rate categories, and currently initialize them to 0
+  // we'll use RATE_CATS rate categories, and currently initialize them to 0
   double rate_cats[RATE_CATS] = {0};
 
-  //initialize the alpha value
+  // initialize the alpha value
   pos1 = contents.find("alpha[0]: ");
   pos2 = contents.find(' ', pos1 + 10);
   sstr = contents.substr(pos1 + 10, pos2 - pos1 - 10);
