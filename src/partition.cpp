@@ -203,10 +203,10 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
     } else
       return false;
   }
-  if (SetLabelRoot(label, tree->next->back, root) ||
-      SetLabelRoot(label, tree->next->next->back, root))
-    return true;
-  return false;
+  else{
+    return(SetLabelRoot(label, tree->next->back, root) ||
+      SetLabelRoot(label, tree->next->next->back, root));
+  }
 }
 
 /// @brief Sets the label of the root for the entire tree.
@@ -243,7 +243,7 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
 /// @param[in] is_full
 /// Which type of traversal update to perform. (1 = full)
 void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
-  /* Perform a full postorder traversal of the unrooted tree. */
+  //Perform a full postorder traversal of the unrooted tree.
   if (is_full)
     FullTraversalUpdate(tree);
   else
@@ -264,23 +264,23 @@ void Partition::FullTraversalUpdate(pll_utree_t *tree) {
     fatal("Function pll_utree_traverse() requires inner nodes as parameters");
   }
 
-  /* Given the computed traversal descriptor, generate the operations
-     structure, and the corresponding probability matrix indices that
-     may need recomputing. */
+  //Given the computed traversal descriptor, generate the operations
+  //structure, and the corresponding probability matrix indices that
+  //may need recomputing.
   pll_utree_create_operations(travbuffer_, traversal_size, branch_lengths_,
                               matrix_indices_, operations_, &matrix_count,
                               &ops_count);
 
-  /* Update matrix_count probability matrices for model with index 0. The i-th
-     matrix (i ranges from 0 to matrix_count - 1) is generated using branch
-     length branch_lengths[i] and can be referred to with index
-     matrix_indices[i]. */
+  //Update matrix_count probability matrices for model with index 0. The i-th
+  //matrix (i ranges from 0 to matrix_count - 1) is generated using branch
+  //length branch_lengths[i] and can be referred to with index
+  //matrix_indices[i].
   pll_update_prob_matrices(partition_, params_indices_, matrix_indices_,
                            branch_lengths_, matrix_count);
 
-  /* Use the operations array to compute all ops_count inner CLVs. Operations
-     will be carried out sequentially starting from operation 0 towrds
-     ops_count-1. */
+  //Use the operations array to compute all ops_count inner CLVs. Operations
+  //will be carried out sequentially starting from operation 0 towrds
+  //ops_count-1.
   pll_update_partials(partition_, operations_, ops_count);
 }
 
@@ -300,7 +300,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
   return logl;
 }
 
-/// @brief Make a traversal at the root and return the log likelihood.
+/// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
   TraversalUpdate(tree, 1);
@@ -313,7 +313,7 @@ double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
 /// Parent node of branch to optimize.
 /// @return Optimized branch length.
 double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
-  /* Perform a full postorder traversal of the unrooted tree. */
+  //Perform a full postorder traversal of the unrooted tree.
   pll_utree_t *parent = tree;
   pll_utree_t *child = tree->back;
 
@@ -336,20 +336,20 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
     if (fabs(d1) < EPSILON)
       break;
 
-    /* Newton's method for finding the optimum of a function. The iteration to
-       reach the optimum is
+    //Newton's method for finding the optimum of a function. The iteration to
+    //reach the optimum is
 
-       x_{i+1} = x_i - f'(x_i) / f''(x_i)
+    //x_{i+1} = x_i - f'(x_i) / f''(x_i)
 
-       where x_i is the current branch, f'(x_i) is the first derivative and
-       f''(x_i) is the second derivative of the likelihood function. */
+    //where x_i is the current branch, f'(x_i) is the first derivative and
+    //f''(x_i) is the second derivative of the likelihood function.
     if (d2 < 0)
       len += d1 / d2;
     else
       len -= d1 / d2;
 
-    /*Branch optimization was returning negative values, set minimum branch
-     * length to be small positive value*/
+  //Branch optimization was returning negative values, set minimum branch
+  //length to be small positive value
 
     if (len < 0) {
       len = EPSILON;
@@ -374,7 +374,6 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-
     TraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
   } else {
@@ -465,16 +464,18 @@ void Partition::MakeTables() {
 }
 /// @brief Perform both NNI moves at an edge and compare their log-likelihoods
 /// to the ML, sort accordingly.
-///@param[in] tree
+/// @param[in] tree
 /// The current edge.
-///@param[in] lambda
+/// @param[in] lambda
 /// The likelihood of ML tree.
-void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda) {
+/// @param[in] cutoff
+/// The scaler cutoff for tree acceptance (c * lambda)
+void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff) {
   TraversalUpdate(tree, 1);
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Set scaler parameter to determine if tree is good/bad.
-  double c = 1.0105;
+  double c = cutoff;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
@@ -504,7 +505,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda) {
 void Partition::NNITraverse(pll_utree_t *tree, double lambda) {
   if (!tree->next)
     return;
-  NNIComputeEdge(tree, lambda);
+  NNIComputeEdge(tree, lambda, cutoff_);
   NNITraverse(tree->next->back, lambda);
   NNITraverse(tree->next->next->back, lambda);
 }

@@ -19,7 +19,6 @@ class Partition {
 
 private:
   unsigned int tip_nodes_count_;
-  pll_utree_t *tree_;
   // Stores probability matrices, scalers, etc.
   pll_partition_t *partition_;
   unsigned int *matrix_indices_;
@@ -29,8 +28,10 @@ private:
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
+  double cutoff_=1.0105;
 
 public:
+  pll_utree_t *tree_;
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
   virtual ~Partition();
@@ -62,7 +63,7 @@ public:
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda);
-  void NNIComputeEdge(pll_utree_t *tree, double lambda);
+  void NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff);
   InnerTable good_;
   InnerTable bad_;
   int cb_branch_lengths(pll_utree_t *tree);
