@@ -38,10 +38,9 @@ TEST_CASE("Partition", "[partition]") {
 }
 
 TEST_CASE("NNI_Recursion", "[nnirecursion]") {
-  auto p_DS1 = std::unique_ptr<pt::Partition>(
-      new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
-                        "test-data/hohna_datasets_fasta/DS1.fasta",
-                        "test-data/hohna_datasets_fasta/RAxML_info.DS1"));
+  auto p_DS1 = std::unique_ptr<pt::Partition>(new pt::Partition(
+      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
+      "test-data/five/RAxML_info.five"));
   // Optimize initial topology.
   p_DS1->FullBranchOpt(p_DS1->tree_);
 
@@ -49,9 +48,9 @@ TEST_CASE("NNI_Recursion", "[nnirecursion]") {
   double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
 
   // Return all trees with a log likelihood of at least -6490 (ML is -6486.9).
-  p_DS1->MakeTables(1.000477886, logl, p_DS1->tree_);
+  p_DS1->MakeTables(1.05, logl, p_DS1->tree_);
 
   // Only print the good table.
-  p_DS1->PrintTables(0);
+  p_DS1->PrintTables(1);
 }
 }

@@ -447,6 +447,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
+  FullTraversalUpdate(tree);
   pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
   if (!good_.contains(ToNewick(clone))) {
@@ -498,14 +499,13 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
-      good_.insert(ToNewick(clone), lambda_1);
-      //Create thread for good tree and have it MakeTables.
-      vec_thread_.push_back(
-          std::thread(&pt::Partition::MakeTables, this, c, lambda, clone));
-      //Let threads run in paralel.
-      vec_thread_.at(vec_thread_.size() - 1).detach();
+      good_.insert(label, lambda_1);
+      // Create thread for good tree and have it MakeTables.
+      std::thread *temp =
+          new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
+      temp->join();
     } else {
-      bad_.insert(ToNewick(clone), lambda_1);
+      bad_.insert(label, lambda_1);
     }
   }
   // Repeat for 2nd NNI move.
@@ -517,11 +517,12 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
-      //Create thread for good tree and have it MakeTables.
-      vec_thread_.push_back(
-          std::thread(&pt::Partition::MakeTables, this, c, lambda, clone));
-      //Let threads run in paralel.
-      vec_thread_.at(vec_thread_.size() - 1).detach();
+      // Create thread for good tree and have it MakeTables.
+
+      std::thread *temp =
+          new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
+      // Let threads run in paralel.
+      temp->join();
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
