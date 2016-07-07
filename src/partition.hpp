@@ -58,7 +58,8 @@ public:
   std::string FindRootNode(pll_utree_t *tree);
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
-  void MakeTables(double cutoff);
+  void MakeTables(double cutoff, double logl, pll_utree_t *tree);
+  void PrintTables(bool print_bad);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff);

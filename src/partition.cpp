@@ -368,6 +368,18 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   return len;
 }
 
+// Potential callback function for branch length optimization.
+/*int cb_branch_lengths(pll_utree_t *tree){
+  if (!tree->next) {
+    TraversalUpdate(tree->back, 1);
+    OptimizeCurrentBranch(tree->back);
+  } else {
+    TraversalUpdate(tree, 1);
+    OptimizeCurrentBranch(tree);
+  }
+  return 1;
+}*/
+
 /// @brief Aux function for optimizing branch lengths across the whole tree.
 /// @param[in] tree
 /// Child node from which to optimize the branch length and continue recursion.
@@ -424,7 +436,6 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   pll_utree_rb_t *rb;
   rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
   pll_utree_nni(tree, move_type, rb);
-  FullBranchOpt(tree);
   tree = ToOrderedNewick(tree);
   return tree;
 }
@@ -433,20 +444,20 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// into good and bad tables.
 /// NOTE: This function assumes that the current topology is "good" (i.e. it is
 /// the ML tree).
-void Partition::MakeTables(double cutoff) {
+void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  FullBranchOpt(tree_);
-  pll_utree_t *clone = pll_utree_clone(tree_);
+  pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
-  double logl = FullTraversalLogLikelihood(clone);
-  good_.insert(ToNewick(clone), logl);
-
+  if (!good_.contains(ToNewick(clone))) {
+    good_.insert(ToNewick(clone), logl);
+  }
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
-  NNITraverse(tree_, logl, cutoff);
-  NNITraverse(tree_->back, logl, cutoff);
-
+  NNITraverse(tree, logl, cutoff);
+  NNITraverse(tree->back, logl, cutoff);
+}
+void Partition::PrintTables(bool print_bad) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
@@ -455,12 +466,14 @@ void Partition::MakeTables(double cutoff) {
     std::cout << "Log Likelihood for " << item.first << " : " << item.second
               << std::endl;
 
-  std::cout << "Bad: " << std::endl;
+  if (print_bad) {
+    std::cout << "Bad: " << std::endl;
 
-  auto lt1 = bad_.lock_table();
-  for (auto &item : lt1)
-    std::cout << "Log Likelihood for " << item.first << " : " << item.second
-              << std::endl;
+    auto lt1 = bad_.lock_table();
+    for (auto &item : lt1)
+      std::cout << "Log Likelihood for " << item.first << " : " << item.second
+                << std::endl;
+  }
 }
 /// @brief Perform both NNI moves at an edge and compare their log-likelihoods
 /// to the ML, sort accordingly.
@@ -472,19 +485,21 @@ void Partition::MakeTables(double cutoff) {
 /// The scaler cutoff for tree acceptance (c * lambda)
 void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
                                double cutoff) {
-  TraversalUpdate(tree, 1);
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
+
   // Set scaler parameter to determine if tree is good/bad.
   double c = cutoff;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
   if (!(good_.contains(label) || bad_.contains(label))) {
+    /// FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
+      MakeTables(c, lambda, clone);
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
@@ -494,9 +509,11 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
   if (!(good_.contains(label) || bad_.contains(label))) {
+    /// FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
+      MakeTables(c, lambda, clone);
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
