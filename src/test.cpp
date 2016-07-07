@@ -24,24 +24,34 @@ TEST_CASE("Partition", "[partition]") {
   p_newton->tree_ = p_newton->ToOrderedNewick(p_newton->tree_);
   REQUIRE(p_newton->ToNewick(p_newton->tree_) == "(0,1,(2,3));");
   p_newton->FullBranchOpt(p_newton->tree_);
+  logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.
   p_newton->MakeTables(2, logl, p_newton->tree_);
+
+  // Print All Tables
   p_newton->PrintTables(1);
+
   // Check that good tree is in newton good table.
   REQUIRE(p_newton->good_.contains("(0,(1,3),2);"));
 
   std::cout << "DONE WITH TEST 1" << std::endl;
 }
 
-TEST_CASE("Threading", "[threading]") {
+TEST_CASE("NNI_Recursion", "[nnirecursion]") {
   auto p_DS1 = std::unique_ptr<pt::Partition>(
       new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
                         "test-data/hohna_datasets_fasta/DS1.fasta",
                         "test-data/hohna_datasets_fasta/RAxML_info.DS1"));
+  // Optimize initial topology.
   p_DS1->FullBranchOpt(p_DS1->tree_);
+
+  // Set ML parameter.
   double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
+
   // Return all trees with a log likelihood of at least -6490 (ML is -6486.9).
   p_DS1->MakeTables(1.000477886, logl, p_DS1->tree_);
+
+  // Only print the good table.
   p_DS1->PrintTables(0);
 }
 }

@@ -7,6 +7,8 @@
 #include <memory>
 #include <pthread.h>
 #include <string>
+#include <thread>
+#include <vector>
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
@@ -67,6 +69,7 @@ public:
   InnerTable good_;
   InnerTable bad_;
   int cb_branch_lengths(pll_utree_t *tree);
+  std::vector<std::thread> vec_thread_;
 };
 }
 

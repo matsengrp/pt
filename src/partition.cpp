@@ -499,7 +499,11 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
-      MakeTables(c, lambda, clone);
+      //Create thread for good tree and have it MakeTables.
+      vec_thread_.push_back(
+          std::thread(&pt::Partition::MakeTables, this, c, lambda, clone));
+      //Let threads run in paralel.
+      vec_thread_.at(vec_thread_.size() - 1).detach();
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
@@ -513,7 +517,11 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
-      MakeTables(c, lambda, clone);
+      //Create thread for good tree and have it MakeTables.
+      vec_thread_.push_back(
+          std::thread(&pt::Partition::MakeTables, this, c, lambda, clone));
+      //Let threads run in paralel.
+      vec_thread_.at(vec_thread_.size() - 1).detach();
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
