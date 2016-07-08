@@ -38,19 +38,20 @@ TEST_CASE("Partition", "[partition]") {
 }
 
 TEST_CASE("NNI_Recursion", "[nnirecursion]") {
-  auto p_DS1 = std::unique_ptr<pt::Partition>(new pt::Partition(
+  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
       "test-data/five/RAxML_info.five"));
   // Optimize initial topology.
-  p_DS1->FullBranchOpt(p_DS1->tree_);
+  p_five->FullBranchOpt(p_five->tree_);
 
   // Set ML parameter.
-  double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
+  double logl = p_five->FullTraversalLogLikelihood(p_five->tree_);
 
-  // Return all trees with a log likelihood of at least -6490 (ML is -6486.9).
-  p_DS1->MakeTables(1.05, logl, p_DS1->tree_);
+  // Good trees are trees with a log likelihood of at least -3820 (ML is -3737.47).
+  // Note that program returns all 15 topologies for a 5-leaf tree.
+  p_five->MakeTables(1.022081783, logl, p_five->tree_);
 
-  // Only print the good table.
-  p_DS1->PrintTables(1);
+  // Print both tables.
+  p_five->PrintTables(1);
 }
 }

@@ -496,14 +496,15 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
                                double cutoff) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
-
+  FullTraversalUpdate(clone);
   // Set scaler parameter to determine if tree is good/bad.
   double c = cutoff;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
   if (!(good_.contains(label) || bad_.contains(label))) {
-    /// FullBranchOpt(clone);
+    FullTraversalUpdate(clone);
+    FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
@@ -521,7 +522,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
   if (!(good_.contains(label) || bad_.contains(label))) {
-    /// FullBranchOpt(clone);
+    FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
       good_.insert(ToNewick(clone), lambda_1);
