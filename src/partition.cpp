@@ -398,6 +398,8 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 ///@brief Perform a postorder tree traversal which optimizes the branch length
 /// at every edge.
 /// NOTE: This optimizes the initial branch twice per traversal.
+/// @param[in] tree
+/// An internal node.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
     fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
@@ -431,7 +433,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 /// Node at edge on which to perform NNI.
 ///@param[in] move_type
 /// Type of NNI move to perform.
-///@return Ordered, optimized new topology.
+///@return Ordered new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   pll_utree_rb_t *rb;
   rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
@@ -444,6 +446,12 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// into good and bad tables.
 /// NOTE: This function assumes that the current topology is "good" (i.e. it is
 /// the ML tree).
+/// @param[in] cutoff
+/// Scaler value by which to multiply ML tree Log-L, the result is the cutoff between good and bad trees.
+/// @param[in] logl
+/// The log likelihood of the ML tree.
+/// @param[in] tree
+/// internal node of topology on which to try NNI moves.
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
