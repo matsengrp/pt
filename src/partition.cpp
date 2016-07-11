@@ -90,7 +90,10 @@ Partition::~Partition() {
 /// @brief Returns a the tree as a Newick string.
 /// @return Newick string.
 std::string Partition::ToNewick(pll_utree_t *tree) {
-  return std::string(utree_short_newick(tree));
+  char *newick = utree_short_newick(tree);
+  std::string strnewick = (std::string)newick;
+  free(newick);
+  return strnewick;
 }
 
 /// @brief Recursive function to generate newick string without branch lengths.
@@ -158,7 +161,6 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
     snprintf(pll_errmsg, 200, "memory allocation during newick export failed");
     return NULL;
   }
-
   return (newick);
 }
 
@@ -198,7 +200,7 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
                              pll_utree_t **root) {
   if (!tree->next) {
     if (tree->label == label) {
-      root[0] = tree->back;
+      *root = tree->back;
       return true;
     } else
       return false;
@@ -220,11 +222,10 @@ pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
     minlabel = rlabel1;
   else
     minlabel = rlabel2;
-  pll_utree_t **root;
-  root = (pll_utree_t **)malloc(sizeof(pll_utree_t *));
-  SetLabelRoot(minlabel, tree, root);
-  SetLabelRoot(minlabel, tree->back, root);
-  return root[0];
+  pll_utree_t *root;
+  SetLabelRoot(minlabel, tree, &root);
+  SetLabelRoot(minlabel, tree->back, &root);
+  return root;
 }
 
 /// @brief Determines order for first ternary step, then runs recursive ordering
@@ -435,9 +436,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 /// Type of NNI move to perform.
 ///@return Ordered new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
-  pll_utree_rb_t *rb;
-  rb = (pll_utree_rb_t *)malloc(sizeof(pll_utree_t *) + sizeof(int));
-  pll_utree_nni(tree, move_type, rb);
+  pll_utree_nni(tree, move_type, 0);
   tree = ToOrderedNewick(tree);
   return tree;
 }
@@ -447,7 +446,8 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// NOTE: This function assumes that the current topology is "good" (i.e. it is
 /// the ML tree).
 /// @param[in] cutoff
-/// Scaler value by which to multiply ML tree Log-L, the result is the cutoff between good and bad trees.
+/// Scaler value by which to multiply ML tree Log-L, the result is the cutoff
+/// between good and bad trees.
 /// @param[in] logl
 /// The log likelihood of the ML tree.
 /// @param[in] tree
@@ -463,6 +463,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
   }
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
+  pll_utree_destroy(clone);
   NNITraverse(tree, logl, cutoff);
   NNITraverse(tree->back, logl, cutoff);
 }
@@ -513,15 +514,18 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
       std::thread *temp =
           new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
       temp->join();
+      delete (temp);
     } else {
       bad_.insert(label, lambda_1);
     }
   }
+  pll_utree_destroy(clone);
   // Repeat for 2nd NNI move.
   clone = pll_utree_clone(tree);
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
   if (!(good_.contains(label) || bad_.contains(label))) {
+    FullTraversalUpdate(clone);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
@@ -532,10 +536,12 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
           new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
       // Let threads run in paralel.
       temp->join();
+      delete (temp);
     } else {
       bad_.insert(ToNewick(clone), lambda_1);
     }
   }
+  pll_utree_destroy(clone);
 }
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff) {

@@ -35,6 +35,7 @@ TEST_CASE("Partition", "[partition]") {
   REQUIRE(p_newton->good_.contains("(0,(1,3),2);"));
 
   std::cout << "DONE WITH TEST 1" << std::endl;
+  p_newton.reset();
 }
 
 TEST_CASE("NNI_Recursion", "[nnirecursion]") {
@@ -47,11 +48,13 @@ TEST_CASE("NNI_Recursion", "[nnirecursion]") {
   // Set ML parameter.
   double logl = p_five->FullTraversalLogLikelihood(p_five->tree_);
 
-  // Good trees are trees with a log likelihood of at least -3820 (ML is -3737.47).
+  // Good trees are trees with a log likelihood of at least -3820 (ML is
+  // -3737.47).
   // Note that program returns all 15 topologies for a 5-leaf tree.
   p_five->MakeTables(1.022081783, logl, p_five->tree_);
 
   // Print both tables.
   p_five->PrintTables(1);
+  p_five.reset();
 }
 }
