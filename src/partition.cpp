@@ -30,8 +30,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
 
   char **headers = NULL;
   char **seqdata = NULL;
-  unsigned int sites_count =
-      ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
+  sites_count = ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
 
   partition_ = pll_partition_create(
       tip_nodes_count(),   // Number of tip sequences we want to have.
@@ -74,18 +73,54 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
       ALIGNMENT);
 }
 
-Partition::Partition(const Partition &obj) {
+Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   tip_nodes_count_ = obj.tip_nodes_count_;
-  // Stores probability matrices, scalers, etc.
-  partition_ = obj.partition_;
-  matrix_indices_ = obj.matrix_indices_;
-  branch_lengths_ = obj.branch_lengths_;
-  operations_ = obj.operations_;
-  // buffer for storing pointers to nodes of the tree in postorder traversal.
-  travbuffer_ = obj.travbuffer_;
-  params_indices_ = obj.params_indices_;
-  sumtable_ = obj.sumtable_;
-  tree_ = obj.tree_;
+  tree_ = pll_utree_clone(tree);
+  unsigned int sites_count = obj.sites_count;
+  partition_ = pll_partition_create(
+      tip_nodes_count(),   // Number of tip sequences we want to have.
+      inner_nodes_count(), // Number of CLV buffers to be allocated for inner
+                           // nodes.
+      STATES,              // Number of states that our data have.
+      sites_count,         // Number of sites in the alignment.
+      1, // Number of different substitution models (or eigen decomposition)
+         //     to use concurrently (i.e. 4 for LG4).
+      branch_count(),      // Number of probability matrices to be allocated.
+      RATE_CATS,           // Number of rate categories we will use.
+      inner_nodes_count(), // How many scale buffers to use.
+      ARCH_FLAGS);         // List of flags for hardware acceleration.
+
+  /* Need way of copying over data from
+  ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
+
+  SetModelParameters(partition_, RAxML_info_path);
+
+  EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
+                         seqdata);
+  */
+
+  params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
+  memcpy(params_indices_, obj.params_indices_, sizeof(params_indices_));
+
+  travbuffer_ = (pll_utree_t **)malloc(nodes_count() * sizeof(pll_utree_t *));
+  memcpy(travbuffer_, obj.travbuffer_, sizeof(travbuffer_));
+
+  branch_lengths_ = (double *)malloc(branch_count() * sizeof(double));
+  memcpy(branch_lengths_, obj.branch_lengths_, sizeof(branch_lengths_));
+
+  matrix_indices_ =
+      (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
+  memcpy(matrix_indices_, obj.matrix_indices_, sizeof(matrix_indices_));
+
+  operations_ =
+      (pll_operation_t *)malloc(inner_nodes_count() * sizeof(pll_operation_t));
+  memcpy(operations_, obj.operations_, sizeof(operations_));
+
+  sumtable_ = (double *)pll_aligned_alloc(
+      partition_->sites * partition_->rate_cats * partition_->states_padded *
+          sizeof(double),
+      ALIGNMENT);
+  memcpy(sumtable_, obj.sumtable_, sizeof(sumtable_));
 }
 
 /// @brief Destructor for Partition.
@@ -438,7 +473,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
   }
 }
 
-///@brief Perform an NNI move at the current edge, optimize branch lengths, and
+///@brief Perform an NNI move at the current edge and
 /// order the tree.
 ///@param[in] tree
 /// Node at edge on which to perform NNI.
@@ -462,27 +497,29 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// The log likelihood of the ML tree.
 /// @param[in] tree
 /// internal node of topology on which to try NNI moves.
-void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
+void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
+                           InnerTable &good, InnerTable &bad,
+                           std::vector<std::thread> &vec_thread) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  FullTraversalUpdate(tree);
+  /// FullTraversalUpdate(tree);
   pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
-  if (!good_.contains(ToNewick(clone))) {
-    good_.insert(ToNewick(clone), logl);
+  if (!good.contains(ToNewick(clone))) {
+    good.insert(ToNewick(clone), logl);
   }
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
   pll_utree_destroy(clone);
-  NNITraverse(tree, logl, cutoff);
-  NNITraverse(tree->back, logl, cutoff);
+  NNITraverse(tree, logl, cutoff, good, bad, vec_thread);
+  NNITraverse(tree->back, logl, cutoff, good, bad, vec_thread);
 }
 
-void Partition::PrintTables(bool print_bad) {
+void Partition::PrintTables(bool print_bad, InnerTable &good, InnerTable &bad) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
-  auto lt = good_.lock_table();
+  auto lt = good.lock_table();
   for (auto &item : lt)
     std::cout << "Log Likelihood for " << item.first << " : " << item.second
               << std::endl;
@@ -490,7 +527,7 @@ void Partition::PrintTables(bool print_bad) {
   if (print_bad) {
     std::cout << "Bad: " << std::endl;
 
-    auto lt1 = bad_.lock_table();
+    auto lt1 = bad.lock_table();
     for (auto &item : lt1)
       std::cout << "Log Likelihood for " << item.first << " : " << item.second
                 << std::endl;
@@ -505,30 +542,31 @@ void Partition::PrintTables(bool print_bad) {
 /// The likelihood of ML tree.
 /// @param[in] cutoff
 /// The scaler cutoff for tree acceptance (c * lambda)
-void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
-                               double cutoff) {
+void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
+                               InnerTable &good, InnerTable &bad,
+                               std::vector<std::thread> &vec_thread) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
-  FullTraversalUpdate(clone);
+  /// FullTraversalUpdate(clone);
   // Set scaler parameter to determine if tree is good/bad.
   double c = cutoff;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
-  if (!(good_.contains(label) || bad_.contains(label))) {
+  if (!(good.contains(label) || bad.contains(label))) {
     FullTraversalUpdate(clone);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
-      good_.insert(label, lambda_1);
+      good.insert(label, lambda_1);
       // Create thread for good tree and have it MakeTables.
-      std::thread *temp =
-          new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
-      temp->join();
-      delete (temp);
+      pt::Partition *temp = new pt::Partition(*this, clone);
+      vec_thread.push_back(std::thread(&pt::Partition::MakeTables, temp, c,
+                                       lambda, temp->tree_, std::ref(good),
+                                       std::ref(bad), std::ref(vec_thread)));
     } else {
-      bad_.insert(label, lambda_1);
+      bad.insert(label, lambda_1);
     }
   }
   pll_utree_destroy(clone);
@@ -536,32 +574,33 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
   clone = pll_utree_clone(tree);
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
-  if (!(good_.contains(label) || bad_.contains(label))) {
+  if (!(good.contains(label) || bad.contains(label))) {
     FullTraversalUpdate(clone);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     if (lambda_1 > c * lambda) {
-      good_.insert(ToNewick(clone), lambda_1);
+      good.insert(ToNewick(clone), lambda_1);
       // Create thread for good tree and have it MakeTables.
 
-      std::thread *temp =
-          new std::thread(&pt::Partition::MakeTables, this, c, lambda, clone);
-      // Let threads run in paralel.
-      temp->join();
-      delete (temp);
+      pt::Partition *temp = new pt::Partition(*this, clone);
+      vec_thread.push_back(std::thread(&pt::Partition::MakeTables, temp, c,
+                                       lambda, temp->tree_, std::ref(good),
+                                       std::ref(bad), std::ref(vec_thread)));
     } else {
-      bad_.insert(ToNewick(clone), lambda_1);
+      bad.insert(ToNewick(clone), lambda_1);
     }
   }
   pll_utree_destroy(clone);
 }
 
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
-void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff) {
+void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
+                            InnerTable &good, InnerTable &bad,
+                            std::vector<std::thread> &vec_thread) {
   if (!tree->next)
     return;
-  NNIComputeEdge(tree, lambda, cutoff);
-  NNITraverse(tree->next->back, lambda, cutoff);
-  NNITraverse(tree->next->next->back, lambda, cutoff);
+  NNIComputeEdge(tree, lambda, cutoff, good, bad, vec_thread);
+  NNITraverse(tree->next->back, lambda, cutoff, good, bad, vec_thread);
+  NNITraverse(tree->next->next->back, lambda, cutoff, good, bad, vec_thread);
 }
 }
