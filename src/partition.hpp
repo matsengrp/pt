@@ -35,6 +35,7 @@ public:
   pll_utree_t *tree_;
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
+  Partition(const Partition &obj);
   virtual ~Partition();
 
   unsigned int tip_nodes_count() { return tip_nodes_count_; };
@@ -45,6 +46,7 @@ public:
   unsigned int branch_count() { return (nodes_count() - 1); };
 
   std::string ToNewick(pll_utree_t *tree);
+  std::string ToFullNewick(pll_utree_t *tree);
   void TraversalUpdate(pll_utree_t *tree, bool is_full);
   void FullTraversalUpdate(pll_utree_t *tree);
   void FastUpdate(pll_utree_t *tree);

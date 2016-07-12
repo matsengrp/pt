@@ -25,7 +25,6 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
               << " must be an unrooted binary tree.\n";
     exit(EXIT_FAILURE);
   };
-
   if (!TreeHealthy(tree_))
     fatal("Missing branch lengths in tree.\n");
 
@@ -75,6 +74,20 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
       ALIGNMENT);
 }
 
+Partition::Partition(const Partition &obj) {
+  tip_nodes_count_ = obj.tip_nodes_count_;
+  // Stores probability matrices, scalers, etc.
+  partition_ = obj.partition_;
+  matrix_indices_ = obj.matrix_indices_;
+  branch_lengths_ = obj.branch_lengths_;
+  operations_ = obj.operations_;
+  // buffer for storing pointers to nodes of the tree in postorder traversal.
+  travbuffer_ = obj.travbuffer_;
+  params_indices_ = obj.params_indices_;
+  sumtable_ = obj.sumtable_;
+  tree_ = obj.tree_;
+}
+
 /// @brief Destructor for Partition.
 Partition::~Partition() {
   free(params_indices_);
@@ -91,6 +104,15 @@ Partition::~Partition() {
 /// @return Newick string.
 std::string Partition::ToNewick(pll_utree_t *tree) {
   char *newick = utree_short_newick(tree);
+  std::string strnewick = (std::string)newick;
+  free(newick);
+  return strnewick;
+}
+
+/// @brief Returns a the tree as a Newick string with branch lengths.
+/// @return Newick string.
+std::string Partition::ToFullNewick(pll_utree_t *tree) {
+  char *newick = pll_utree_export_newick(tree);
   std::string strnewick = (std::string)newick;
   free(newick);
   return strnewick;
@@ -369,18 +391,6 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   return len;
 }
 
-// Potential callback function for branch length optimization.
-/*int cb_branch_lengths(pll_utree_t *tree){
-  if (!tree->next) {
-    TraversalUpdate(tree->back, 1);
-    OptimizeCurrentBranch(tree->back);
-  } else {
-    TraversalUpdate(tree, 1);
-    OptimizeCurrentBranch(tree);
-  }
-  return 1;
-}*/
-
 /// @brief Aux function for optimizing branch lengths across the whole tree.
 /// @param[in] tree
 /// Child node from which to optimize the branch length and continue recursion.
@@ -467,6 +477,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree) {
   NNITraverse(tree, logl, cutoff);
   NNITraverse(tree->back, logl, cutoff);
 }
+
 void Partition::PrintTables(bool print_bad) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
@@ -485,6 +496,7 @@ void Partition::PrintTables(bool print_bad) {
                 << std::endl;
   }
 }
+
 /// @brief Perform both NNI moves at an edge and compare their log-likelihoods
 /// to the ML, sort accordingly.
 /// @param[in] tree
@@ -543,6 +555,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda,
   }
   pll_utree_destroy(clone);
 }
+
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff) {
   if (!tree->next)
