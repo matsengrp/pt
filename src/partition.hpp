@@ -1,6 +1,7 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
+#include "ctpl_stl.h"
 #include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
 #include <iostream>
@@ -8,19 +9,19 @@
 #include <pthread.h>
 #include <string>
 #include <thread>
-#include <vector>
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
 
 namespace pt {
 typedef cuckoohash_map<std::string, double> InnerTable;
+typedef cuckoohash_map<std::string, int> OuterTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 ///
 class Partition {
 
 private:
-  unsigned int sites_count;
+  unsigned int sites_count_;
   unsigned int tip_nodes_count_;
   // Stores probability matrices, scalers, etc.
   pll_partition_t *partition_;
@@ -34,6 +35,8 @@ private:
 
 public:
   pll_utree_t *tree_;
+  std::string fasta_path_;
+  std::string info_path_;
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
   Partition(const Partition &obj, pll_utree_t *tree);
@@ -64,17 +67,17 @@ public:
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                  InnerTable &good, InnerTable &bad,
-                  std::vector<std::thread> &vec_thread);
+                  InnerTable &good, InnerTable &bad, OuterTable &all,
+                  ctpl::thread_pool &pool);
   void PrintTables(bool print_bad, InnerTable &good, InnerTable &bad);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                   InnerTable &good, InnerTable &bad,
-                   std::vector<std::thread> &vec_thread);
+                   InnerTable &good, InnerTable &bad, OuterTable &all,
+                   ctpl::thread_pool &pool);
   void NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
-                      InnerTable &good, InnerTable &bad,
-                      std::vector<std::thread> &vec_thread);
+                      InnerTable &good, InnerTable &bad, OuterTable &all,
+                      ctpl::thread_pool &pool);
 };
 }
 
