@@ -178,6 +178,8 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
       partition_->sites * partition_->rate_cats * partition_->states_padded *
           sizeof(double),
       ALIGNMENT);
+  memcpy(sumtable_,obj.sumtable_,partition_->sites * partition_->rate_cats * partition_->states_padded *
+          sizeof(double));
 }
 
 /// @brief Destructor for Partition.
@@ -564,6 +566,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
   clone = ToOrderedNewick(clone);
   if (!good.contains(ToNewick(clone))) {
     good.insert(ToNewick(clone), logl);
+    all.insert(ToNewick(clone), 0);
   }
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
@@ -624,8 +627,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          MakeTables(c, lambda, temp->tree_, std::ref(good), std::ref(bad),
-                     std::ref(all), std::ref(pool));
+          temp->MakeTables(c, lambda, temp->tree_, good, bad,
+                     all, pool);
         });
       }
     } else {
@@ -652,8 +655,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          MakeTables(c, lambda, temp->tree_, std::ref(good), std::ref(bad),
-                     std::ref(all), std::ref(pool));
+          temp->MakeTables(c, lambda, temp->tree_, good, bad,
+                     all, pool);
         });
       }
     } else {
@@ -670,6 +673,9 @@ void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                             ctpl::thread_pool &pool) {
   if (!tree->next)
     return;
+  if(!tree->back->next){
+    NNITraverse(tree->next, lambda, cutoff, good, bad, all, pool);
+  }
   NNIComputeEdge(tree, lambda, cutoff, good, bad, all, pool);
   NNITraverse(tree->next->back, lambda, cutoff, good, bad, all, pool);
   NNITraverse(tree->next->next->back, lambda, cutoff, good, bad, all, pool);

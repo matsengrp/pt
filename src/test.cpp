@@ -13,6 +13,7 @@ TEST_CASE("Partition", "[partition]") {
   InnerTable good_;
   InnerTable bad_;
   OuterTable all_;
+  ctpl::thread_pool pool_(2);
   double logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Value reported by running newton PLL example.
   REQUIRE(fabs(-33.387713 - logl) < 1e-6);
@@ -29,7 +30,6 @@ TEST_CASE("Partition", "[partition]") {
   p_newton->FullBranchOpt(p_newton->tree_);
   logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.
-  ctpl::thread_pool pool_(4);
   p_newton->MakeTables(1.5, logl, p_newton->tree_, good_, bad_, all_, pool_);
 
   pool_.stop(true);
@@ -50,22 +50,22 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   InnerTable good_;
   InnerTable bad_;
   OuterTable all_;
+  ctpl::thread_pool pool_(100);
   // Optimize initial topology.
   p_five->FullBranchOpt(p_five->tree_);
 
   // Set ML parameter.
   double logl = p_five->FullTraversalLogLikelihood(p_five->tree_);
 
-  ctpl::thread_pool pool_(10);
   // Good trees are trees with a log likelihood of at least -3820 (ML is
   // -3737.47).
   // Note that program returns all 15 topologies for a 5-leaf tree.
-  p_five->MakeTables(1.2, logl, p_five->tree_, good_, bad_, all_, pool_);
+  p_five->MakeTables(1.022081783, logl, p_five->tree_, good_, bad_, all_, pool_);
 
   pool_.stop(true);
-  // vec_thread_.clear();
   // Print both tables.
   p_five->PrintTables(1, good_, bad_);
   p_five.reset();
 }
+
 }
