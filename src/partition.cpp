@@ -72,13 +72,15 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
           sizeof(double),
       ALIGNMENT);
 }
-
+/// @brief Copy Constructor for Partition.
+/// @param[in] obj
+/// Pointer to partition object to copy.
+/// @param[in] tree
+/// Initial topology to use. (For full copy use obj->tree_)
 Partition::Partition(const Partition &obj, pll_utree_t *tree) {
 
   tip_nodes_count_ = obj.tip_nodes_count_;
   tree_ = pll_utree_clone(tree);
-  char **headers = NULL;
-  char **seqdata = NULL;
   sites_count_ = obj.sites_count_;
 
   partition_ = pll_partition_create(
@@ -178,8 +180,9 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
       partition_->sites * partition_->rate_cats * partition_->states_padded *
           sizeof(double),
       ALIGNMENT);
-  memcpy(sumtable_,obj.sumtable_,partition_->sites * partition_->rate_cats * partition_->states_padded *
-          sizeof(double));
+  memcpy(sumtable_, obj.sumtable_, partition_->sites * partition_->rate_cats *
+                                       partition_->states_padded *
+                                       sizeof(double));
 }
 
 /// @brief Destructor for Partition.
@@ -556,6 +559,14 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// The log likelihood of the ML tree.
 /// @param[in] tree
 /// internal node of topology on which to try NNI moves.
+/// @param[in] good
+/// Hash table for good trees.
+/// @param[in] bad
+/// Hash table for bad trees.
+/// @param[in] all
+/// Hash table for all trees.
+/// @param[in] pool
+/// Thread pool to which to push
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            InnerTable &good, InnerTable &bad, OuterTable &all,
                            ctpl::thread_pool &pool) {
@@ -602,12 +613,19 @@ void Partition::PrintTables(bool print_bad, InnerTable &good, InnerTable &bad) {
 /// The likelihood of ML tree.
 /// @param[in] cutoff
 /// The scaler cutoff for tree acceptance (c * lambda)
+/// @param[in] good
+/// Hash table for good trees.
+/// @param[in] bad
+/// Hash table for bad trees.
+/// @param[in] all
+/// Hash table for all trees.
+/// @param[in] pool
+/// Thread pool to which to push
 void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
                                InnerTable &good, InnerTable &bad,
                                OuterTable &all, ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
-  /// FullTraversalUpdate(clone);
   // Set scaler parameter to determine if tree is good/bad.
   double c = cutoff;
   // Perform first NNI and reordering on first edge.
@@ -627,8 +645,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, bad,
-                     all, pool);
+          temp->MakeTables(c, lambda, temp->tree_, good, bad, all, pool);
         });
       }
     } else {
@@ -655,8 +672,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, bad,
-                     all, pool);
+          temp->MakeTables(c, lambda, temp->tree_, good, bad, all, pool);
         });
       }
     } else {
@@ -673,7 +689,7 @@ void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                             ctpl::thread_pool &pool) {
   if (!tree->next)
     return;
-  if(!tree->back->next){
+  if (!tree->back->next) {
     NNITraverse(tree->next, lambda, cutoff, good, bad, all, pool);
   }
   NNIComputeEdge(tree, lambda, cutoff, good, bad, all, pool);
