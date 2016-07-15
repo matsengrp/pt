@@ -67,16 +67,14 @@ public:
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                  InnerTable &good, InnerTable &bad, OuterTable &all,
-                  ctpl::thread_pool &pool);
-  void PrintTables(bool print_bad, InnerTable &good, InnerTable &bad);
+                  InnerTable &good, OuterTable &all, ctpl::thread_pool &pool);
+  void PrintTables(bool print_bad, InnerTable &good, OuterTable &all);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                   InnerTable &good, InnerTable &bad, OuterTable &all,
-                   ctpl::thread_pool &pool);
+                   InnerTable &good, OuterTable &all, ctpl::thread_pool &pool);
   void NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
-                      InnerTable &good, InnerTable &bad, OuterTable &all,
+                      InnerTable &good, OuterTable &all,
                       ctpl::thread_pool &pool);
 };
 }

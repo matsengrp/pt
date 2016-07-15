@@ -549,7 +549,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 }
 
 ///@brief Perform every possible NNI move from the current state, and sort them
-/// into good and bad tables.
+/// into good and all tables.
 /// NOTE: This function assumes that the current topology is "good" (i.e. it is
 /// the ML tree).
 /// @param[in] cutoff
@@ -561,14 +561,12 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// internal node of topology on which to try NNI moves.
 /// @param[in] good
 /// Hash table for good trees.
-/// @param[in] bad
-/// Hash table for bad trees.
 /// @param[in] all
 /// Hash table for all trees.
 /// @param[in] pool
 /// Thread pool to which to push
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                           InnerTable &good, InnerTable &bad, OuterTable &all,
+                           InnerTable &good, OuterTable &all,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
@@ -582,11 +580,11 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
   pll_utree_destroy(clone);
-  NNITraverse(tree, logl, cutoff, good, bad, all, pool);
-  NNITraverse(tree->back, logl, cutoff, good, bad, all, pool);
+  NNITraverse(tree, logl, cutoff, good, all, pool);
+  NNITraverse(tree->back, logl, cutoff, good, all, pool);
 }
 
-void Partition::PrintTables(bool print_bad, InnerTable &good, InnerTable &bad) {
+void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
@@ -595,13 +593,12 @@ void Partition::PrintTables(bool print_bad, InnerTable &good, InnerTable &bad) {
     std::cout << "Log Likelihood for " << item.first << " : " << item.second
               << std::endl;
 
-  if (print_bad) {
-    std::cout << "Bad: " << std::endl;
+  if (print_all) {
+    std::cout << "All: " << std::endl;
 
-    auto lt1 = bad.lock_table();
+    auto lt1 = all.lock_table();
     for (auto &item : lt1)
-      std::cout << "Log Likelihood for " << item.first << " : " << item.second
-                << std::endl;
+      std::cout << item.first << std::endl;
   }
 }
 
@@ -615,15 +612,13 @@ void Partition::PrintTables(bool print_bad, InnerTable &good, InnerTable &bad) {
 /// The scaler cutoff for tree acceptance (c * lambda)
 /// @param[in] good
 /// Hash table for good trees.
-/// @param[in] bad
-/// Hash table for bad trees.
 /// @param[in] all
 /// Hash table for all trees.
 /// @param[in] pool
 /// Thread pool to which to push
 void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
-                               InnerTable &good, InnerTable &bad,
-                               OuterTable &all, ctpl::thread_pool &pool) {
+                               InnerTable &good, OuterTable &all,
+                               ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Set scaler parameter to determine if tree is good/bad.
@@ -638,19 +633,16 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
-      if (!(good.contains(label) || bad.contains(label))) {
+      if (!good.contains(label)) {
         good.insert(label, lambda_1);
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, bad, all, pool);
+          temp->MakeTables(c, lambda, temp->tree_, good, all, pool);
         });
       }
-    } else {
-      if (!(good.contains(label) || bad.contains(label)))
-        bad.insert(label, lambda_1);
     }
   }
   pll_utree_destroy(clone);
@@ -665,19 +657,16 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > c * lambda) {
-      if (!(good.contains(label) || bad.contains(label))) {
+      if (!(good.contains(label))) {
         good.insert(label, lambda_1);
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
 
         pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, bad, all, pool);
+          temp->MakeTables(c, lambda, temp->tree_, good, all, pool);
         });
       }
-    } else {
-      if (!(good.contains(label) || bad.contains(label)))
-        bad.insert(label, lambda_1);
     }
   }
   pll_utree_destroy(clone);
@@ -685,15 +674,15 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
 
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                            InnerTable &good, InnerTable &bad, OuterTable &all,
+                            InnerTable &good, OuterTable &all,
                             ctpl::thread_pool &pool) {
   if (!tree->next)
     return;
   if (!tree->back->next) {
-    NNITraverse(tree->next, lambda, cutoff, good, bad, all, pool);
+    NNITraverse(tree->next, lambda, cutoff, good, all, pool);
   }
-  NNIComputeEdge(tree, lambda, cutoff, good, bad, all, pool);
-  NNITraverse(tree->next->back, lambda, cutoff, good, bad, all, pool);
-  NNITraverse(tree->next->next->back, lambda, cutoff, good, bad, all, pool);
+  NNIComputeEdge(tree, lambda, cutoff, good, all, pool);
+  NNITraverse(tree->next->back, lambda, cutoff, good, all, pool);
+  NNITraverse(tree->next->next->back, lambda, cutoff, good, all, pool);
 }
 }
