@@ -624,15 +624,13 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
-  if (!all.contains(label)) {
-    all.insert(label, 0);
+  if (all.insert(label, 0)) {
     FullTraversalUpdate(clone);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > cutoff * lambda) {
-      if (!good.contains(label)) {
-        good.insert(label, lambda_1);
+      if (good.insert(label, lambda_1)) {
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
@@ -648,15 +646,13 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   clone = pll_utree_clone(tree);
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
-  if (!all.contains(label)) {
-    all.insert(label, 0);
+  if (all.insert(label, 0)) {
     FullTraversalUpdate(clone);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > cutoff * lambda) {
-      if (!(good.contains(label))) {
-        good.insert(label, lambda_1);
+      if (good.insert(label, lambda_1)) {
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
