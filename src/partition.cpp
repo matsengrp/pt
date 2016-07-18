@@ -615,14 +615,12 @@ void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
 /// @param[in] all
 /// Hash table for all trees.
 /// @param[in] pool
-/// Thread pool to which to push
+/// Thread pool to which to push jobs.
 void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
                                InnerTable &good, OuterTable &all,
                                ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
-  // Set scaler parameter to determine if tree is good/bad.
-  double c = cutoff;
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
@@ -632,15 +630,15 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
-    if (lambda_1 > c * lambda) {
+    if (lambda_1 > cutoff * lambda) {
       if (!good.contains(label)) {
         good.insert(label, lambda_1);
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
-
-        pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, all, pool);
+        pool.push([&, temp, cutoff, lambda, &good, &all, &pool](int id) {
+          temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
+          delete temp;
         });
       }
     }
@@ -656,15 +654,16 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
-    if (lambda_1 > c * lambda) {
+    if (lambda_1 > cutoff * lambda) {
       if (!(good.contains(label))) {
         good.insert(label, lambda_1);
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
 
-        pool.push([&, temp](int id) {
-          temp->MakeTables(c, lambda, temp->tree_, good, all, pool);
+        pool.push([&, temp, cutoff, lambda, &good, &all, &pool](int id) {
+          temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
+          delete temp;
         });
       }
     }
