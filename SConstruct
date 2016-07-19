@@ -1,5 +1,5 @@
 env = Environment(
-    CPPPATH = ['src', 'libs'],
+    CPPPATH = ['src'],
     CCFLAGS='-std=c++11 -g -pg',
     LIBS=['pll','pthread'],
     LINKFLAGS=['-g', '-pg'])
