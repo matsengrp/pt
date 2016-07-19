@@ -4,8 +4,6 @@
 #include <iomanip>
 #include <search.h>
 #include <sstream>
-#include <string>
-#include <vector>
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.

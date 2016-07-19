@@ -5,10 +5,6 @@
 #include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
 #include <iostream>
-#include <memory>
-#include <pthread.h>
-#include <string>
-#include <thread>
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.

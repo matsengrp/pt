@@ -1,6 +1,5 @@
 #include "partition.hpp"
 #include "pll-utils.hpp"
-#include <thread>
 
 /// @file partition.cpp
 /// @brief Implementation of the Partition class.
@@ -405,6 +404,7 @@ void Partition::FullTraversalUpdate(pll_utree_t *tree) {
 
 void Partition::FastUpdate(pll_utree_t *tree) {
   // Some other type of updating here.
+
 }
 
 /// @brief Just calculate log likelihood.
