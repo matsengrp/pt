@@ -63,6 +63,12 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   p_five->MakeTables(1.022081783, logl, p_five->tree_, good_, all_, pool_);
 
   pool_.stop(true);
+  REQUIRE(good_.size() == 13);
+  REQUIRE(all_.size() == 15);
+  REQUIRE(good_.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,((Ref.A1.RW.92."
+                         "92RW008.AB253421,Ref.A1.UG.92.92UG037.AB253429),Ref."
+                         "A2.CM.01.01CM_1445MV.GU201516),Ref.A2.CD.97."
+                         "97CDKTB48.AF286238);"));
   // Print both tables.
   p_five->PrintTables(1, good_, all_);
   p_five.reset();
