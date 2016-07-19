@@ -1,0 +1,6 @@
+[submodule "src/--force"]
+	path = src/--force
+	url = https://github.com/efficient/libcuckoo
+[submodule "src/libcuckoo"]
+	path = src/libcuckoo
+	url = https://github.com/efficient/libcuckoo
