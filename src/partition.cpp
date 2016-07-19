@@ -112,11 +112,6 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   for (int j = 0; j < partition_->rate_cats; j++)
     partition_->rates[j] = obj.partition_->rates[j];
 
-  // memcpy(partition_->rate_weights, obj.partition_->rate_weights,
-  // (partition_->rate_cats*sizeof(double)));
-
-  // Scale buffer?
-
   // subst_params
   for (int i = 0; i < partition_->states * (partition_->states - 1) / 2; i++) {
     partition_->subst_params[0][i] = obj.partition_->subst_params[0][i];
@@ -127,10 +122,6 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
       partition_->frequencies[i][j] = obj.partition_->frequencies[i][j];
   }
 
-  // memcpy(partition_->prop_invar, obj.partition_->prop_invar,
-  // partition_->rate_matrices * sizeof(double));
-
-  // pattern_weights?
 
   // eigenvecs
   for (int i = 0; i < partition_->rate_matrices; ++i) {
@@ -510,7 +501,7 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 /// An internal node.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
-    fatal("Function TreeBranchLengthsAux requires an inner node as parameter");
+    fatal("Function TreeBranchLengths requires an inner node as parameter");
   }
   TreeBranchLengthsAux(tree);
   TreeBranchLengthsAux(tree->back);
@@ -634,7 +625,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
-        pool.push([&, temp, cutoff, lambda, &good, &all, &pool](int id) {
+        pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
           delete temp;
         });
@@ -657,7 +648,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
         // pool.
         pt::Partition *temp = new pt::Partition(*this, clone);
 
-        pool.push([&, temp, cutoff, lambda, &good, &all, &pool](int id) {
+        pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
           delete temp;
         });
