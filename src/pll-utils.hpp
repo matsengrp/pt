@@ -12,6 +12,8 @@
 
 namespace pt {
 
+typedef struct { int clv_valid; } node_info_t;
+
 const unsigned int STATES = 4;
 const unsigned int RATE_CATS = 4;
 const unsigned int ALIGNMENT = PLL_ALIGNMENT_AVX;
@@ -22,6 +24,8 @@ const double EPSILON = 1e-5;  // Threshold for detecting zero.
 
 void fatal(const char *format, ...);
 int cb_full_traversal(pll_utree_t *node);
+int cb_partial_traversal(pll_utree_t *node);
+int cb_reset_valid(pll_utree_t *node);
 int cb_branch_healthy(pll_utree_t *tree);
 
 bool TreeHealthy(pll_utree_t *tree);

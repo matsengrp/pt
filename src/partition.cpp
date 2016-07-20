@@ -332,13 +332,14 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
   return tree;
 }
 
-/// @brief Perform a tree traversal and update CLV's, etc.
+/// @brief Perform a full tree traversal and update CLV's, etc.
+/// Eventually, we will want to break this up for efficiency gains
+/// so that we aren't always doing a full traversal every time we
+/// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
-/// @param[in] is_full
-/// Which type of traversal update to perform. (1 = full) (0 = partial)
-void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
-  unsigned int traversal_size=0;
+void Partition::FullTraversalUpdate(pll_utree_t *tree, bool is_full) {
+  unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
   if (is_full) {
     if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
@@ -347,6 +348,7 @@ void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
     }
   } else {
     // Some other type of updating here.
+    return;
   }
 
   // Given the computed traversal descriptor, generate the operations
@@ -384,7 +386,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  TraversalUpdate(tree, 1);
+  FullTraversalUpdate(tree, 1);
   return LogLikelihood(tree);
 }
 
@@ -453,10 +455,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-    TraversalUpdate(tree->back, 1);
+    FullTraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, 1);
+    FullTraversalUpdate(tree, 1);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);

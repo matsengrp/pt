@@ -45,6 +45,67 @@ bool TreeHealthy(pll_utree_t *tree) {
   return pll_utree_every(tree, cb_branch_healthy);
 }
 
+// a callback function for performing a partial traversal
+int cb_partial_traversal(pll_utree_t *node) {
+  node_info_t *node_info;
+
+  /* if we don't want tips in the traversal we must return 0 here. For now,
+     allow tips */
+  if (!node->next)
+    return 1;
+
+  /* get the data element from the node and check if the CLV vector is
+     oriented in the direction that we want to traverse. If the data
+     element is not yet allocated then we allocate it, set the direction
+     and instruct the traversal routine to place the node in the traversal array
+     by returning 1 */
+  node_info = (node_info_t *)(node->data);
+  if (!node_info) {
+    /* allocate data element */
+    node->data = (node_info_t *)malloc(sizeof(node_info_t));
+    node->next->data = (node_info_t *)malloc(sizeof(node_info_t));
+    node->next->next->data = (node_info_t *)malloc(sizeof(node_info_t));
+
+    /* set orientation on selected direction and traverse the subtree */
+    node_info = (node_info_t *)node->data;
+    node_info->clv_valid = 1;
+    return 1;
+  }
+
+  /* if the data element was already there and the CLV on this direction is
+     set, i.e. the CLV is valid, we instruct the traversal routine not to
+     traverse the subtree rooted in this node/direction by returning 0 */
+  if (node_info->clv_valid)
+    return 0;
+
+  /* otherwise, set orientation on selected direction */
+  node_info->clv_valid = 1;
+
+  /* reset orientation on the other two directions and return 1 (i.e. traverse
+     the subtree */
+  node_info = (node_info_t *)node->next->data;
+  node_info->clv_valid = 0;
+  node_info = (node_info_t *)node->next->next->data;
+  node_info->clv_valid = 0;
+
+  return 1;
+}
+// A callback function for reseting cb_valid values.
+int cb_reset_valid(pll_utree_t *node) {
+  // Reset all clv_valid to 0 (for after NNI).
+  node_info_t *node_info;
+  if (node->next) {
+    node_info = (node_info_t *)(node->data);
+    node_info->clv_valid = 0;
+    node_info = (node_info_t *)node->next->data;
+    node_info->clv_valid = 0;
+    node_info = (node_info_t *)node->next->next->data;
+    node_info->clv_valid = 0;
+  }
+
+  return 1;
+}
+
 /// @brief Parse a Fasta file.
 /// @param[in] path
 /// A Fasta path.
