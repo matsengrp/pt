@@ -95,49 +95,50 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
       inner_nodes_count(), // How many scale buffers to use.
       ARCH_FLAGS);         // List of flags for hardware acceleration.
 
-  for (int i = 0; i < partition_->tips + partition_->clv_buffers; ++i) {
-    for (int j = 0;
+  for (unsigned int i = 0; i < partition_->tips + partition_->clv_buffers; ++i) {
+    for (unsigned int j = 0;
          j < partition_->sites * partition_->states * partition_->rate_cats;
          j++)
       partition_->clv[i][j] = obj.partition_->clv[i][j];
   }
 
-  for (int i = 0; i < partition_->prob_matrices; ++i) {
-    for (int j = 0;
+  for (unsigned int i = 0; i < partition_->prob_matrices; ++i) {
+    for (unsigned int j = 0;
          j < partition_->states * partition_->states * partition_->rate_cats;
          j++)
       partition_->pmatrix[i][j] = obj.partition_->pmatrix[i][j];
   }
 
-  for (int j = 0; j < partition_->rate_cats; j++)
+  // rates
+  for (unsigned int j = 0; j < partition_->rate_cats; j++)
     partition_->rates[j] = obj.partition_->rates[j];
 
   // subst_params
-  for (int i = 0; i < partition_->states * (partition_->states - 1) / 2; i++) {
+  for (unsigned int i = 0; i < partition_->states * (partition_->states - 1) / 2; i++) {
     partition_->subst_params[0][i] = obj.partition_->subst_params[0][i];
   }
 
-  for (int i = 0; i < partition_->rate_matrices; ++i) {
-    for (int j = 0; j < partition_->states; j++)
+  // frequencies
+  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < partition_->states; j++)
       partition_->frequencies[i][j] = obj.partition_->frequencies[i][j];
   }
 
-
   // eigenvecs
-  for (int i = 0; i < partition_->rate_matrices; ++i) {
-    for (int j = 0; j < partition_->states * partition_->states; j++)
+  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
       partition_->eigenvecs[i][j] = obj.partition_->eigenvecs[i][j];
   }
 
   // inv_eigenvecs
-  for (int i = 0; i < partition_->rate_matrices; ++i) {
-    for (int j = 0; j < partition_->states * partition_->states; j++)
+  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
       partition_->inv_eigenvecs[i][j] = obj.partition_->inv_eigenvecs[i][j];
   }
 
   // eigenvals
-  for (int i = 0; i < partition_->rate_matrices; ++i) {
-    for (int j = 0; j < partition_->states; j++)
+  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < partition_->states; j++)
       partition_->eigenvals[i][j] = obj.partition_->eigenvals[i][j];
   }
 
@@ -146,7 +147,7 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
 
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
 
-  for (int i = 0; i < RATE_CATS; i++) {
+  for (unsigned int i = 0; i < RATE_CATS; i++) {
     params_indices_[i] = obj.params_indices_[i];
   }
 
@@ -516,7 +517,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 
   double loglike = FullTraversalLogLikelihood(tree);
 
-  int i = 0;
+  unsigned int i = 0;
   while (fabs(loglike_prev - loglike) > EPSILON && i < MAX_ITER) {
     TreeBranchLengths(tree);
 
@@ -575,6 +576,8 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
   NNITraverse(tree->back, logl, cutoff, good, all, pool);
 }
 
+
+/// @todo Document
 void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
   // Print Tables.
   std::cout << "Good: " << std::endl;

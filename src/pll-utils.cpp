@@ -41,6 +41,7 @@ int cb_branch_healthy(pll_utree_t *tree) {
   return (tree->length == tree->back->length);
 }
 
+/// @todo Document. Wouldn't it make sense to move the docs above to this one, and not expose cb_branch_healthy?
 bool TreeHealthy(pll_utree_t *tree) {
   return pll_utree_every(tree, cb_branch_healthy);
 }
@@ -168,6 +169,7 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
   free(data);
   free(tipnodes);
 }
+
 /// @brief Partition string according to delimiter.
 std::vector<std::string> ssplit(const std::string &s, char delim) {
   std::stringstream ss(s);
@@ -203,7 +205,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   std::vector<std::string> freqvector = ssplit(sstr, ' ');
   double frequencies[freqvector.size()];
 
-  for (int i = 0; i < freqvector.size(); i++)
+  for (unsigned int i = 0; i < freqvector.size(); i++)
     frequencies[i] = std::stod(freqvector.at(i));
 
   // initialize the array of subst_params
@@ -213,7 +215,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   std::vector<std::string> ratevector = ssplit(sstr, ' ');
   double subst_params[ratevector.size()];
 
-  for (int i = 0; i < ratevector.size(); i++)
+  for (unsigned int i = 0; i < ratevector.size(); i++)
     subst_params[i] = std::stod(ratevector.at(i));
   if (ratevector.size() != (((freqvector.size()) * freqvector.size() - 4) / 2))
     fatal("Wrong number of rate values.");

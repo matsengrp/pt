@@ -24,7 +24,7 @@ private:
   unsigned int *matrix_indices_;
   double *branch_lengths_;
   pll_operation_t *operations_;
-  // buffer for storing pointers to nodes of the tree in postorder traversal.
+  // Buffer for storing pointers to nodes of the tree in postorder traversal.
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
