@@ -1,10 +1,10 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
+#include <iostream>
 #include "ctpl_stl.h"
 #include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
-#include <iostream>
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
@@ -15,8 +15,7 @@ typedef cuckoohash_map<std::string, int> OuterTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 ///
 class Partition {
-
-private:
+ private:
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
   // Stores probability matrices, scalers, etc.
@@ -29,7 +28,7 @@ private:
   unsigned int *params_indices_;
   double *sumtable_;
 
-public:
+ public:
   pll_utree_t *tree_;
   std::string fasta_path_;
   std::string info_path_;
@@ -75,4 +74,4 @@ public:
 };
 }
 
-#endif // PT_PARTITION_
+#endif  // PT_PARTITION_
