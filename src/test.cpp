@@ -43,6 +43,7 @@ TEST_CASE("Partition", "[partition]") {
 }
 
 TEST_CASE("MultiThreading", "[multithreading]") {
+
   auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
       "test-data/five/RAxML_info.five"));
@@ -80,6 +81,24 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   p_five->PrintTables(1, good_, all_);
   p_five.reset();
 }
+TEST_CASE("RAxML info", "[RAxMLinfo]") {
+  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
+      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
+      "test-data/five/RAxML_info.five"));
+  // Values from RAxML info file.
+  double rates[6] = {1.420268, 5.241274, 0.870287,
+                     0.348533, 7.363575, 1.000000};
+  // Verify rates are parsed correctly.
+  for (unsigned int i = 0; i < 6; i++) {
+    REQUIRE(rates[i] == p_five->partition_->subst_params[0][i]);
+  }
+  // Values from RAxML info file.
+  double frequencies[4] = {.370, 0.194, 0.246, 0.191};
+  // Verify rates are parsed correctly.
+  for (unsigned int i = 0; i < 4; i++) {
+    REQUIRE(frequencies[i] == p_five->partition_->frequencies[0][i]);
+  }
+}
 TEST_CASE("Copy", "[copy]") {
   auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
@@ -88,6 +107,7 @@ TEST_CASE("Copy", "[copy]") {
   // tree as args.
   auto p_five1 =
       std::unique_ptr<pt::Partition>(new pt::Partition(*p_five, p_five->tree_));
+  // Fully optimize both topologies.
   p_five1->FullBranchOpt(p_five1->tree_);
   p_five->FullBranchOpt(p_five->tree_);
   // Check the copy logl is the same as original logl after both have been
