@@ -152,10 +152,10 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   }
 
   travbuffer_ = (pll_utree_t **)malloc(nodes_count() * sizeof(pll_utree_t *));
-  memcpy(travbuffer_, obj.travbuffer_, sizeof(travbuffer_));
+  memcpy(travbuffer_, obj.travbuffer_, nodes_count()*sizeof(pll_utree_t*));
 
   branch_lengths_ = (double *)malloc(branch_count() * sizeof(double));
-  memcpy(branch_lengths_, obj.branch_lengths_, sizeof(branch_lengths_));
+  memcpy(branch_lengths_, obj.branch_lengths_, branch_count()*sizeof(double));
 
   matrix_indices_ =
       (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
