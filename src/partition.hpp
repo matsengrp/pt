@@ -43,7 +43,7 @@ class Partition {
     return (tip_nodes_count() + inner_nodes_count());
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
-
+  pll_partition_t* CreatePartition();
   std::string ToNewick(pll_utree_t *tree);
   std::string ToFullNewick(pll_utree_t *tree);
   void TraversalUpdate(pll_utree_t *tree, bool is_full);

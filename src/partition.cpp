@@ -31,18 +31,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   char **seqdata = NULL;
   sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
 
-  partition_ = pll_partition_create(
-      tip_nodes_count(),    // Number of tip sequences we want to have.
-      inner_nodes_count(),  // Number of CLV buffers to be allocated for inner
-                            // nodes.
-      STATES,               // Number of states that our data have.
-      sites_count_,         // Number of sites in the alignment.
-      1,  // Number of different substitution models (or eigen decomposition)
-          //     to use concurrently (i.e. 4 for LG4).
-      branch_count(),       // Number of probability matrices to be allocated.
-      RATE_CATS,            // Number of rate categories we will use.
-      inner_nodes_count(),  // How many scale buffers to use.
-      ARCH_FLAGS);          // List of flags for hardware acceleration.
+  partition_ = CreatePartition();
 
   SetModelParameters(partition_, RAxML_info_path);
 
@@ -82,18 +71,7 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   tree_ = pll_utree_clone(tree);
   sites_count_ = obj.sites_count_;
 
-  partition_ = pll_partition_create(
-      tip_nodes_count(),    // Number of tip sequences we want to have.
-      inner_nodes_count(),  // Number of CLV buffers to be allocated for inner
-                            // nodes.
-      STATES,               // Number of states that our data have.
-      sites_count_,         // Number of sites in the alignment.
-      1,  // Number of different substitution models (or eigen decomposition)
-          //     to use concurrently (i.e. 4 for LG4).
-      branch_count(),       // Number of probability matrices to be allocated.
-      RATE_CATS,            // Number of rate categories we will use.
-      inner_nodes_count(),  // How many scale buffers to use.
-      ARCH_FLAGS);          // List of flags for hardware acceleration.
+  partition_ = CreatePartition();
 
   for (unsigned int i = 0; i < partition_->tips + partition_->clv_buffers;
        ++i) {
@@ -180,6 +158,22 @@ Partition::~Partition() {
   pll_aligned_free(sumtable_);
   pll_partition_destroy(partition_);
   pll_utree_destroy(tree_);
+}
+
+pll_partition_t* Partition:: CreatePartition(){
+  pll_partition_t* partition= pll_partition_create(
+      tip_nodes_count(),    // Number of tip sequences we want to have.
+      inner_nodes_count(),  // Number of CLV buffers to be allocated for inner
+                            // nodes.
+      STATES,               // Number of states that our data have.
+      sites_count_,         // Number of sites in the alignment.
+      1,  // Number of different substitution models (or eigen decomposition)
+          //     to use concurrently (i.e. 4 for LG4).
+      branch_count(),       // Number of probability matrices to be allocated.
+      RATE_CATS,            // Number of rate categories we will use.
+      inner_nodes_count(),  // How many scale buffers to use.
+      ARCH_FLAGS);          // List of flags for hardware acceleration.
+   return partition;
 }
 
 /// @brief Returns a the tree as a Newick string.
