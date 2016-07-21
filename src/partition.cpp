@@ -525,7 +525,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// @param[in] pool
 /// Thread pool to which to push
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                           InnerTable &good, InnerTable &all,
+                           TreeTable &good, TreeTable &all,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
@@ -550,7 +550,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
 /// Table of good trees.
 /// @param[in] all
 /// Table of all trees.
-void Partition::PrintTables(bool print_all, InnerTable &good, InnerTable &all) {
+void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
@@ -582,7 +582,7 @@ void Partition::PrintTables(bool print_all, InnerTable &good, InnerTable &all) {
 /// @param[in] pool
 /// Thread pool to which to push jobs.
 void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, double cutoff,
-                               InnerTable &good, InnerTable &all,
+                               TreeTable &good, TreeTable &all,
                                ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
@@ -611,7 +611,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, 
 
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                            InnerTable &good, InnerTable &all,
+                            TreeTable &good, TreeTable &all,
                             ctpl::thread_pool &pool) {
   if (!tree->next) return;
   if (!tree->back->next) {

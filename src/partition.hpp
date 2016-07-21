@@ -11,11 +11,12 @@
 
 namespace pt {
 
-typedef cuckoohash_map<std::string, double> InnerTable;
+typedef cuckoohash_map<std::string, double> TreeTable;
 
 /// @brief The representation of a tree, alignment, and all associated data.
 class Partition {
  private:
+  pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
   unsigned int *matrix_indices_;
@@ -28,8 +29,8 @@ class Partition {
 
  public:
   // Stores probability matrices, scalers, etc.
-  pll_partition_t *partition_;
   pll_utree_t *tree_;
+  pll_partition_t *GetPartition(){ return partition_; }
   std::string fasta_path_;
   std::string info_path_;
   Partition(std::string newick_path, std::string fasta_path,
@@ -60,14 +61,14 @@ class Partition {
   pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                  InnerTable &good, InnerTable &all, ctpl::thread_pool &pool);
-  void PrintTables(bool print_all, InnerTable &good, InnerTable &all);
+                  TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
+  void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                   InnerTable &good, InnerTable &all, ctpl::thread_pool &pool);
+                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
   void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, double cutoff,
-                      InnerTable &good, InnerTable &all,
+                      TreeTable &good, TreeTable &all,
                       ctpl::thread_pool &pool);
 };
 }

@@ -9,8 +9,8 @@ TEST_CASE("Partition", "[partition]") {
   auto p_newton = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/tiny/newton.tre", "test-data/tiny/newton.fasta",
       "test-data/tiny/RAxML_info.newton"));
-  InnerTable good_;
-  InnerTable all_;
+  TreeTable good_;
+  TreeTable all_;
   ctpl::thread_pool pool_(2);
   double logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Value reported by running newton PLL example.
@@ -46,8 +46,8 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
       "test-data/five/RAxML_info.five"));
-  InnerTable good_;
-  InnerTable all_;
+  TreeTable good_;
+  TreeTable all_;
   ctpl::thread_pool pool_(10);
   // Optimize initial topology.
   p_five->FullBranchOpt(p_five->tree_);
@@ -88,13 +88,13 @@ TEST_CASE("RAxML info", "[RAxMLinfo]") {
                      0.348533, 7.363575, 1.000000};
   // Verify rates are parsed correctly.
   for (unsigned int i = 0; i < 6; i++) {
-    REQUIRE(rates[i] == p_five->partition_->subst_params[0][i]);
+    REQUIRE(rates[i] == p_five->GetPartition()->subst_params[0][i]);
   }
   // Values from RAxML info file.
   double frequencies[4] = {.370, 0.194, 0.246, 0.191};
   // Verify rates are parsed correctly.
   for (unsigned int i = 0; i < 4; i++) {
-    REQUIRE(frequencies[i] == p_five->partition_->frequencies[0][i]);
+    REQUIRE(frequencies[i] == p_five->GetPartition()->frequencies[0][i]);
   }
 }
 TEST_CASE("Copy", "[copy]") {
