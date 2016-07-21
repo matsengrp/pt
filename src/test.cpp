@@ -84,6 +84,8 @@ TEST_CASE("Copy", "[copy]") {
   auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
       "test-data/five/RAxML_info.five"));
+  // Copy using the copy constructor, with above partition and its root
+  // tree as args.
   auto p_five1 =
       std::unique_ptr<pt::Partition>(new pt::Partition(*p_five, p_five->tree_));
   p_five1->FullBranchOpt(p_five1->tree_);
