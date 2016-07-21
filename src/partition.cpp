@@ -342,31 +342,24 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
   return tree;
 }
 
-/// @brief Perform either a full or fast traversal update.
-/// @param[in] tree
-/// Parent node from which to update CLV's etc.
-/// @param[in] is_full
-/// Which type of traversal update to perform. (1 = full)
-void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
-  // Perform a full postorder traversal of the unrooted tree.
-  if (is_full)
-    FullTraversalUpdate(tree);
-  else
-    FastUpdate(tree);
-}
-
-/// @brief Perform a full tree traversal and update CLV's, etc.
+/// @brief Perform a tree traversal and update CLV's, etc.
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
 /// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
-void Partition::FullTraversalUpdate(pll_utree_t *tree) {
+/// @param[in] is_full
+/// Which type of traversal update to perform. (1 = full) (0= partial)
+void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
-  if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
-                          &traversal_size)) {
-    fatal("Function pll_utree_traverse() requires inner nodes as parameters");
+  if (is_full) {
+    if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
+                            &traversal_size)) {
+      fatal("Function pll_utree_traverse() requires inner nodes as parameters");
+    }
+  } else {
+    // Some other type of updating here.
   }
 
   // Given the computed traversal descriptor, generate the operations
@@ -389,10 +382,6 @@ void Partition::FullTraversalUpdate(pll_utree_t *tree) {
   pll_update_partials(partition_, operations_, ops_count);
 }
 
-void Partition::FastUpdate(pll_utree_t *tree) {
-  // Some other type of updating here.
-}
-
 /// @brief Just calculate log likelihood.
 /// NOTE: This will return nonsense if you haven't updated CLV's, etc.
 /// @return Log likelihood.
@@ -413,7 +402,7 @@ double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
 }
 
 /// @brief Optimize the current branch length.
-/// NOTE: This assumes we've just run `FullTraversalUpdate` or some such.
+/// NOTE: This assumes we've just run `TraversalUpdate` or some such.
 /// @param[in] tree
 /// Parent node of branch to optimize.
 /// @return Optimized branch length.
@@ -555,7 +544,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  FullTraversalUpdate(tree);
+  TraversalUpdate(tree,1);
   pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
   if (!good.contains(ToNewick(clone))) {
@@ -611,7 +600,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
-    FullTraversalUpdate(clone);
+    TraversalUpdate(clone,1);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
@@ -633,7 +622,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
   if (all.insert(label, 0)) {
-    FullTraversalUpdate(clone);
+    TraversalUpdate(clone,1);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
