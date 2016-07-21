@@ -30,7 +30,8 @@ class Partition {
  public:
   // Stores probability matrices, scalers, etc.
   pll_utree_t *tree_;
-  pll_partition_t *GetPartition(){ return partition_; }
+  pll_partition_t* GetPartition() {return partition_ ; }
+  const pll_partition_t *GetPartition() const { return partition_ ; }
   std::string fasta_path_;
   std::string info_path_;
   Partition(std::string newick_path, std::string fasta_path,
