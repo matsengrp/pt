@@ -531,7 +531,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// @param[in] pool
 /// Thread pool to which to push
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
-                           InnerTable &good, OuterTable &all,
+                           InnerTable &good, InnerTable &all,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
@@ -556,7 +556,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
 /// Table of good trees.
 /// @param[in] all
 /// Table of all trees.
-void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
+void Partition::PrintTables(bool print_all, InnerTable &good, InnerTable &all) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
 
@@ -587,13 +587,13 @@ void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
 /// Hash table for all trees.
 /// @param[in] pool
 /// Thread pool to which to push jobs.
-void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
-                               InnerTable &good, OuterTable &all,
+void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, double cutoff,
+                               InnerTable &good, InnerTable &all,
                                ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Perform first NNI and reordering on first edge.
-  clone = NNIUpdate(clone, 1);
+  clone = NNIUpdate(clone, move_type);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
     TraversalUpdate(clone, 1);
@@ -613,40 +613,18 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
     }
   }
   pll_utree_destroy(clone);
-  // Repeat for 2nd NNI move.
-  clone = pll_utree_clone(tree);
-  clone = NNIUpdate(clone, 2);
-  label = ToNewick(clone);
-  if (all.insert(label, 0)) {
-    TraversalUpdate(clone, 1);
-    FullBranchOpt(clone);
-    double lambda_1 = FullTraversalLogLikelihood(clone);
-    // Compare new likelihood to ML, then decide which table to put in.
-    if (lambda_1 > cutoff * lambda) {
-      if (good.insert(label, lambda_1)) {
-        // Create routine for good tree and have it MakeTables. Push routine to
-        // pool.
-        pt::Partition *temp = new pt::Partition(*this, clone);
-
-        pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
-          temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
-          delete temp;
-        });
-      }
-    }
-  }
-  pll_utree_destroy(clone);
 }
 
 /// @brief Traverse the tree and perform NNI moves at each internal edge.
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                            InnerTable &good, OuterTable &all,
+                            InnerTable &good, InnerTable &all,
                             ctpl::thread_pool &pool) {
   if (!tree->next) return;
   if (!tree->back->next) {
     NNITraverse(tree->next, lambda, cutoff, good, all, pool);
   }
-  NNIComputeEdge(tree, lambda, cutoff, good, all, pool);
+  NNIComputeEdge(tree, 1, lambda, cutoff, good, all, pool);
+  NNIComputeEdge(tree, 2, lambda, cutoff, good, all, pool);
   NNITraverse(tree->next->back, lambda, cutoff, good, all, pool);
   NNITraverse(tree->next->next->back, lambda, cutoff, good, all, pool);
 }

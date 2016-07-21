@@ -10,8 +10,7 @@ TEST_CASE("Partition", "[partition]") {
       "test-data/tiny/newton.tre", "test-data/tiny/newton.fasta",
       "test-data/tiny/RAxML_info.newton"));
   InnerTable good_;
-  InnerTable bad_;
-  OuterTable all_;
+  InnerTable all_;
   ctpl::thread_pool pool_(2);
   double logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Value reported by running newton PLL example.
@@ -48,8 +47,7 @@ TEST_CASE("MultiThreading", "[multithreading]") {
       "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
       "test-data/five/RAxML_info.five"));
   InnerTable good_;
-  InnerTable bad_;
-  OuterTable all_;
+  InnerTable all_;
   ctpl::thread_pool pool_(10);
   // Optimize initial topology.
   p_five->FullBranchOpt(p_five->tree_);
