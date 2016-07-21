@@ -80,4 +80,17 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   p_five->PrintTables(1, good_, all_);
   p_five.reset();
 }
+TEST_CASE("Copy", "[copy]") {
+  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
+      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
+      "test-data/five/RAxML_info.five"));
+  auto p_five1 =
+      std::unique_ptr<pt::Partition>(new pt::Partition(*p_five, p_five->tree_));
+  p_five1->FullBranchOpt(p_five1->tree_);
+  p_five->FullBranchOpt(p_five->tree_);
+  // Check the copy logl is the same as original logl after both have been
+  // optimized.
+  REQUIRE(fabs(p_five1->FullTraversalLogLikelihood(p_five1->tree_) -
+               p_five->FullTraversalLogLikelihood(p_five->tree_)) < 1e-6);
+}
 }
