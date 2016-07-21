@@ -61,7 +61,7 @@ class Partition {
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   InnerTable &good, OuterTable &all, ctpl::thread_pool &pool);
-  void PrintTables(bool print_bad, InnerTable &good, OuterTable &all);
+  void PrintTables(bool print_all, InnerTable &good, OuterTable &all);
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,

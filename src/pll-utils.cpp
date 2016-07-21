@@ -27,9 +27,6 @@ void fatal(const char *format, ...) {
 // a callback function for performing a full traversal
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
-/// @brief Determine if a tree is healthy, i.e. has branch lengths.
-/// @param[in] tree
-/// A pll_utree_t to check.
 int cb_branch_healthy(pll_utree_t *tree) {
   if (!tree->length) return 0;
 
@@ -39,8 +36,10 @@ int cb_branch_healthy(pll_utree_t *tree) {
   return (tree->length == tree->back->length);
 }
 
-/// @todo Document. Wouldn't it make sense to move the docs above to this one,
-/// and not expose cb_branch_healthy?
+/// @brief Determine if a tree is healthy, i.e. has branch lengths.
+/// @param[in] tree
+/// A pll_utree_t to check.
+/// @return Health value of tree.
 bool TreeHealthy(pll_utree_t *tree) {
   return pll_utree_every(tree, cb_branch_healthy);
 }

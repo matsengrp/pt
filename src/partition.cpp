@@ -558,8 +558,13 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
   NNITraverse(tree->back, logl, cutoff, good, all, pool);
 }
 
-
-/// @todo Document
+/// @brief Print out hashtables.
+/// @param[in] print_all
+/// Prints the "all trees" table if true.
+/// @param[in] good
+/// Table of good trees.
+/// @param[in] all
+/// Table of all trees.
 void Partition::PrintTables(bool print_all, InnerTable &good, OuterTable &all) {
   // Print Tables.
   std::cout << "Good: " << std::endl;
