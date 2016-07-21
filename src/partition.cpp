@@ -7,6 +7,7 @@
 /// Flouri.
 
 namespace pt {
+
 /// @brief Constructor for Partition from a tree and an alignment.
 /// @param[in] newick_path
 /// Path to a file with a Newick-format tree string.
@@ -70,6 +71,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
           sizeof(double),
       ALIGNMENT);
 }
+
 /// @brief Copy Constructor for Partition.
 /// @param[in] obj
 /// Pointer to partition object to copy.
@@ -108,45 +110,37 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
       partition_->pmatrix[i][j] = obj.partition_->pmatrix[i][j];
   }
 
-  // rates
   for (unsigned int j = 0; j < partition_->rate_cats; j++)
     partition_->rates[j] = obj.partition_->rates[j];
 
-  // subst_params
   for (unsigned int i = 0;
        i < partition_->states * (partition_->states - 1) / 2; i++) {
     partition_->subst_params[0][i] = obj.partition_->subst_params[0][i];
   }
 
-  // frequencies
   for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
     for (unsigned int j = 0; j < partition_->states; j++)
       partition_->frequencies[i][j] = obj.partition_->frequencies[i][j];
   }
 
-  // eigenvecs
   for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
     for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
       partition_->eigenvecs[i][j] = obj.partition_->eigenvecs[i][j];
   }
 
-  // inv_eigenvecs
   for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
     for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
       partition_->inv_eigenvecs[i][j] = obj.partition_->inv_eigenvecs[i][j];
   }
 
-  // eigenvals
   for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
     for (unsigned int j = 0; j < partition_->states; j++)
       partition_->eigenvals[i][j] = obj.partition_->eigenvals[i][j];
   }
 
-  // maxstates
   partition_->maxstates = obj.partition_->maxstates;
 
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
-
   for (unsigned int i = 0; i < RATE_CATS; i++) {
     params_indices_[i] = obj.params_indices_[i];
   }
@@ -239,8 +233,9 @@ char *Partition::newick_utree_recurse(pll_utree_t *root) {
 char *Partition::utree_short_newick(pll_utree_t *root) {
   char *newick;
   int size_alloced;
-  if (!root) return NULL;
 
+  if (!root) return NULL;
+  // If we are given a leaf then move to the attached internal node.
   if (!root->next) root = root->back;
 
   char *subtree1 = newick_utree_recurse(root->back);
@@ -299,8 +294,9 @@ std::string Partition::FindRootNode(pll_utree_t *tree) {
 /// Label of node to find
 /// @param[in] tree
 /// Node to search at
-/// @param[in] root
-/// Buffer for storing root node
+/// @param[out] root
+/// Buffer for storing root node.
+/// @return Were we successful in finding the label?
 bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
                              pll_utree_t **root) {
   if (!tree->next) {
@@ -315,7 +311,7 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
   }
 }
 
-/// @brief Sets the label of the root for the entire tree.
+/// @brief Returns the passed tree rooted at the minimum label.
 /// @param[in] tree
 /// An internal node.
 /// @return Parent of the first node alphabetically.
@@ -343,15 +339,12 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
 }
 
 /// @brief Perform a tree traversal and update CLV's, etc.
-/// Eventually, we will want to break this up for efficiency gains
-/// so that we aren't always doing a full traversal every time we
-/// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
 /// @param[in] is_full
-/// Which type of traversal update to perform. (1 = full) (0= partial)
+/// Which type of traversal update to perform. (1 = full) (0 = partial)
 void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
-  unsigned int traversal_size;
+  unsigned int traversal_size=0;
   unsigned int matrix_count, ops_count;
   if (is_full) {
     if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
@@ -407,7 +400,6 @@ double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
 /// Parent node of branch to optimize.
 /// @return Optimized branch length.
 double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
-  // Perform a full postorder traversal of the unrooted tree.
   pll_utree_t *parent = tree;
   pll_utree_t *child = tree->back;
 
@@ -424,8 +416,8 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
 
-    /// printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
-    /// opt_logl, d1,d2);
+    // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
+    // opt_logl, d1,d2);
     // If derivative is approximately zero then we've found the maximum.
     if (fabs(d1) < EPSILON) break;
 
@@ -449,8 +441,8 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
       double opt_logl = pll_compute_likelihood_derivatives(
           partition_, parent->scaler_index, child->scaler_index, len,
           params_indices_, sumtable_, &d1, &d2);
-      /// printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
-      /// opt_logl, d1,d2);
+      // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
+      // opt_logl, d1,d2);
       break;
     }
   }
@@ -524,8 +516,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 
 ///@brief Perform every possible NNI move from the current state, and sort them
 /// into good and all tables.
-/// NOTE: This function assumes that the current topology is "good" (i.e. it is
-/// the ML tree).
+/// NOTE: This function assumes that the current topology is the ML tree).
 /// @param[in] cutoff
 /// Scaler value by which to multiply ML tree Log-L, the result is the cutoff
 /// between good and bad trees.
@@ -605,7 +596,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   clone = NNIUpdate(clone, 1);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
-    TraversalUpdate(clone,1);
+    TraversalUpdate(clone, 1);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
@@ -627,7 +618,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, double lambda, double cutoff,
   clone = NNIUpdate(clone, 2);
   label = ToNewick(clone);
   if (all.insert(label, 0)) {
-    TraversalUpdate(clone,1);
+    TraversalUpdate(clone, 1);
     FullBranchOpt(clone);
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.

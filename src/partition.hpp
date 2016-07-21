@@ -10,10 +10,11 @@
 /// @brief Headers for the Partition class.
 
 namespace pt {
+
 typedef cuckoohash_map<std::string, double> InnerTable;
 typedef cuckoohash_map<std::string, int> OuterTable;
+
 /// @brief The representation of a tree, alignment, and all associated data.
-///
 class Partition {
  private:
   unsigned int sites_count_;

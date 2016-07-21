@@ -5,7 +5,7 @@
 #include <iomanip>
 #include <sstream>
 
-/// @file pll-utils.hpp
+/// @file pll-utils.cpp
 /// @brief Utilities for interfacing with libpll.
 /// Much of this was directly copied from libpll examples, so parts (c) Thomas
 /// Flouri.
@@ -24,9 +24,10 @@ void fatal(const char *format, ...) {
   exit(EXIT_FAILURE);
 }
 
-// a callback function for performing a full traversal
+// A callback function for performing a full traversal.
 int cb_full_traversal(pll_utree_t *node) { return 1; }
 
+// A callback function for testing if a tree has nonzero branch lengths.
 int cb_branch_healthy(pll_utree_t *tree) {
   if (!tree->length) return 0;
 
@@ -106,15 +107,15 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
 /// @brief Add tip data to a partition.
 /// Look up every sequence by its name and set the corresponding CLV in the
 /// partition.
-/// @param[in] partition
+/// @param partition
 /// A partition to equip.
 /// @param[in] tree
 /// The tree to use for equipping the partition.
 /// @param[in] tip_nodes_count
 /// The number of tip nodes.
-/// @param[out] headers
+/// @param[in] headers
 /// An array of header strings.
-/// @param[out] seqdata
+/// @param[in] seqdata
 /// An array of sequence strings.
 void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
                             unsigned int tip_nodes_count, char **headers,
@@ -128,7 +129,6 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
   hcreate(tip_nodes_count);
 
   // populate a libc hash table with tree tip labels
-
   unsigned int *data =
       (unsigned int *)malloc(tip_nodes_count * sizeof(unsigned int));
   unsigned int i;
@@ -181,7 +181,6 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
 /// @param[in] path
 /// RAxML info file path for retrieving parameters.
 void SetModelParameters(pll_partition_t *partition, std::string path) {
-  // Import the info file
   std::ifstream file(path);
   std::string read;
   std::string contents;
@@ -190,10 +189,10 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
     contents += read;
     contents.push_back('\n');
   }
+
   // initialize the array of base frequencies
   std::size_t pos1 = contents.find("frequencies: ");
   std::size_t pos2 = contents.find('\n', pos1);
-
   std::string sstr = contents.substr(pos1 + 13, pos2 - pos1 - 13);
 
   std::vector<std::string> freqvector = ssplit(sstr, ' ');
