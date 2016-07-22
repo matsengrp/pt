@@ -332,12 +332,14 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
   return tree;
 }
 
-/// @brief Perform a full tree traversal and update CLV's, etc.
+/// @brief Perform a tree traversal and update CLV's, etc.
 /// Eventually, we will want to break this up for efficiency gains
 /// so that we aren't always doing a full traversal every time we
 /// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
+/// @param[in] is_full
+/// Which type of traversal update to perform. (1 = full) (0 = partial)
 void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
@@ -388,7 +390,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  TraversalUpdate(tree, 0);
+  TraversalUpdate(tree, 1);
   return LogLikelihood(tree);
 }
 
@@ -452,10 +454,14 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   //There is an issue here, I don't know which ones need to be set to 0.
   node_info_t* node_info;
   node_info= (node_info_t*)parent->data;
-  node_info->clv_valid=0;
+  if(node_info){
+    node_info->clv_valid=0;
+  }
   if(child->next){
     node_info=(node_info_t*)child->data;
-    node_info->clv_valid=0;
+    if(node_info){
+      node_info->clv_valid=0;
+    }
   }
 
   return len;
