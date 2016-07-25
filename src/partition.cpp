@@ -480,10 +480,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
     // Have FullTraversal for now, partial does not work.
-    TraversalUpdate(tree->back, 0);
+    TraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, 0);
+    TraversalUpdate(tree, 1);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
@@ -630,7 +630,21 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
                                ctpl::thread_pool &pool) {
   TraversalUpdate(tree, 0);
   // Create a clone of the original tree to perform NNI and reordering on.
+  node_info_t *node_info1;
+  node_info_t *node_info2;
+
   pll_utree_t *clone = pll_utree_clone(tree);
+
+  node_info1 = (node_info_t *)tree->data;
+  node_info2 = (node_info_t *)clone->data;
+
+  if (node_info1->clv_valid != node_info2->clv_valid) {
+    fatal("pll_utree_clone failed to copy data.");
+  }
+  if (node_info1 == node_info2) {
+    fatal("pll_utree_clone copied data pointer, did not deep copy.");
+  }
+
   // Perform NNI and reordering on edge. (pll_utree_clone seems to copy
   // clv_valid values correctly from my tests.)
   clone = NNIUpdate(clone, move_type);
