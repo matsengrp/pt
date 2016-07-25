@@ -25,7 +25,8 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
               << " must be an unrooted binary tree.\n";
     exit(EXIT_FAILURE);
   };
-  if (!TreeHealthy(tree_)) fatal("Missing branch lengths in tree.\n");
+  if (!TreeHealthy(tree_))
+    fatal("Missing branch lengths in tree.\n");
 
   char **headers = NULL;
   char **seqdata = NULL;
@@ -124,10 +125,10 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   }
 
   travbuffer_ = (pll_utree_t **)malloc(nodes_count() * sizeof(pll_utree_t *));
-  memcpy(travbuffer_, obj.travbuffer_, nodes_count()*sizeof(pll_utree_t*));
+  memcpy(travbuffer_, obj.travbuffer_, nodes_count() * sizeof(pll_utree_t *));
 
   branch_lengths_ = (double *)malloc(branch_count() * sizeof(double));
-  memcpy(branch_lengths_, obj.branch_lengths_, branch_count()*sizeof(double));
+  memcpy(branch_lengths_, obj.branch_lengths_, branch_count() * sizeof(double));
 
   matrix_indices_ =
       (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
@@ -160,20 +161,20 @@ Partition::~Partition() {
   pll_utree_destroy(tree_);
 }
 
-pll_partition_t* Partition:: CreatePartition(){
-  pll_partition_t* partition= pll_partition_create(
-      tip_nodes_count(),    // Number of tip sequences we want to have.
-      inner_nodes_count(),  // Number of CLV buffers to be allocated for inner
-                            // nodes.
-      STATES,               // Number of states that our data have.
-      sites_count_,         // Number of sites in the alignment.
-      1,  // Number of different substitution models (or eigen decomposition)
-          //     to use concurrently (i.e. 4 for LG4).
-      branch_count(),       // Number of probability matrices to be allocated.
-      RATE_CATS,            // Number of rate categories we will use.
-      inner_nodes_count(),  // How many scale buffers to use.
-      ARCH_FLAGS);          // List of flags for hardware acceleration.
-   return partition;
+pll_partition_t *Partition::CreatePartition() {
+  pll_partition_t *partition = pll_partition_create(
+      tip_nodes_count(),   // Number of tip sequences we want to have.
+      inner_nodes_count(), // Number of CLV buffers to be allocated for inner
+                           // nodes.
+      STATES,              // Number of states that our data have.
+      sites_count_,        // Number of sites in the alignment.
+      1, // Number of different substitution models (or eigen decomposition)
+         //     to use concurrently (i.e. 4 for LG4).
+      branch_count(),      // Number of probability matrices to be allocated.
+      RATE_CATS,           // Number of rate categories we will use.
+      inner_nodes_count(), // How many scale buffers to use.
+      ARCH_FLAGS);         // List of flags for hardware acceleration.
+  return partition;
 }
 
 /// @brief Returns a the tree as a Newick string.
@@ -203,7 +204,8 @@ char *Partition::newick_utree_recurse(pll_utree_t *root) {
     size_alloced = asprintf(&newick, "%s", root->label);
   else {
     char *subtree1 = newick_utree_recurse(root->next->back);
-    if (subtree1 == NULL) return NULL;
+    if (subtree1 == NULL)
+      return NULL;
     char *subtree2 = newick_utree_recurse(root->next->next->back);
     if (subtree2 == NULL) {
       free(subtree1);
@@ -228,12 +230,15 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
   char *newick;
   int size_alloced;
 
-  if (!root) return NULL;
+  if (!root)
+    return NULL;
   // If we are given a leaf then move to the attached internal node.
-  if (!root->next) root = root->back;
+  if (!root->next)
+    root = root->back;
 
   char *subtree1 = newick_utree_recurse(root->back);
-  if (subtree1 == NULL) return NULL;
+  if (subtree1 == NULL)
+    return NULL;
   char *subtree2 = newick_utree_recurse(root->next->back);
   if (subtree2 == NULL) {
     free(subtree1);
@@ -266,7 +271,8 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
 /// @return smallest label
 std::string Partition::FindRootNode(pll_utree_t *tree) {
   std::string minlabel;
-  if (!tree->next) return tree->label;
+  if (!tree->next)
+    return tree->label;
   std::string rlabel1 = FindRootNode(tree->next->back);
   std::string rlabel2 = FindRootNode(tree->next->next->back);
   if (rlabel1.compare(rlabel2) < 0)
@@ -349,7 +355,7 @@ void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
       fatal("Function pll_utree_traverse() requires inner nodes as parameters");
     }
   } else {
-     if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_,
+    if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_,
                             &traversal_size)) {
       fatal("Function pll_utree_traverse() requires inner nodes as parameters");
     }
@@ -382,7 +388,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
   double logl = pll_compute_edge_loglikelihood(
       partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
       tree->back->scaler_index, tree->pmatrix_index, params_indices_,
-      NULL);  // Can supply a persite_lnl parameter as last argument.
+      NULL); // Can supply a persite_lnl parameter as last argument.
 
   return logl;
 }
@@ -409,8 +415,8 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
                       params_indices_, sumtable_);
 
   double len = tree->length;
-  double d1;  // First derivative.
-  double d2;  // Second derivative.
+  double d1; // First derivative.
+  double d2; // Second derivative.
   for (unsigned int i = 0; i < MAX_ITER; ++i) {
     double opt_logl = pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
@@ -419,7 +425,8 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
     // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
     // opt_logl, d1,d2);
     // If derivative is approximately zero then we've found the maximum.
-    if (fabs(d1) < EPSILON) break;
+    if (fabs(d1) < EPSILON)
+      break;
 
     // Newton's method for finding the optimum of a function. The iteration to
     // reach the optimum is
@@ -451,16 +458,16 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   parent->length = len;
   child->length = len;
 
-  //There is an issue here, I don't know which ones need to be set to 0.
-  node_info_t* node_info;
-  node_info= (node_info_t*)parent->data;
-  if(node_info){
-    node_info->clv_valid=0;
+  // There is an issue here, I don't know which ones need to be set to 0.
+  node_info_t *node_info;
+  node_info = (node_info_t *)parent->data;
+  if (node_info) {
+    node_info->clv_valid = 0;
   }
-  if(child->next){
-    node_info=(node_info_t*)child->data;
-    if(node_info){
-      node_info->clv_valid=0;
+  if (child->next) {
+    node_info = (node_info_t *)child->data;
+    if (node_info) {
+      node_info->clv_valid = 0;
     }
   }
 
@@ -472,7 +479,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-  //Have FullTraversal for now, partial does not work.
+    // Have FullTraversal for now, partial does not work.
     TraversalUpdate(tree->back, 1);
     OptimizeCurrentBranch(tree->back);
   } else {
@@ -549,7 +556,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  TraversalUpdate(tree,1);
+  TraversalUpdate(tree, 1);
   pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
   if (!good.contains(ToNewick(clone))) {
@@ -583,7 +590,8 @@ void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
     std::cout << "All: " << std::endl;
 
     auto lt1 = all.lock_table();
-    for (auto &item : lt1) std::cout << item.first << std::endl;
+    for (auto &item : lt1)
+      std::cout << item.first << std::endl;
   }
 }
 
@@ -601,8 +609,8 @@ void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
 /// Hash table for all trees.
 /// @param[in] pool
 /// Thread pool to which to push jobs.
-void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, double cutoff,
-                               TreeTable &good, TreeTable &all,
+void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
+                               double cutoff, TreeTable &good, TreeTable &all,
                                ctpl::thread_pool &pool) {
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
@@ -633,7 +641,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, 
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                             TreeTable &good, TreeTable &all,
                             ctpl::thread_pool &pool) {
-  if (!tree->next) return;
+  if (!tree->next)
+    return;
   if (!tree->back->next) {
     NNITraverse(tree->next, lambda, cutoff, good, all, pool);
   }

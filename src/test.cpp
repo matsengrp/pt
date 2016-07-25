@@ -68,11 +68,10 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   REQUIRE(all_.size() == 15);
 
   // Ensure a specific good tree is contained in good table.
-  REQUIRE(
-      good_.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,((Ref.A1.RW.92."
-                     "92RW008.AB253421,Ref.A1.UG.92.92UG037.AB253429),Ref."
-                     "A2.CM.01.01CM_1445MV.GU201516),Ref.A2.CD.97."
-                     "97CDKTB48.AF286238);"));
+  REQUIRE(good_.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,((Ref.A1.RW.92."
+                         "92RW008.AB253421,Ref.A1.UG.92.92UG037.AB253429),Ref."
+                         "A2.CM.01.01CM_1445MV.GU201516),Ref.A2.CD.97."
+                         "97CDKTB48.AF286238);"));
 
   // Print both tables.
   // Note that program returns all 15 topologies for a 5-leaf tree.

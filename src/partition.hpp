@@ -1,10 +1,10 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
-#include <iostream>
 #include "ctpl_stl.h"
 #include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
+#include <iostream>
 
 /// @file partition.hpp
 /// @brief Headers for the Partition class.
@@ -15,7 +15,7 @@ typedef cuckoohash_map<std::string, double> TreeTable;
 
 /// @brief The representation of a tree, alignment, and all associated data.
 class Partition {
- private:
+private:
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
@@ -27,11 +27,11 @@ class Partition {
   unsigned int *params_indices_;
   double *sumtable_;
 
- public:
+public:
   // Stores probability matrices, scalers, etc.
   pll_utree_t *tree_;
-  pll_partition_t* GetPartition() {return partition_ ; }
-  const pll_partition_t *GetPartition() const { return partition_ ; }
+  pll_partition_t *GetPartition() { return partition_; }
+  const pll_partition_t *GetPartition() const { return partition_; }
   std::string fasta_path_;
   std::string info_path_;
   Partition(std::string newick_path, std::string fasta_path,
@@ -45,7 +45,7 @@ class Partition {
     return (tip_nodes_count() + inner_nodes_count());
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
-  pll_partition_t* CreatePartition();
+  pll_partition_t *CreatePartition();
   std::string ToNewick(pll_utree_t *tree);
   std::string ToFullNewick(pll_utree_t *tree);
   void TraversalUpdate(pll_utree_t *tree, bool is_full);
@@ -68,10 +68,10 @@ class Partition {
   static char *newick_utree_recurse(pll_utree_t *root);
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                    TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
-  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, double cutoff,
-                      TreeTable &good, TreeTable &all,
+  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
+                      double cutoff, TreeTable &good, TreeTable &all,
                       ctpl::thread_pool &pool);
 };
 }
 
-#endif  // PT_PARTITION_
+#endif // PT_PARTITION_
