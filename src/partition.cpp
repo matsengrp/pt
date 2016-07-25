@@ -396,7 +396,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  TraversalUpdate(tree, 1);
+  TraversalUpdate(tree, 0);
   return LogLikelihood(tree);
 }
 
@@ -556,7 +556,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  TraversalUpdate(tree, 1);
+  TraversalUpdate(tree, 0);
   pll_utree_t *clone = pll_utree_clone(tree);
   clone = ToOrderedNewick(clone);
   if (!good.contains(ToNewick(clone))) {
@@ -618,8 +618,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
   clone = NNIUpdate(clone, move_type);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
-    TraversalUpdate(clone, 1);
     FullBranchOpt(clone);
+    /// @todo Can we save time by having FullBranchOpt return this?
     double lambda_1 = FullTraversalLogLikelihood(clone);
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > cutoff * lambda) {

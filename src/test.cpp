@@ -62,6 +62,10 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   // Wait until all threads in the pool have executed.
   pool_.stop(true);
 
+  // Print both tables.
+  // Note that program returns all 15 topologies for a 5-leaf tree.
+  p_five->PrintTables(1, good_, all_);
+
   // Ensure that 13 trees were sorted into the good table, all 15 topologies
   // were investigated.
   REQUIRE(good_.size() == 13);
@@ -73,9 +77,6 @@ TEST_CASE("MultiThreading", "[multithreading]") {
                          "A2.CM.01.01CM_1445MV.GU201516),Ref.A2.CD.97."
                          "97CDKTB48.AF286238);"));
 
-  // Print both tables.
-  // Note that program returns all 15 topologies for a 5-leaf tree.
-  p_five->PrintTables(1, good_, all_);
   p_five.reset();
 }
 TEST_CASE("RAxML info", "[RAxMLinfo]") {
