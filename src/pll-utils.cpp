@@ -71,10 +71,6 @@ int cb_partial_traversal(pll_utree_t *node) {
     /* set orientation on selected direction and traverse the subtree */
     node_info = (node_info_t *)node->data;
     node_info->clv_valid = 1;
-    node_info = (node_info_t *)node->next->data;
-    node_info->clv_valid = 0;
-    node_info = (node_info_t *)node->next->next->data;
-    node_info->clv_valid = 0;
     return 1;
   }
 

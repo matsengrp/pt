@@ -480,10 +480,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
     // Have FullTraversal for now, partial does not work.
-    TraversalUpdate(tree->back, 1);
+    TraversalUpdate(tree->back, 0);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, 1);
+    TraversalUpdate(tree, 0);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
@@ -530,7 +530,23 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 /// Type of NNI move to perform.
 ///@return Ordered new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
+  // Orient CLV's
+  TraversalUpdate(tree, 0);
   pll_utree_nni(tree, move_type, 0);
+  // Recalculate CLV's after NNI
+  node_info_t *node_info;
+  node_info = (node_info_t *)tree->data;
+  if (node_info) {
+    node_info->clv_valid = 0;
+  }
+  if (tree->back->next) {
+    node_info = (node_info_t *)tree->back->data;
+    if (node_info) {
+      node_info->clv_valid = 0;
+    }
+  }
+  TraversalUpdate(tree, 0);
+  // Reorder the tree (shouldn't affect CLV_Valid status)
   tree = ToOrderedNewick(tree);
   return tree;
 }
@@ -612,9 +628,11 @@ void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
 void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
                                double cutoff, TreeTable &good, TreeTable &all,
                                ctpl::thread_pool &pool) {
+  TraversalUpdate(tree, 0);
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
-  // Perform first NNI and reordering on first edge.
+  // Perform NNI and reordering on edge. (pll_utree_clone seems to copy
+  // clv_valid values correctly from my tests.)
   clone = NNIUpdate(clone, move_type);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
@@ -626,6 +644,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
       if (good.insert(label, lambda_1)) {
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
+        // Copy constructor calls pll_utree_clone, so there shouldn't be an
+        // issue here.
         pt::Partition *temp = new pt::Partition(*this, clone);
         pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
