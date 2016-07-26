@@ -608,6 +608,8 @@ void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
     for (auto &item : lt1)
       std::cout << item.first << std::endl;
   }
+  printf("Trees Explored: %zu \n", all.size());
+  printf("Good Trees Found: %zu \n", good.size());
 }
 
 /// @brief Perform both NNI moves at an edge and compare their log-likelihoods

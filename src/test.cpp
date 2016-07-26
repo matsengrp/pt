@@ -129,17 +129,13 @@ TEST_CASE("BigExample", "[BigExample]") {
   // Set ML parameter.
   double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
 
-  // Good trees are trees with a log likelihood of at least -3820 (ML is
-  // -3737.47).
   p_DS1->MakeTables(1.0001, logl, p_DS1->tree_, good_, all_, pool_);
 
   // Wait until all threads in the pool have executed.
   pool_.stop(true);
 
-  // Print both tables.
-  // Note that program returns all 15 topologies for a 5-leaf tree.
+  // Print good table.
   p_DS1->PrintTables(0, good_, all_);
-
   p_DS1.reset();
 }
 }
