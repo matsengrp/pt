@@ -61,7 +61,6 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
           sizeof(double),
       ALIGNMENT);
 }
-
 /// @brief Copy Constructor for Partition.
 /// @param[in] obj
 /// Pointer to partition object to copy.
@@ -70,6 +69,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
 Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   tip_nodes_count_ = obj.tip_nodes_count_;
   tree_ = pll_utree_clone(tree);
+  pll_utree_every(tree_, cb_copy_clv_traversal);
   sites_count_ = obj.sites_count_;
 
   partition_ = CreatePartition();
@@ -479,11 +479,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-    // Have FullTraversal for now, partial does not work.
-    TraversalUpdate(tree->back, 1);
+    TraversalUpdate(tree->back, 0);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, 1);
+    TraversalUpdate(tree, 0);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
@@ -630,23 +629,10 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
                                ctpl::thread_pool &pool) {
   TraversalUpdate(tree, 0);
   // Create a clone of the original tree to perform NNI and reordering on.
-  node_info_t *node_info1;
-  node_info_t *node_info2;
-
   pll_utree_t *clone = pll_utree_clone(tree);
-
-  node_info1 = (node_info_t *)tree->data;
-  node_info2 = (node_info_t *)clone->data;
-
-  if (node_info1->clv_valid != node_info2->clv_valid) {
-    fatal("pll_utree_clone failed to copy data.");
-  }
-  if (node_info1 == node_info2) {
-    fatal("pll_utree_clone copied data pointer, did not deep copy.");
-  }
-
-  // Perform NNI and reordering on edge. (pll_utree_clone seems to copy
-  // clv_valid values correctly from my tests.)
+  // Deep copy clv_valid values.
+  pll_utree_every(clone, cb_copy_clv_traversal);
+  // Perform NNI and reordering on edge.
   clone = NNIUpdate(clone, move_type);
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
@@ -658,8 +644,6 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
       if (good.insert(label, lambda_1)) {
         // Create routine for good tree and have it MakeTables. Push routine to
         // pool.
-        // Copy constructor calls pll_utree_clone, so there shouldn't be an
-        // issue here.
         pt::Partition *temp = new pt::Partition(*this, clone);
         pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);

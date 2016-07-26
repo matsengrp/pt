@@ -73,7 +73,6 @@ int cb_partial_traversal(pll_utree_t *node) {
     node_info->clv_valid = 1;
     return 1;
   }
-
   /* if the data element was already there and the CLV on this direction is
      set, i.e. the CLV is valid, we instruct the traversal routine not to
      traverse the subtree rooted in this node/direction by returning 0 */
@@ -104,6 +103,39 @@ int cb_reset_valid(pll_utree_t *node) {
     node_info = (node_info_t *)node->next->next->data;
     node_info->clv_valid = 0;
   }
+
+  return 1;
+}
+
+// callback function for deep copying clv_valid values after cloning.
+int cb_copy_clv_traversal(pll_utree_t *node) {
+
+  node_info_t *node_info;
+
+  if (!node->next)
+    return 1;
+
+  node_info = (node_info_t *)(node->data);
+  if (!node_info) {
+    return 1;
+  }
+
+  int node_valid = node_info->clv_valid;
+  node_info = (node_info_t *)(node->next->data);
+  int node_valid_1 = node_info->clv_valid;
+  node_info = (node_info_t *)(node->next->next->data);
+  int node_valid_2 = node_info->clv_valid;
+
+  /* allocate data element and deep copy */
+  node->data = (node_info_t *)malloc(sizeof(node_info_t));
+  node_info = (node_info_t *)(node->data);
+  node_info->clv_valid = node_valid;
+  node->next->data = (node_info_t *)malloc(sizeof(node_info_t));
+  node_info = (node_info_t *)(node->next->data);
+  node_info->clv_valid = node_valid_1;
+  node->next->next->data = (node_info_t *)malloc(sizeof(node_info_t));
+  node_info = (node_info_t *)(node->next->next->data);
+  node_info->clv_valid = node_valid_2;
 
   return 1;
 }
