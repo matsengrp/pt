@@ -113,4 +113,33 @@ TEST_CASE("Copy", "[copy]") {
   REQUIRE(fabs(p_five1->FullTraversalLogLikelihood(p_five1->tree_) -
                p_five->FullTraversalLogLikelihood(p_five->tree_)) < 1e-6);
 }
+
+TEST_CASE("BigExample", "[BigExample]") {
+
+  auto p_DS1 = std::unique_ptr<pt::Partition>(
+      new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
+                        "test-data/hohna_datasets_fasta/DS1.fasta",
+                        "test-data/hohna_datasets_fasta/RAxML_info.DS1"));
+  TreeTable good_;
+  TreeTable all_;
+  ctpl::thread_pool pool_(6);
+  // Optimize initial topology.
+  p_DS1->FullBranchOpt(p_DS1->tree_);
+
+  // Set ML parameter.
+  double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
+
+  // Good trees are trees with a log likelihood of at least -3820 (ML is
+  // -3737.47).
+  p_DS1->MakeTables(1.0001, logl, p_DS1->tree_, good_, all_, pool_);
+
+  // Wait until all threads in the pool have executed.
+  pool_.stop(true);
+
+  // Print both tables.
+  // Note that program returns all 15 topologies for a 5-leaf tree.
+  p_DS1->PrintTables(0, good_, all_);
+
+  p_DS1.reset();
+}
 }
