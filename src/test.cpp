@@ -3,6 +3,7 @@
 
 #include "catch.hpp"
 #include "ctpl_stl.h"
+#include "ordered-tree.hpp"
 #include "partition.hpp"
 namespace pt {
 TEST_CASE("Partition", "[partition]") {
@@ -20,11 +21,11 @@ TEST_CASE("Partition", "[partition]") {
   REQUIRE(fabs(p_newton->OptimizeCurrentBranch(p_newton->tree_) - 2.607098) <
           1e-6);
   // Verify ToNewick functionality pre-ordering and post-ordering.
-  REQUIRE(p_newton->ToNewick(p_newton->tree_) == "((0,1),2,3);");
+  REQUIRE(ToNewick(p_newton->tree_) == "((0,1),2,3);");
 
   // Order and check status.
-  p_newton->tree_ = p_newton->ToOrderedNewick(p_newton->tree_);
-  REQUIRE(p_newton->ToNewick(p_newton->tree_) == "(0,1,(2,3));");
+  p_newton->tree_ = ToOrderedNewick(p_newton->tree_);
+  REQUIRE(ToNewick(p_newton->tree_) == "(0,1,(2,3));");
   p_newton->FullBranchOpt(p_newton->tree_);
   logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.

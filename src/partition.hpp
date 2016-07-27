@@ -16,6 +16,8 @@ typedef cuckoohash_map<std::string, double> TreeTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 class Partition {
 private:
+  std::string fasta_path_;
+  std::string info_path_;
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
@@ -26,14 +28,17 @@ private:
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
+  void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
+                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
+  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
+                      double cutoff, TreeTable &good, TreeTable &all,
+                      ctpl::thread_pool &pool);
 
 public:
   // Stores probability matrices, scalers, etc.
   pll_utree_t *tree_;
   pll_partition_t *GetPartition() { return partition_; }
   const pll_partition_t *GetPartition() const { return partition_; }
-  std::string fasta_path_;
-  std::string info_path_;
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
   Partition(const Partition &obj, pll_utree_t *tree);
@@ -46,8 +51,6 @@ public:
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
   pll_partition_t *CreatePartition();
-  std::string ToNewick(pll_utree_t *tree);
-  std::string ToFullNewick(pll_utree_t *tree);
   void TraversalUpdate(pll_utree_t *tree, bool is_full);
   double LogLikelihood(pll_utree_t *tree);
   double FullTraversalLogLikelihood(pll_utree_t *tree);
@@ -55,24 +58,10 @@ public:
   void TreeBranchLengthsAux(pll_utree_t *tree);
   void TreeBranchLengths(pll_utree_t *tree);
   void FullBranchOpt(pll_utree_t *tree);
-  pll_utree_t *SetNewickRoot(pll_utree_t *tree);
-  bool SetLabelRoot(std::string label, pll_utree_t *tree, pll_utree_t **root);
-  void RecursiveOrderedNewick(pll_utree_t *tree);
-  std::string FindRootNode(pll_utree_t *tree);
-  pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
   void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
-  /// @todo These don't follow our naming convention.
-  char *utree_short_newick(pll_utree_t *root);
-  static char *newick_utree_recurse(pll_utree_t *root);
-  /// @todo Shouldn't these be private? They only make sense in terms of a MakeTables call.
-  void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
-  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
-                      double cutoff, TreeTable &good, TreeTable &all,
-                      ctpl::thread_pool &pool);
 };
 }
 
