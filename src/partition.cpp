@@ -28,6 +28,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   if (!TreeHealthy(tree_))
     fatal("Missing branch lengths in tree.\n");
 
+  // Load in sequences and RAxML info.
   char **headers = NULL;
   char **seqdata = NULL;
   sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
@@ -46,6 +47,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   free(seqdata);
   free(headers);
 
+  // Allocate lots of memory for various operations.
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
   for (unsigned int i = 0; i < RATE_CATS; ++i) {
     params_indices_[i] = 0;
@@ -61,6 +63,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
           sizeof(double),
       ALIGNMENT);
 }
+
 /// @brief Copy Constructor for Partition.
 /// @param[in] obj
 /// Pointer to partition object to copy.
@@ -161,6 +164,8 @@ Partition::~Partition() {
   pll_utree_destroy(tree_);
 }
 
+/// @brief Create a libpll partition data structure using the data in the Partition object.
+/// @return pll_partition_t data structure.
 pll_partition_t *Partition::CreatePartition() {
   pll_partition_t *partition = pll_partition_create(
       tip_nodes_count(),   // Number of tip sequences we want to have.
@@ -187,7 +192,7 @@ std::string Partition::ToNewick(pll_utree_t *tree) {
 }
 
 /// @brief Returns a the tree as a Newick string with branch lengths.
-/// @return Newick string.
+/// @return Newick std::string.
 std::string Partition::ToFullNewick(pll_utree_t *tree) {
   char *newick = pll_utree_export_newick(tree);
   std::string strnewick = (std::string)newick;
@@ -196,6 +201,7 @@ std::string Partition::ToFullNewick(pll_utree_t *tree) {
 }
 
 /// @brief Recursive function to generate newick string without branch lengths.
+/// @return Newick char* string.
 char *Partition::newick_utree_recurse(pll_utree_t *root) {
   char *newick;
   int size_alloced;
@@ -225,7 +231,8 @@ char *Partition::newick_utree_recurse(pll_utree_t *root) {
   return newick;
 }
 
-/// @brief Prints newick string without branch lengths.
+/// @brief Build newick string without branch lengths.
+/// @return Newick char* string without branch lengths.
 char *Partition::utree_short_newick(pll_utree_t *root) {
   char *newick;
   int size_alloced;
@@ -265,10 +272,10 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
 }
 
 /// @brief Finds node in tree's subtree with the label that is first
-/// alphabetically.
-/// @param[in] tree
+/// alphabetically, and reroots the tree at its parent node.
+/// @param[in,out] tree
 /// Parent node of subtree to root.
-/// @return smallest label
+/// @return Smallest label.
 std::string Partition::FindRootNode(pll_utree_t *tree) {
   std::string minlabel;
   if (!tree->next)
@@ -291,9 +298,9 @@ std::string Partition::FindRootNode(pll_utree_t *tree) {
 /// @brief Finds a node with the given label and sets the current node to the
 /// parent of it.
 /// @param[in] label
-/// Label of node to find
+/// Label of node to find.
 /// @param[in] tree
-/// Node to search at
+/// Node to search at.
 /// @param[out] root
 /// Buffer for storing root node.
 /// @return Were we successful in finding the label?
@@ -314,7 +321,7 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
 /// @brief Returns the passed tree rooted at the minimum label.
 /// @param[in] tree
 /// An internal node.
-/// @return Parent of the first node alphabetically.
+/// @return Parent of the alphabetically smallest leaf.
 pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
   std::string minlabel;
   std::string rlabel1 = FindRootNode(tree);
@@ -332,6 +339,7 @@ pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
 /// @brief Determines order for first ternary step, then runs recursive ordering
 /// for the two non-root subtrees.
 /// @return Completely ordered newick string.
+/// @todo Update.
 pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
   tree = SetNewickRoot(tree);
   FindRootNode(tree);
@@ -339,9 +347,6 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
 }
 
 /// @brief Perform a tree traversal and update CLV's, etc.
-/// Eventually, we will want to break this up for efficiency gains
-/// so that we aren't always doing a full traversal every time we
-/// want to calculate the likelihood, but we'll do that carefully!
 /// @param[in] tree
 /// Parent node from which to update CLV's etc.
 /// @param[in] is_full
@@ -400,9 +405,10 @@ double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
   return LogLikelihood(tree);
 }
 
-/// @brief Optimize the current branch length.
+/// @brief Optimize the current branch length, storing the new branch
+/// length in the tree structure.
 /// NOTE: This assumes we've just run `TraversalUpdate` or some such.
-/// @param[in] tree
+/// @param[in,out] tree
 /// Parent node of branch to optimize.
 /// @return Optimized branch length.
 double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
@@ -552,7 +558,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 
 ///@brief Perform every possible NNI move from the current state, and sort them
 /// into good and all tables.
-/// NOTE: This function assumes that the current topology is the ML tree).
+/// NOTE: This function assumes that the current topology is the ML tree.
 /// @param[in] cutoff
 /// Scaler value by which to multiply ML tree Log-L, the result is the cutoff
 /// between good and bad trees.
@@ -565,10 +571,11 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// @param[in] all
 /// Hash table for all trees.
 /// @param[in] pool
-/// Thread pool to which to push
+/// Thread pool to which to push.
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            TreeTable &good, TreeTable &all,
                            ctpl::thread_pool &pool) {
+  /// @todo Update
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
   TraversalUpdate(tree, 0);

@@ -64,8 +64,10 @@ public:
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
   void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
+  /// @todo These don't follow our naming convention.
   char *utree_short_newick(pll_utree_t *root);
   static char *newick_utree_recurse(pll_utree_t *root);
+  /// @todo Shouldn't these be private? They only make sense in terms of a MakeTables call.
   void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                    TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
   void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
