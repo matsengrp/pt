@@ -68,7 +68,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
 /// @param[in] obj
 /// Pointer to partition object to copy.
 /// @param[in] tree
-/// Initial topology to use. (For full copy use obj->tree_)
+/// Initial tree to use. (For full copy use obj->tree_)
 Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   tip_nodes_count_ = obj.tip_nodes_count_;
   tree_ = pll_utree_clone(tree);
@@ -271,10 +271,10 @@ char *Partition::utree_short_newick(pll_utree_t *root) {
   return (newick);
 }
 
-/// @brief Finds node in tree's subtree with the label that is first
+/// @brief Finds node tree with the label that is first
 /// alphabetically, and reroots the tree at its parent node.
 /// @param[in,out] tree
-/// Parent node of subtree to root.
+/// Tree.
 /// @return Smallest label.
 std::string Partition::FindRootNode(pll_utree_t *tree) {
   std::string minlabel;
@@ -295,12 +295,12 @@ std::string Partition::FindRootNode(pll_utree_t *tree) {
   return minlabel;
 }
 
-/// @brief Finds a node with the given label and sets the current node to the
+/// @brief Finds a node in a tree with the given label and sets the current node to the
 /// parent of it.
 /// @param[in] label
 /// Label of node to find.
 /// @param[in] tree
-/// Node to search at.
+/// Tree.
 /// @param[out] root
 /// Buffer for storing root node.
 /// @return Were we successful in finding the label?
@@ -320,7 +320,7 @@ bool Partition::SetLabelRoot(std::string label, pll_utree_t *tree,
 
 /// @brief Returns the passed tree rooted at the minimum label.
 /// @param[in] tree
-/// An internal node.
+/// Tree.
 /// @return Parent of the alphabetically smallest leaf.
 pll_utree_t *Partition::SetNewickRoot(pll_utree_t *tree) {
   std::string minlabel;
@@ -348,7 +348,7 @@ pll_utree_t *Partition::ToOrderedNewick(pll_utree_t *tree) {
 
 /// @brief Perform a tree traversal and update CLV's, etc.
 /// @param[in] tree
-/// Parent node from which to update CLV's etc.
+/// Tree.
 /// @param[in] is_full
 /// Which type of traversal update to perform. (1 = full) (0 = partial)
 void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
@@ -499,7 +499,7 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 /// at every edge.
 /// NOTE: This optimizes the initial branch twice per traversal.
 /// @param[in] tree
-/// An internal node.
+/// Tree.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
     fatal("Function TreeBranchLengths requires an inner node as parameter");
@@ -565,7 +565,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 /// @param[in] logl
 /// The log likelihood of the ML tree.
 /// @param[in] tree
-/// internal node of topology on which to try NNI moves.
+/// Internal node of topology on which to try NNI moves.
 /// @param[in] good
 /// Hash table for good trees.
 /// @param[in] all
