@@ -36,8 +36,6 @@ TEST_CASE("Partition", "[partition]") {
 
   // Check that good tree is in newton good table.
   REQUIRE(good_.contains("(0,(1,3),2);"));
-
-  std::cout << "DONE WITH TEST 1" << std::endl;
   p_newton.reset();
 }
 
@@ -96,6 +94,7 @@ TEST_CASE("RAxML info", "[RAxMLinfo]") {
   for (unsigned int i = 0; i < 4; i++) {
     REQUIRE(frequencies[i] == p_five->GetPartition()->frequencies[0][i]);
   }
+  p_five.reset();
 }
 TEST_CASE("Copy", "[copy]") {
   auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
@@ -112,6 +111,7 @@ TEST_CASE("Copy", "[copy]") {
   // optimized.
   REQUIRE(fabs(p_five1->FullTraversalLogLikelihood(p_five1->tree_) -
                p_five->FullTraversalLogLikelihood(p_five->tree_)) < 1e-6);
+  p_five.reset();
 }
 
 TEST_CASE("BigExample", "[BigExample]") {
@@ -129,7 +129,7 @@ TEST_CASE("BigExample", "[BigExample]") {
   // Set ML parameter.
   double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
 
-  p_DS1->MakeTables(1.0001, logl, p_DS1->tree_, good_, all_, pool_);
+  p_DS1->MakeTables(1.00001, logl, p_DS1->tree_, good_, all_, pool_);
 
   // Wait until all threads in the pool have executed.
   pool_.stop(true);

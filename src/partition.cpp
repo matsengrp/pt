@@ -545,7 +545,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
     }
   }
   TraversalUpdate(tree, 0);
-  // Reorder the tree (shouldn't affect CLV_Valid status)
+  // Reorder the tree
   tree = ToOrderedNewick(tree);
   return tree;
 }
@@ -571,16 +571,13 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            ctpl::thread_pool &pool) {
   // Update and optimize the ML tree, store its logl for comparison, and add it
   // to the good table.
-  TraversalUpdate(tree, 0);
-  pll_utree_t *clone = pll_utree_clone(tree);
-  clone = ToOrderedNewick(clone);
-  if (!good.contains(ToNewick(clone))) {
-    good.insert(ToNewick(clone), logl);
-    all.insert(ToNewick(clone), 0);
+  tree = ToOrderedNewick(tree);
+  if (!good.contains(ToNewick(tree))) {
+    good.insert(ToNewick(tree), logl);
+    all.insert(ToNewick(tree), 0);
   }
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
-  pll_utree_destroy(clone);
   NNITraverse(tree, logl, cutoff, good, all, pool);
   NNITraverse(tree->back, logl, cutoff, good, all, pool);
 }
@@ -629,7 +626,6 @@ void Partition::PrintTables(bool print_all, TreeTable &good, TreeTable &all) {
 void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
                                double cutoff, TreeTable &good, TreeTable &all,
                                ctpl::thread_pool &pool) {
-  TraversalUpdate(tree, 0);
   // Create a clone of the original tree to perform NNI and reordering on.
   pll_utree_t *clone = pll_utree_clone(tree);
   // Deep copy clv_valid values.
