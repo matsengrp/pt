@@ -114,7 +114,7 @@ TEST_CASE("Copy", "[copy]") {
                p_five->FullTraversalLogLikelihood(p_five->tree_)) < 1e-6);
   p_five.reset();
 }
-
+/*
 TEST_CASE("BigExample", "[BigExample]") {
 
   auto p_DS1 = std::unique_ptr<pt::Partition>(
@@ -139,4 +139,5 @@ TEST_CASE("BigExample", "[BigExample]") {
   p_DS1->PrintTables(0, good_, all_);
   p_DS1.reset();
 }
+*/
 }

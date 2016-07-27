@@ -91,21 +91,6 @@ int cb_partial_traversal(pll_utree_t *node) {
 
   return 1;
 }
-// A callback function for reseting cb_valid values.
-int cb_reset_valid(pll_utree_t *node) {
-  // Reset all clv_valid to 0 (for after NNI).
-  node_info_t *node_info;
-  if (node->next) {
-    node_info = (node_info_t *)(node->data);
-    node_info->clv_valid = 0;
-    node_info = (node_info_t *)node->next->data;
-    node_info->clv_valid = 0;
-    node_info = (node_info_t *)node->next->next->data;
-    node_info->clv_valid = 0;
-  }
-
-  return 1;
-}
 
 // callback function for deep copying clv_valid values after cloning.
 int cb_copy_clv_traversal(pll_utree_t *node) {
@@ -137,6 +122,14 @@ int cb_copy_clv_traversal(pll_utree_t *node) {
   node_info = (node_info_t *)(node->next->next->data);
   node_info->clv_valid = node_valid_2;
 
+  return 1;
+}
+int cb_erase_data(pll_utree_t *tree) {
+  if (tree->data) {
+    free(tree->data);
+    free(tree->next->data);
+    free(tree->next->next->data);
+  }
   return 1;
 }
 

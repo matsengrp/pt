@@ -162,6 +162,7 @@ Partition::~Partition() {
   free(operations_);
   pll_aligned_free(sumtable_);
   pll_partition_destroy(partition_);
+  pll_utree_every(tree_, cb_erase_data);
   pll_utree_destroy(tree_);
 }
 
@@ -413,9 +414,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
 void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            TreeTable &good, TreeTable &all,
                            ctpl::thread_pool &pool) {
-  /// @todo Update
-  // Update and optimize the ML tree, store its logl for comparison, and add it
-  // to the good table.
+  // Order the tree, check if it is in the good table, and add if it is not.
   tree = ToOrderedNewick(tree);
   if (!good.contains(ToNewick(tree))) {
     good.insert(ToNewick(tree), logl);
@@ -495,6 +494,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
       }
     }
   }
+  pll_utree_every(clone, cb_erase_data);
   pll_utree_destroy(clone);
 }
 

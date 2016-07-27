@@ -1,7 +1,6 @@
 #ifndef ORDERED_TREE_HPP_INCLUDED
 #define ORDERED_TREE_HPP_INCLUDED
 
-#include "ordered-tree.hpp"
 #include "partition.hpp"
 #include "pll-utils.hpp"
 
@@ -17,4 +16,4 @@ char *utree_short_newick(pll_utree_t *tree);
 static char *newick_utree_recurse(pll_utree_t *tree);
 }
 
-#endif // ORDERED-TREE_HPP_INCLUDED
+#endif // ORDERED_TREE_HPP_INCLUDED
