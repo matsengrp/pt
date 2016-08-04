@@ -116,28 +116,41 @@ TEST_CASE("Copy", "[copy]") {
 }
 
 TEST_CASE("BigExample", "[BigExample]") {
-
   auto p_DS1 = std::unique_ptr<pt::Partition>(
       new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
                         "test-data/hohna_datasets_fasta/DS1.fasta",
                         "test-data/hohna_datasets_fasta/RAxML_info.DS1"));
+  auto p_DS1_2 = std::unique_ptr<pt::Partition>(
+      new pt::Partition("test-data/hohna_datasets_fasta/RAxML_secondpeak.DS1",
+                        "test-data/hohna_datasets_fasta/DS1.fasta",
+                        "test-data/hohna_datasets_fasta/RAxML_secondinfo.DS1"));
   TreeTable good_;
   TreeTable all_;
   ctpl::thread_pool pool_(6);
   // Optimize initial topology.
   p_DS1->FullBranchOpt(p_DS1->tree_);
-
-  // Set ML parameter.
+  // Set ML parameter. (ML is 6482.13).
+  p_DS1->tree_ = ToOrderedNewick(p_DS1->tree_);
   double logl = p_DS1->FullTraversalLogLikelihood(p_DS1->tree_);
+  // Add to tables.
+  good_.insert(ToNewick(p_DS1->tree_), logl);
+  all_.insert(ToNewick(p_DS1->tree_), 0);
+  // Explore peak.
+  p_DS1->MakeTables(1.000001, logl, p_DS1->tree_, good_, all_, pool_);
 
-  p_DS1->MakeTables(1.00001, logl, p_DS1->tree_, good_, all_, pool_);
-
+  // Repeat for second peak.
+  p_DS1_2->FullBranchOpt(p_DS1_2->tree_);
+  p_DS1_2->tree_ = ToOrderedNewick(p_DS1_2->tree_);
+  good_.insert(ToNewick(p_DS1_2->tree_),
+               p_DS1_2->FullTraversalLogLikelihood(p_DS1_2->tree_));
+  all_.insert(ToNewick(p_DS1_2->tree_), 0);
+  p_DS1_2->MakeTables(1.000001, logl, p_DS1_2->tree_, good_, all_, pool_);
   // Wait until all threads in the pool have executed.
   pool_.stop(true);
 
   // Print good table.
   p_DS1->PrintTables(0, good_, all_);
   p_DS1.reset();
+  p_DS1_2.reset();
 }
-
 }

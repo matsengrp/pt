@@ -416,10 +416,10 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
                            ctpl::thread_pool &pool) {
   // Order the tree, check if it is in the good table, and add if it is not.
   tree = ToOrderedNewick(tree);
-  if (!good.contains(ToNewick(tree))) {
-    good.insert(ToNewick(tree), logl);
-    all.insert(ToNewick(tree), 0);
-  }
+  /* if (!good.contains(ToNewick(tree))) {
+     good.insert(ToNewick(tree), logl);
+     all.insert(ToNewick(tree), 0);
+   }*/
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
   NNITraverse(tree, logl, cutoff, good, all, pool);
