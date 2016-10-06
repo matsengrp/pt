@@ -180,8 +180,13 @@ pll_partition_t* Partition:: CreatePartition(){
 /// @return Newick string.
 std::string Partition::ToNewick(pll_utree_t *tree) {
   char *newick = utree_short_newick(tree);
-  std::string strnewick = (std::string)newick;
-  free(newick);
+
+  std::string strnewick;
+  if (newick) {
+    strnewick = newick;
+    free(newick);
+  }
+
   return strnewick;
 }
 
@@ -189,8 +194,13 @@ std::string Partition::ToNewick(pll_utree_t *tree) {
 /// @return Newick string.
 std::string Partition::ToFullNewick(pll_utree_t *tree) {
   char *newick = pll_utree_export_newick(tree);
-  std::string strnewick = (std::string)newick;
-  free(newick);
+
+  std::string strnewick;
+  if (newick) {
+    strnewick = newick;
+    free(newick);
+  }
+
   return strnewick;
 }
 
