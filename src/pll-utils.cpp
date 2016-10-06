@@ -1,9 +1,10 @@
 #include "pll-utils.hpp"
-#include <search.h>
 #include <cstdarg>
 #include <fstream>
 #include <iomanip>
+#include <map>
 #include <sstream>
+#include <tuple>
 
 /// @file pll-utils.cpp
 /// @brief Utilities for interfacing with libpll.
@@ -125,42 +126,32 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
       (pll_utree_t **)calloc(tip_nodes_count, sizeof(pll_utree_t *));
   pll_utree_query_tipnodes(tree, tipnodes);
 
-  // create a libc hash table of size tip_nodes_count
-  hcreate(tip_nodes_count);
+  std::map<std::string, unsigned int> tip_ids;
 
-  // populate a libc hash table with tree tip labels
-  unsigned int *data =
-      (unsigned int *)malloc(tip_nodes_count * sizeof(unsigned int));
-  unsigned int i;
-  for (i = 0; i < tip_nodes_count; ++i) {
-    data[i] = i;
-    ENTRY entry;
-    entry.key = tipnodes[i]->label;
-    entry.data = (void *)(data + i);
-    hsearch(entry, ENTER);
+  // populate a hash table with tree tip labels
+  for (unsigned int i = 0; i < tip_nodes_count; ++i) {
+    std::string label = tipnodes[i]->label;
+    bool inserted;
+    std::tie(std::ignore, inserted) = tip_ids.emplace(label, i);
+
+    if (!inserted) {
+      fatal("Error inserting label %s into map (probably a duplicate)", label.c_str());
+    }
   }
 
   // find sequences in hash table and link them with the corresponding taxa
-  for (i = 0; i < tip_nodes_count; ++i) {
-    ENTRY query;
-    query.key = headers[i];
-    ENTRY *found = NULL;
+  for (unsigned int i = 0; i < tip_nodes_count; ++i) {
+    std::string header = headers[i];
+    auto iter = tip_ids.find(header);
 
-    found = hsearch(query, FIND);
+    if (iter == tip_ids.end()) {
+      fatal("Sequence with header %s does not appear in the tree", header.c_str());
+    }
 
-    if (!found)
-      fatal("Sequence with header %s does not appear in the tree", headers[i]);
-
-    unsigned int tip_clv_index = *((unsigned int *)(found->data));
-
+    unsigned int tip_clv_index = iter->second;
     pll_set_tip_states(partition, tip_clv_index, pll_map_nt, seqdata[i]);
   }
 
-  // destroy hash table
-  hdestroy();
-
-  // we no longer need these two arrays (keys and values of hash table...
-  free(data);
   free(tipnodes);
 }
 
