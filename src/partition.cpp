@@ -613,6 +613,8 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, 
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
           delete temp;
         });
+
+        std::cout << "work queue size: " << pool.queue_size() << "\n";
       }
     }
   }
