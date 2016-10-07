@@ -57,6 +57,10 @@ public:
     std::unique_lock<std::mutex> lock(this->mutex);
     return this->q.empty();
   }
+  size_t size() {
+    std::unique_lock<std::mutex> lock(this->mutex);
+    return this->q.size();
+  }
 
 private:
   std::queue<T> q;
@@ -78,6 +82,9 @@ public:
 
   // get the number of running threads in the pool
   int size() { return static_cast<int>(this->threads.size()); }
+
+  // get the number of functions in the queue
+  int queue_size() { return static_cast<int>(this->q.size()); }
 
   // number of idle threads
   int n_idle() { return this->nWaiting; }
