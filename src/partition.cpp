@@ -1,4 +1,6 @@
 #include "partition.hpp"
+
+#include <memory>
 #include "pll-utils.hpp"
 
 /// @file partition.cpp
@@ -8,7 +10,43 @@
 
 namespace pt {
 
-/// @brief Constructor for Partition from a tree and an alignment.
+/// @brief Create a Partition object from a tree and an alignment.
+///
+/// This factory function (and private constructor) ensures that
+/// Partition objects are managed via shared pointers. See the
+/// comments in pt::Partition::NNIComputeEdge for details on why.
+///
+/// @param[in] newick_path
+/// Path to a file with a Newick-format tree string.
+/// @param[in] fasta_path
+/// Path to a FASTA-formatted alignment.
+/// @param[in] RAxML_info_path
+/// Path to a RAxML info file.
+std::shared_ptr<Partition> Partition::Create(const std::string &newick_path,
+                                             const std::string &fasta_path,
+                                             const std::string &RAxML_info_path)
+{
+  return std::shared_ptr<Partition>(new Partition(newick_path, fasta_path,
+                                                  RAxML_info_path));
+}
+
+/// @brief Create a Partition object from an existing Partition and a tree.
+///
+/// This factory function (and private constructor) ensures that
+/// Partition objects are managed via shared pointers. See the
+/// comments in pt::Partition::NNIComputeEdge for details on why.
+///
+/// @param[in] obj
+/// Pointer to partition object to copy.
+/// @param[in] tree
+/// Initial topology to use. (For full copy use obj->tree_)
+std::shared_ptr<Partition> Partition::Create(const Partition &obj,
+                                             pll_utree_t *tree)
+{
+  return std::shared_ptr<Partition>(new Partition(obj, tree));
+}
+
+/// @brief Private constructor for Partition from a tree and an alignment.
 /// @param[in] newick_path
 /// Path to a file with a Newick-format tree string.
 /// @param[in] fasta_path
@@ -61,7 +99,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
       ALIGNMENT);
 }
 
-/// @brief Copy Constructor for Partition.
+/// @brief Private copy constructor for Partition.
 /// @param[in] obj
 /// Pointer to partition object to copy.
 /// @param[in] tree
@@ -598,6 +636,11 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, 
   pll_utree_t *clone = pll_utree_clone(tree);
   // Perform first NNI and reordering on first edge.
   clone = NNIUpdate(clone, move_type);
+
+  // Keep track of whether or not we should free the cloned tree at
+  // the end of this function, or if it will be needed later.
+  bool free_clone = true;
+
   std::string label = ToNewick(clone);
   if (all.insert(label, 0)) {
     TraversalUpdate(clone, 1);
@@ -606,19 +649,37 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda, 
     // Compare new likelihood to ML, then decide which table to put in.
     if (lambda_1 > cutoff * lambda) {
       if (good.insert(label, lambda_1)) {
-        // Create routine for good tree and have it MakeTables. Push routine to
-        // pool.
-        pt::Partition *temp = new pt::Partition(*this, clone);
-        pool.push([temp, cutoff, lambda, &good, &all, &pool](int id) {
+        // Don't free the cloned tree at the end of this function.
+        // Instead it will be freed by the function pushed to the
+        // thread pool.
+        free_clone = false;
+
+        // Create routine for good tree and have it MakeTables. Push
+        // routine to pool.
+        //
+        // This Partition object should only be destroyed after all
+        // the jobs it adds to the pool are completed. Here we create
+        // a shared pointer to this Partition to pass to the lambda to
+        // ensure that it still exists when the new Partition inside
+        // the lambda is created. This is only safe if this object is
+        // already owned by a shared pointer, which is why the
+        // constructors are private and object creation is delegated
+        // to factory functions.
+        auto this_shared = shared_from_this();
+        pool.push([this_shared, clone, cutoff, lambda, &good, &all, &pool](int id) {
+          auto temp = pt::Partition::Create(*this_shared, clone);
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
-          delete temp;
+          pll_utree_destroy(clone);
         });
 
         std::cout << "work queue size: " << pool.queue_size() << "\n";
       }
     }
   }
-  pll_utree_destroy(clone);
+
+  if (free_clone) {
+    pll_utree_destroy(clone);
+  }
 }
 
 /// @brief Traverse the tree and perform NNI moves at each internal edge.

@@ -2,6 +2,8 @@
 #define PT_PARTITION_
 
 #include <iostream>
+#include <memory>
+
 #include "ctpl_stl.h"
 #include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
@@ -14,7 +16,7 @@ namespace pt {
 typedef cuckoohash_map<std::string, double> TreeTable;
 
 /// @brief The representation of a tree, alignment, and all associated data.
-class Partition {
+class Partition : public std::enable_shared_from_this<Partition> {
  private:
   pll_partition_t *partition_;
   unsigned int sites_count_;
@@ -27,16 +29,23 @@ class Partition {
   unsigned int *params_indices_;
   double *sumtable_;
 
+  Partition(std::string newick_path, std::string fasta_path,
+            std::string RAxML_info_path);
+  Partition(const Partition &obj, pll_utree_t *tree);
+
  public:
+  static std::shared_ptr<Partition> Create(const std::string &newick_path,
+                                           const std::string &fasta_path,
+                                           const std::string &RAxML_info_path);
+  static std::shared_ptr<Partition> Create(const Partition &obj,
+                                           pll_utree_t *tree);
+
   // Stores probability matrices, scalers, etc.
   pll_utree_t *tree_;
   pll_partition_t* GetPartition() {return partition_ ; }
   const pll_partition_t *GetPartition() const { return partition_ ; }
   std::string fasta_path_;
   std::string info_path_;
-  Partition(std::string newick_path, std::string fasta_path,
-            std::string RAxML_info_path);
-  Partition(const Partition &obj, pll_utree_t *tree);
   virtual ~Partition();
 
   unsigned int tip_nodes_count() { return tip_nodes_count_; };
