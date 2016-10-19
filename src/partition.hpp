@@ -4,8 +4,9 @@
 #include <iostream>
 #include <memory>
 
+#include <cuckoohash_map.hh>
+
 #include "ctpl_stl.h"
-#include "libcuckoo/src/cuckoohash_map.hh"
 #include "pll-utils.hpp"
 
 /// @file partition.hpp
