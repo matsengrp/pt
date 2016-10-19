@@ -7,4 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pg -Wall -Wextra -Wshadow -pedantic")
 
+enable_testing()
+
 add_subdirectory(src)
+add_subdirectory(test)
