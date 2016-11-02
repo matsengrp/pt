@@ -7,9 +7,9 @@
 #include "partition.hpp"
 namespace pt {
 TEST_CASE("Partition", "[partition]") {
-  auto p_newton = std::unique_ptr<pt::Partition>(new pt::Partition(
-      "test-data/tiny/newton.tre", "test-data/tiny/newton.fasta",
-      "test-data/tiny/RAxML_info.newton"));
+  auto p_newton = pt::Partition::Create("test-data/tiny/newton.tre",
+                                        "test-data/tiny/newton.fasta",
+                                        "test-data/tiny/RAxML_info.newton");
   TreeTable good_;
   TreeTable all_;
   ctpl::thread_pool pool_(2);
@@ -41,10 +41,9 @@ TEST_CASE("Partition", "[partition]") {
 }
 
 TEST_CASE("MultiThreading", "[multithreading]") {
-
-  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
-      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
-      "test-data/five/RAxML_info.five"));
+  auto p_five = pt::Partition::Create("test-data/five/RAxML_bestTree.five",
+                                      "test-data/five/five.fasta",
+                                      "test-data/five/RAxML_info.five");
   TreeTable good_;
   TreeTable all_;
   ctpl::thread_pool pool_(10);
@@ -79,9 +78,9 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   p_five.reset();
 }
 TEST_CASE("RAxML info", "[RAxMLinfo]") {
-  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
-      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
-      "test-data/five/RAxML_info.five"));
+  auto p_five = pt::Partition::Create("test-data/five/RAxML_bestTree.five",
+                                      "test-data/five/five.fasta",
+                                      "test-data/five/RAxML_info.five");
   // Values from RAxML info file.
   double rates[6] = {1.420268, 5.241274, 0.870287,
                      0.348533, 7.363575, 1.000000};
@@ -98,13 +97,12 @@ TEST_CASE("RAxML info", "[RAxMLinfo]") {
   p_five.reset();
 }
 TEST_CASE("Copy", "[copy]") {
-  auto p_five = std::unique_ptr<pt::Partition>(new pt::Partition(
-      "test-data/five/RAxML_bestTree.five", "test-data/five/five.fasta",
-      "test-data/five/RAxML_info.five"));
+  auto p_five = pt::Partition::Create("test-data/five/RAxML_bestTree.five",
+                                      "test-data/five/five.fasta",
+                                      "test-data/five/RAxML_info.five");
   // Copy using the copy constructor, with above partition and its root
   // tree as args.
-  auto p_five1 =
-      std::unique_ptr<pt::Partition>(new pt::Partition(*p_five, p_five->tree_));
+  auto p_five1 = pt::Partition::Create(*p_five, p_five->tree_);
   // Fully optimize both topologies.
   p_five1->FullBranchOpt(p_five1->tree_);
   p_five->FullBranchOpt(p_five->tree_);
@@ -116,14 +114,12 @@ TEST_CASE("Copy", "[copy]") {
 }
 
 TEST_CASE("BigExample", "[BigExample]") {
-  auto p_DS1 = std::unique_ptr<pt::Partition>(
-      new pt::Partition("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
-                        "test-data/hohna_datasets_fasta/DS1.fasta",
-                        "test-data/hohna_datasets_fasta/RAxML_info.DS1"));
-  auto p_DS1_2 = std::unique_ptr<pt::Partition>(
-      new pt::Partition("test-data/hohna_datasets_fasta/RAxML_secondpeak.DS1",
-                        "test-data/hohna_datasets_fasta/DS1.fasta",
-                        "test-data/hohna_datasets_fasta/RAxML_secondinfo.DS1"));
+  auto p_DS1 = pt::Partition::Create("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
+                                     "test-data/hohna_datasets_fasta/DS1.fasta",
+                                     "test-data/hohna_datasets_fasta/RAxML_info.DS1");
+  auto p_DS1_2 = pt::Partition::Create("test-data/hohna_datasets_fasta/RAxML_secondpeak.DS1",
+                                       "test-data/hohna_datasets_fasta/DS1.fasta",
+                                       "test-data/hohna_datasets_fasta/RAxML_secondinfo.DS1");
   TreeTable good_;
   TreeTable all_;
   ctpl::thread_pool pool_(6);

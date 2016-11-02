@@ -78,8 +78,13 @@ char *utree_short_newick(pll_utree_t *tree) {
 /// @return Newick string.
 std::string ToNewick(pll_utree_t *tree) {
   char *newick = utree_short_newick(tree);
-  std::string strnewick = (std::string)newick;
-  free(newick);
+
+  std::string strnewick;
+  if (newick) {
+    strnewick = newick;
+    free(newick);
+  }
+
   return strnewick;
 }
 
@@ -87,8 +92,13 @@ std::string ToNewick(pll_utree_t *tree) {
 /// @return Newick std::string.
 std::string ToFullNewick(pll_utree_t *tree) {
   char *newick = pll_utree_export_newick(tree);
-  std::string strnewick = (std::string)newick;
-  free(newick);
+
+  std::string strnewick;
+  if (newick) {
+    strnewick = newick;
+    free(newick);
+  }
+
   return strnewick;
 }
 

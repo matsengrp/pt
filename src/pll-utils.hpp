@@ -1,8 +1,10 @@
 #ifndef PT_PLL_UTILS_
 #define PT_PLL_UTILS_
-#include <pll.h>
+
 #include <string>
 #include <vector>
+
+#include <libpll/pll.h>
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.
