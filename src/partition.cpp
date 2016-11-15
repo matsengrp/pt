@@ -302,7 +302,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   double d1; // First derivative.
   double d2; // Second derivative.
   for (unsigned int i = 0; i < MAX_ITER; ++i) {
-    double opt_logl = pll_compute_likelihood_derivatives(
+    pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
 
@@ -329,7 +329,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 
     if (len < 0) {
       len = EPSILON;
-      double opt_logl = pll_compute_likelihood_derivatives(
+      pll_compute_likelihood_derivatives(
           partition_, parent->scaler_index, child->scaler_index, len,
           params_indices_, sumtable_, &d1, &d2);
       // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
