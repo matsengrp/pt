@@ -149,4 +149,41 @@ TEST_CASE("BigExample", "[BigExample]") {
   p_DS1.reset();
   p_DS1_2.reset();
 }
+
+TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
+  auto p_five = pt::Partition::Create("test-data/five/RAxML_bestTree.five",
+                                      "test-data/five/five.fasta",
+                                      "test-data/five/RAxML_info.five");
+
+  // The original length of the edge pointed to by p_five->tree_ is
+  // approximately 0.0302113. Set it to a new value so we have
+  // something to optimize.
+  p_five->tree_->length = 0.1;
+  p_five->tree_->back->length = 0.1;
+
+  // Perform the first traversal of the tree. Even though we pass
+  // is_full = false here, we'll get a full traversal since none of
+  // the nodes have node_info data associated with them yet.
+  p_five->TraversalUpdate(p_five->tree_, false);
+
+  // Optimize the current branch.
+  double new_length = p_five->OptimizeCurrentBranch(p_five->tree_);
+
+  REQUIRE(new_length == Approx(0.0302113).epsilon(1e-3));
+
+  // Compute the new log-likelihood of the tree as-is.
+  double lnl_as_is = p_five->LogLikelihood(p_five->tree_);
+
+  // Recompute the log-likelihood of the tree with a partial traversal.
+  p_five->TraversalUpdate(p_five->tree_, false);
+  double lnl_partial = p_five->LogLikelihood(p_five->tree_);
+
+  // Recompute the log-likelihood of the tree with a full traversal.
+  p_five->TraversalUpdate(p_five->tree_, true);
+  double lnl_full = p_five->LogLikelihood(p_five->tree_);
+
+  REQUIRE(lnl_partial == Approx(lnl_full));
+  REQUIRE(lnl_as_is == Approx(lnl_full)); // is this true?
 }
+
+} // namespace pt
