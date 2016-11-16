@@ -53,6 +53,8 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   // Set ML parameter.
   double logl = p_five->FullTraversalLogLikelihood(p_five->tree_);
 
+  REQUIRE(logl == Approx(-3737.47));
+
   // Good trees are trees with a log likelihood of at least -3820 (ML is
   // -3737.47).
   p_five->MakeTables(1.022081783, logl, p_five->tree_, good_, all_, pool_);
