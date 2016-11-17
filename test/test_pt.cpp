@@ -185,7 +185,9 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   double lnl_full = p_five->LogLikelihood(p_five->tree_);
 
   REQUIRE(lnl_partial == Approx(lnl_full));
-  REQUIRE(lnl_as_is == Approx(lnl_full)); // is this true?
+
+  // This isn't true -- a traversal after optimization is required.
+  //REQUIRE(lnl_as_is == Approx(lnl_full));
 }
 
 } // namespace pt
