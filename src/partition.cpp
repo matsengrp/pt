@@ -299,9 +299,11 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
                       params_indices_, sumtable_);
 
   double len = tree->length;
-  double d1; // First derivative.
-  double d2; // Second derivative.
+
   for (unsigned int i = 0; i < MAX_ITER; ++i) {
+    double d1; // First derivative.
+    double d2; // Second derivative.
+
     pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
         params_indices_, sumtable_, &d1, &d2);
