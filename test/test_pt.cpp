@@ -40,6 +40,21 @@ TEST_CASE("Partition", "[partition]") {
   p_newton.reset();
 }
 
+std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
+{
+  std::map<std::string, double> tree_lnls;
+
+  std::ifstream file(filename);
+  std::string line;
+
+  while (std::getline(file, line)) {
+    std::vector<std::string> tokens = ssplit(line, '\t');
+    tree_lnls[tokens[0]] = std::stod(tokens[1]);
+  }
+
+  return tree_lnls;
+}
+
 TEST_CASE("MultiThreading", "[multithreading]") {
   auto p_five = pt::Partition::Create("test-data/five/RAxML_bestTree.five",
                                       "test-data/five/five.fasta",
@@ -76,6 +91,22 @@ TEST_CASE("MultiThreading", "[multithreading]") {
                          "92RW008.AB253421,Ref.A1.UG.92.92UG037.AB253429),Ref."
                          "A2.CM.01.01CM_1445MV.GU201516),Ref.A2.CD.97."
                          "97CDKTB48.AF286238);"));
+
+  // Read in known good trees and their associated RAxML log-likelihoods.
+  // See test/test-data/five/README.md for details on this file.
+  std::map<std::string, double> raxml_lnls =
+      ReadRaxmlTest("test-data/five/good_trees.five.raxml");
+
+  REQUIRE(raxml_lnls.size() == good_.size());
+
+  for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
+    std::string tree = iter->first;
+    double raxml_lnl = iter->second;
+    double pt_lnl = good_.find(tree);
+
+    // Test that pt's log-likelihoods are close to RAxML's.
+    REQUIRE(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
+  }
 
   p_five.reset();
 }
