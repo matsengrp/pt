@@ -99,6 +99,9 @@ TEST_CASE("MultiThreading", "[multithreading]") {
 
   REQUIRE(raxml_lnls.size() == good_.size());
 
+  std::vector<std::pair<std::string, double>> raxml_pairs;
+  std::vector<std::pair<std::string, double>> pt_pairs;
+
   for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
     std::string tree = iter->first;
     double raxml_lnl = iter->second;
@@ -106,6 +109,30 @@ TEST_CASE("MultiThreading", "[multithreading]") {
 
     // Test that pt's log-likelihoods are close to RAxML's.
     REQUIRE(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
+
+    // Store the (tree, lnl) pairs for comparing relative order below.
+    raxml_pairs.push_back(std::make_pair(tree, raxml_lnl));
+    pt_pairs.push_back(std::make_pair(tree, pt_lnl));
+  }
+
+  // Sort the pt and RAxML (tree, lnl) pairs by log-likelihood.
+  auto pair_cmp = [](const std::pair<std::string, double>& lhs,
+                     const std::pair<std::string, double>& rhs) {
+    return lhs.second < rhs.second;
+  };
+
+  std::sort(raxml_pairs.begin(), raxml_pairs.end(), pair_cmp);
+  std::sort(pt_pairs.begin(), pt_pairs.end(), pair_cmp);
+
+  // Test that the tree ordering is the same for pt and RAxML.
+  for (size_t i = 0; i < raxml_pairs.size(); ++i) {
+    REQUIRE(raxml_pairs[i].first == pt_pairs[i].first);
+
+#if 0
+    std::cout << raxml_pairs[i].first << " : "
+              << raxml_pairs[i].second << " : "
+              << pt_pairs[i].second << "\n";
+#endif
   }
 
   p_five.reset();
