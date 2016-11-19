@@ -229,7 +229,8 @@ pll_partition_t *Partition::CreatePartition() {
 /// Tree.
 /// @param[in] is_full
 /// Which type of traversal update to perform. (1 = full) (0 = partial)
-void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
+/// @return Number of nodes traversed.
+unsigned int Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
   if (is_full) {
@@ -262,6 +263,8 @@ void Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
   // will be carried out sequentially starting from operation 0 towrds
   // ops_count-1.
   pll_update_partials(partition_, operations_, ops_count);
+
+  return traversal_size;
 }
 
 /// @brief Just calculate log likelihood.
