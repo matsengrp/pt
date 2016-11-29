@@ -215,32 +215,41 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
                                       "test-data/five/five.fasta",
                                       "test-data/five/RAxML_info.five");
 
-  // The original length of the edge pointed to by p_five->tree_ is
-  // approximately 0.0302113. Set it to a new value so we have
-  // something to optimize.
-  p_five->tree_->length = 0.1;
-  p_five->tree_->back->length = 0.1;
+  // As is, p_five->tree_ points at a pendant edge. We want to test
+  // partial traversal after updating an internal edge instead, so we
+  // traverse to one.
+  pll_utree_t* tree = p_five->tree_->next;
+
+  REQUIRE(tree->next);
+  REQUIRE(tree->back->next);
+  REQUIRE(tree->length == tree->back->length);
+
+  // Store the original length of the edge, then set it to a new value
+  // so we have something to optimize.
+  double original_length = tree->length;
+  tree->length = 0.1;
+  tree->back->length = 0.1;
 
   // Perform the first traversal of the tree. Even though we pass
   // is_full = false here, we'll get a full traversal since none of
   // the nodes have node_info data associated with them yet.
-  p_five->TraversalUpdate(p_five->tree_, false);
+  p_five->TraversalUpdate(tree, false);
 
-  // Optimize the current branch.
-  double new_length = p_five->OptimizeCurrentBranch(p_five->tree_);
-
-  REQUIRE(new_length == Approx(0.0302113).epsilon(1e-3));
+  // Optimize the current branch and test that it's close to the original value.
+  double new_length = p_five->OptimizeCurrentBranch(tree);
+  REQUIRE(new_length == Approx(original_length).epsilon(1e-4));
 
   // Compute the new log-likelihood of the tree as-is.
-  double lnl_as_is = p_five->LogLikelihood(p_five->tree_);
+  double lnl_as_is = p_five->LogLikelihood(tree);
 
   // Recompute the log-likelihood of the tree with a partial traversal.
-  p_five->TraversalUpdate(p_five->tree_, false);
-  double lnl_partial = p_five->LogLikelihood(p_five->tree_);
+  p_five->TraversalUpdate(tree, false);
+  double lnl_partial = p_five->LogLikelihood(tree);
 
   // Recompute the log-likelihood of the tree with a full traversal.
-  p_five->TraversalUpdate(p_five->tree_, true);
-  double lnl_full = p_five->LogLikelihood(p_five->tree_);
+  p_five->TraversalUpdate(tree, true);
+  double lnl_full = p_five->LogLikelihood(tree);
+  REQUIRE(lnl_full == Approx(-3737.47));
 
   REQUIRE(lnl_partial == Approx(lnl_full));
 
