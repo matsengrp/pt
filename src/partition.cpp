@@ -349,18 +349,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   parent->length = len;
   child->length = len;
 
-  // There is an issue here, I don't know which ones need to be set to 0.
-  node_info_t *node_info;
-  node_info = (node_info_t *)parent->data;
-  if (node_info) {
-    node_info->clv_valid = 0;
-  }
-  if (child->next) {
-    node_info = (node_info_t *)child->data;
-    if (node_info) {
-      node_info->clv_valid = 0;
-    }
-  }
+  // Update this branch's probability matrix now that the branch
+  // length has changed. No CLVs need to be invalidated.
+  pll_update_prob_matrices(partition_, params_indices_, &(parent->pmatrix_index),
+                           &(parent->length), 1);
 
   return len;
 }

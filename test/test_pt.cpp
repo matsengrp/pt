@@ -249,12 +249,10 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   // Recompute the log-likelihood of the tree with a full traversal.
   p_five->TraversalUpdate(tree, true);
   double lnl_full = p_five->LogLikelihood(tree);
+
   REQUIRE(lnl_full == Approx(-3737.47));
-
+  REQUIRE(lnl_as_is == Approx(lnl_full));
   REQUIRE(lnl_partial == Approx(lnl_full));
-
-  // This isn't true -- a traversal after optimization is required.
-  //REQUIRE(lnl_as_is == Approx(lnl_full));
 }
 
 } // namespace pt
