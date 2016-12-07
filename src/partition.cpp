@@ -571,8 +571,8 @@ void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
   if (!tree->back->next) {
     NNITraverse(tree->next, lambda, cutoff, good, all, pool);
   }
-  NNIComputeEdge(tree, 1, lambda, cutoff, good, all, pool);
-  NNIComputeEdge(tree, 2, lambda, cutoff, good, all, pool);
+  NNIComputeEdge(tree, PLL_UTREE_MOVE_NNI_LEFT, lambda, cutoff, good, all, pool);
+  NNIComputeEdge(tree, PLL_UTREE_MOVE_NNI_RIGHT, lambda, cutoff, good, all, pool);
   NNITraverse(tree->next->back, lambda, cutoff, good, all, pool);
   NNITraverse(tree->next->next->back, lambda, cutoff, good, all, pool);
 }
