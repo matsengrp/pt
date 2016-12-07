@@ -274,7 +274,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
   double logl = pll_compute_edge_loglikelihood(
       partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
       tree->back->scaler_index, tree->pmatrix_index, params_indices_,
-      NULL); // Can supply a persite_lnl parameter as last argument.
+      nullptr); // Can supply a persite_lnl parameter as last argument.
 
   return logl;
 }
@@ -414,7 +414,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   // Orient CLV's
   TraversalUpdate(tree, false);
-  pll_utree_nni(tree, move_type, 0);
+  pll_utree_nni(tree, move_type, nullptr);
   // Recalculate CLV's after NNI
   node_info_t *node_info;
   node_info = (node_info_t *)tree->data;
