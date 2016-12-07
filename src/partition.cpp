@@ -282,7 +282,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  TraversalUpdate(tree, 0);
+  TraversalUpdate(tree, false);
   return LogLikelihood(tree);
 }
 
@@ -362,10 +362,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-    TraversalUpdate(tree->back, 0);
+    TraversalUpdate(tree->back, false);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, 0);
+    TraversalUpdate(tree, false);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
@@ -413,7 +413,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 ///@return Ordered new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   // Orient CLV's
-  TraversalUpdate(tree, 0);
+  TraversalUpdate(tree, false);
   pll_utree_nni(tree, move_type, 0);
   // Recalculate CLV's after NNI
   node_info_t *node_info;
@@ -427,7 +427,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
       node_info->clv_valid = 0;
     }
   }
-  TraversalUpdate(tree, 0);
+  TraversalUpdate(tree, false);
   // Reorder the tree
   tree = ToOrderedNewick(tree);
   return tree;
