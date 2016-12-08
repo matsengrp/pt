@@ -60,20 +60,20 @@ private:
     return (tip_nodes_count() + inner_nodes_count());
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
-  pll_partition_t *CreatePartition();
   unsigned int TraversalUpdate(pll_utree_t *tree, bool is_full);
   double LogLikelihood(pll_utree_t *tree);
   double FullTraversalLogLikelihood(pll_utree_t *tree);
   double OptimizeCurrentBranch(pll_utree_t *tree);
-  void TreeBranchLengthsAux(pll_utree_t *tree);
-  void TreeBranchLengths(pll_utree_t *tree);
   void FullBranchOpt(pll_utree_t *tree);
-  pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void QueueMakeTables(double cutoff, double logl, pll_utree_t *tree,
                        TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
   void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
 
  private:
+  pll_partition_t *CreatePartition();
+  void TreeBranchLengthsAux(pll_utree_t *tree);
+  void TreeBranchLengths(pll_utree_t *tree);
+  pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
 };
