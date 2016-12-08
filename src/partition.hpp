@@ -69,9 +69,13 @@ private:
   void TreeBranchLengths(pll_utree_t *tree);
   void FullBranchOpt(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
+  void QueueMakeTables(double cutoff, double logl, pll_utree_t *tree,
+                       TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
+  void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
+
+ private:
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
-  void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
 };
 }
 

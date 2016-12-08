@@ -433,6 +433,25 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   return tree;
 }
 
+/// @brief Add a MakeTables job to a thread pool work queue.
+///
+/// The caller guarantees that the arguments passed by pointer or
+/// reference will continue to exist until all threads are completed.
+/// See Partition::MakeTables for argument descriptions.
+///
+/// TODO: At time of writing, calls to MakeTables are made using the
+/// tree_ member variable. As such the need to pass in a tree here
+/// could likely be eliminated.
+void Partition::QueueMakeTables(double cutoff, double logl, pll_utree_t *tree,
+                                TreeTable &good, TreeTable &all,
+                                ctpl::thread_pool &pool)
+{
+  auto this_shared = shared_from_this();
+  pool.push([this_shared, cutoff, logl, tree, &good, &all, &pool](int) {
+      this_shared->MakeTables(cutoff, logl, tree, good, all, pool);
+    });
+}
+
 ///@brief Perform every possible NNI move from the current state, and sort them
 /// into good and all tables.
 /// NOTE: This function assumes that the current topology is the ML tree.

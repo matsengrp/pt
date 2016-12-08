@@ -29,7 +29,7 @@ TEST_CASE("Partition", "[partition]") {
   p_newton->FullBranchOpt(p_newton->tree_);
   logl = p_newton->FullTraversalLogLikelihood(p_newton->tree_);
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.
-  p_newton->MakeTables(4, logl, p_newton->tree_, good_, all_, pool_);
+  p_newton->QueueMakeTables(4, logl, p_newton->tree_, good_, all_, pool_);
 
   pool_.stop(true);
   // Print All Tables
@@ -72,7 +72,7 @@ TEST_CASE("MultiThreading", "[multithreading]") {
 
   // Good trees are trees with a log likelihood of at least -3820 (ML is
   // -3737.47).
-  p_five->MakeTables(1.022081783, logl, p_five->tree_, good_, all_, pool_);
+  p_five->QueueMakeTables(1.022081783, logl, p_five->tree_, good_, all_, pool_);
 
   // Wait until all threads in the pool have executed.
   pool_.stop(true);
@@ -192,7 +192,7 @@ TEST_CASE("BigExample", "[BigExample]") {
   good_.insert(ToNewick(p_DS1->tree_), logl);
   all_.insert(ToNewick(p_DS1->tree_), 0);
   // Explore peak.
-  p_DS1->MakeTables(1.000001, logl, p_DS1->tree_, good_, all_, pool_);
+  p_DS1->QueueMakeTables(1.000001, logl, p_DS1->tree_, good_, all_, pool_);
 
   // Repeat for second peak.
   p_DS1_2->FullBranchOpt(p_DS1_2->tree_);
@@ -200,7 +200,7 @@ TEST_CASE("BigExample", "[BigExample]") {
   good_.insert(ToNewick(p_DS1_2->tree_),
                p_DS1_2->FullTraversalLogLikelihood(p_DS1_2->tree_));
   all_.insert(ToNewick(p_DS1_2->tree_), 0);
-  p_DS1_2->MakeTables(1.000001, logl, p_DS1_2->tree_, good_, all_, pool_);
+  p_DS1_2->QueueMakeTables(1.000001, logl, p_DS1_2->tree_, good_, all_, pool_);
   // Wait until all threads in the pool have executed.
   pool_.stop(true);
 
