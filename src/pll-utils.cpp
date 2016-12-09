@@ -25,9 +25,6 @@ void fatal(const char *format, ...) {
   exit(EXIT_FAILURE);
 }
 
-// A callback function for performing a full traversal.
-int cb_full_traversal(pll_utree_t *node) { return 1; }
-
 // A callback function for testing if a tree has nonzero branch lengths.
 int cb_branch_healthy(pll_utree_t *tree) {
   if (!tree->length)
@@ -48,8 +45,8 @@ bool TreeHealthy(pll_utree_t *tree) {
   return pll_utree_every(tree, cb_branch_healthy);
 }
 
-// a callback function for performing a partial traversal
-int cb_partial_traversal(pll_utree_t *node) {
+// A callback function for performing full and partial traversals.
+int cb_traversal(pll_utree_t *node, TraversalType type) {
   node_info_t *node_info;
 
   /* if we don't want tips in the traversal we must return 0 here. For now,
@@ -79,10 +76,12 @@ int cb_partial_traversal(pll_utree_t *node) {
 
     return 1;
   }
-  /* if the data element was already there and the CLV on this direction is
-     set, i.e. the CLV is valid, we instruct the traversal routine not to
-     traverse the subtree rooted in this node/direction by returning 0 */
-  if (node_info->clv_valid)
+
+  /* if we want a partial traversal, the data element was already
+     there, and the CLV on this direction is set, i.e. the CLV is
+     valid, we instruct the traversal routine not to traverse the
+     subtree rooted in this node/direction by returning 0 */
+  if (node_info->clv_valid && type == TraversalType::PARTIAL)
     return 0;
 
   /* otherwise, set orientation on selected direction */
@@ -96,6 +95,18 @@ int cb_partial_traversal(pll_utree_t *node) {
   node_info->clv_valid = 0;
 
   return 1;
+}
+
+// A callback function for performing a full traversal.
+int cb_full_traversal(pll_utree_t *node)
+{
+  return cb_traversal(node, TraversalType::FULL);
+}
+
+// A callback function for performing a partial traversal.
+int cb_partial_traversal(pll_utree_t *node)
+{
+  return cb_traversal(node, TraversalType::PARTIAL);
 }
 
 // callback function for deep copying clv_valid values after cloning.

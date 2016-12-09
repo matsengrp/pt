@@ -235,7 +235,7 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   // Perform the first traversal of the tree. Even though we pass
   // is_full = false here, we'll get a full traversal since none of
   // the nodes have node_info data associated with them yet.
-  traversal_size = p_five->TraversalUpdate(tree, false);
+  traversal_size = p_five->TraversalUpdate(tree, TraversalType::PARTIAL);
   REQUIRE(traversal_size == p_five->nodes_count());
 
   // Optimize the current branch and test that it's close to the original value.
@@ -246,13 +246,13 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   double lnl_as_is = p_five->LogLikelihood(tree);
 
   // Recompute the log-likelihood of the tree with a partial traversal.
-  traversal_size = p_five->TraversalUpdate(tree, false);
+  traversal_size = p_five->TraversalUpdate(tree, TraversalType::PARTIAL);
   REQUIRE(traversal_size == 0);
 
   double lnl_partial = p_five->LogLikelihood(tree);
 
   // Recompute the log-likelihood of the tree with a full traversal.
-  traversal_size = p_five->TraversalUpdate(tree, true);
+  traversal_size = p_five->TraversalUpdate(tree, TraversalType::FULL);
   REQUIRE(traversal_size == p_five->nodes_count());
 
   double lnl_full = p_five->LogLikelihood(tree);

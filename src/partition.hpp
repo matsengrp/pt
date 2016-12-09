@@ -52,7 +52,7 @@ private:
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
 
-  unsigned int TraversalUpdate(pll_utree_t *tree, bool is_full);
+  unsigned int TraversalUpdate(pll_utree_t *tree, TraversalType type);
   double LogLikelihood(pll_utree_t *tree);
   double FullTraversalLogLikelihood(pll_utree_t *tree);
   double OptimizeCurrentBranch(pll_utree_t *tree);

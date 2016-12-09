@@ -1,6 +1,7 @@
 #include "partition.hpp"
 
 #include <memory>
+#include <stdexcept>
 
 #include "ordered-tree.hpp"
 #include "pll-utils.hpp"
@@ -230,19 +231,21 @@ pll_partition_t *Partition::CreatePartition() {
 /// @param[in] is_full
 /// Which type of traversal update to perform. (1 = full) (0 = partial)
 /// @return Number of nodes traversed.
-unsigned int Partition::TraversalUpdate(pll_utree_t *tree, bool is_full) {
+unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
-  if (is_full) {
+  if (type == TraversalType::FULL) {
     if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
                             &traversal_size)) {
       fatal("Function pll_utree_traverse() requires inner nodes as parameters");
     }
-  } else {
+  } else if (type == TraversalType::PARTIAL) {
     if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_,
                             &traversal_size)) {
       fatal("Function pll_utree_traverse() requires inner nodes as parameters");
     }
+  } else {
+    throw std::invalid_argument("Invalid traversal type");
   }
 
   // Given the computed traversal descriptor, generate the operations
@@ -282,7 +285,7 @@ double Partition::LogLikelihood(pll_utree_t *tree) {
 /// @brief Make a traversal at a node and return the log likelihood.
 /// @return Log likelihood.
 double Partition::FullTraversalLogLikelihood(pll_utree_t *tree) {
-  TraversalUpdate(tree, false);
+  TraversalUpdate(tree, TraversalType::FULL);
   return LogLikelihood(tree);
 }
 
@@ -362,10 +365,10 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 /// Child node from which to optimize the branch length and continue recursion.
 void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
   if (!tree->next) {
-    TraversalUpdate(tree->back, false);
+    TraversalUpdate(tree->back, TraversalType::PARTIAL);
     OptimizeCurrentBranch(tree->back);
   } else {
-    TraversalUpdate(tree, false);
+    TraversalUpdate(tree, TraversalType::PARTIAL);
     OptimizeCurrentBranch(tree);
     TreeBranchLengthsAux(tree->next->back);
     TreeBranchLengthsAux(tree->next->next->back);
@@ -413,7 +416,7 @@ void Partition::FullBranchOpt(pll_utree_t *tree) {
 ///@return Ordered new topology.
 pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
   // Orient CLV's
-  TraversalUpdate(tree, false);
+  TraversalUpdate(tree, TraversalType::PARTIAL);
   pll_utree_nni(tree, move_type, nullptr);
   // Recalculate CLV's after NNI
   node_info_t *node_info;
@@ -427,7 +430,7 @@ pll_utree_t *Partition::NNIUpdate(pll_utree_t *tree, int move_type) {
       node_info->clv_valid = 0;
     }
   }
-  TraversalUpdate(tree, false);
+  TraversalUpdate(tree, TraversalType::PARTIAL);
   // Reorder the tree
   tree = ToOrderedNewick(tree);
   return tree;
