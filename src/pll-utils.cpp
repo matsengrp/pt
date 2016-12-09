@@ -163,9 +163,9 @@ int cb_erase_data(pll_utree_t *tree) {
 /// strings that will need to be freed.
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
                         char ***headers_out, char ***seqdata_out) {
-  pll_fasta_t *fp = pll_fasta_open(&path[0], pll_map_fasta);
+  pll_fasta_t *fp = pll_fasta_open(path.c_str(), pll_map_fasta);
   if (!fp)
-    fatal("Error opening file %s", &path[0]);
+    fatal("Error opening file %s", path.c_str());
 
   char *seq = NULL;
   char *hdr = NULL;
@@ -197,7 +197,7 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
 
   // did we stop reading the file because we reached EOF?
   if (pll_errno != PLL_ERROR_FILE_EOF)
-    fatal("Error while reading file %s", &path[0]);
+    fatal("Error while reading file %s", path.c_str());
 
   // close FASTA file
   pll_fasta_close(fp);

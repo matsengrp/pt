@@ -60,7 +60,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
                      std::string RAxML_info_path) {
   // Parse the unrooted binary tree in newick format, and store the number of
   // tip nodes in tip_nodes_count.
-  tree_ = pll_utree_parse_newick(&newick_path[0], &tip_nodes_count_);
+  tree_ = pll_utree_parse_newick(newick_path.c_str(), &tip_nodes_count_);
   if (!tree_) {
     std::cout << "Parsing failure: " << newick_path
               << " must be an unrooted binary tree.\n";
