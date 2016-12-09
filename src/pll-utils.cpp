@@ -295,7 +295,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   std::string sstr = contents.substr(pos1 + 13, pos2 - pos1 - 13);
 
   std::vector<std::string> freqvector = ssplit(sstr, ' ');
-  double frequencies[freqvector.size()];
+  std::vector<double> frequencies(freqvector.size());
 
   for (unsigned int i = 0; i < freqvector.size(); i++)
     frequencies[i] = std::stod(freqvector.at(i));
@@ -305,7 +305,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   pos2 = contents.find('\n', pos1);
   sstr = contents.substr(pos1 + 19, pos2 - pos1 - 19);
   std::vector<std::string> ratevector = ssplit(sstr, ' ');
-  double subst_params[ratevector.size()];
+  std::vector<double> subst_params(ratevector.size());
 
   for (unsigned int i = 0; i < ratevector.size(); i++)
     subst_params[i] = std::stod(ratevector.at(i));
@@ -313,7 +313,7 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
     fatal("Wrong number of rate values.");
 
   // we'll use RATE_CATS rate categories, and currently initialize them to 0
-  double rate_cats[RATE_CATS] = {0};
+  std::vector<double> rate_cats(RATE_CATS, 0.0);
 
   // initialize the alpha value
   pos1 = contents.find("alpha[0]: ");
@@ -321,17 +321,17 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
   sstr = contents.substr(pos1 + 10, pos2 - pos1 - 10);
   double alpha = stod(sstr);
 
-  pll_compute_gamma_cats(alpha, RATE_CATS, rate_cats);
+  pll_compute_gamma_cats(alpha, rate_cats.size(), rate_cats.data());
 
   file.close();
 
   // set frequencies at model with index 0 (we currently have only one model)
-  pll_set_frequencies(partition, 0, frequencies);
+  pll_set_frequencies(partition, 0, frequencies.data());
 
   // set 6 substitution parameters at model with index 0
-  pll_set_subst_params(partition, 0, subst_params);
+  pll_set_subst_params(partition, 0, subst_params.data());
 
   // set rate categories
-  pll_set_category_rates(partition, rate_cats);
+  pll_set_category_rates(partition, rate_cats.data());
 }
 }
