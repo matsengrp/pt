@@ -19,8 +19,6 @@ typedef cuckoohash_map<std::string, double> TreeTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 class Partition : public std::enable_shared_from_this<Partition> {
 private:
-  std::string fasta_path_;
-  std::string info_path_;
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
