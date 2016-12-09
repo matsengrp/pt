@@ -31,15 +31,6 @@ private:
   pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
   double *sumtable_;
-  void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
-                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
-  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
-                      double cutoff, TreeTable &good, TreeTable &all,
-                      ctpl::thread_pool &pool);
-
-  Partition(std::string newick_path, std::string fasta_path,
-            std::string RAxML_info_path);
-  Partition(const Partition &obj, pll_utree_t *tree);
 
  public:
   static std::shared_ptr<Partition> Create(const std::string &newick_path,
@@ -48,11 +39,11 @@ private:
   static std::shared_ptr<Partition> Create(const Partition &obj,
                                            pll_utree_t *tree);
 
-  // Stores probability matrices, scalers, etc.
+  virtual ~Partition();
+
   pll_utree_t *tree_;
   pll_partition_t* GetPartition() {return partition_ ; }
   const pll_partition_t *GetPartition() const { return partition_ ; }
-  virtual ~Partition();
 
   unsigned int tip_nodes_count() { return tip_nodes_count_; };
   unsigned int inner_nodes_count() { return (tip_nodes_count() - 2); };
@@ -60,6 +51,7 @@ private:
     return (tip_nodes_count() + inner_nodes_count());
   };
   unsigned int branch_count() { return (nodes_count() - 1); };
+
   unsigned int TraversalUpdate(pll_utree_t *tree, bool is_full);
   double LogLikelihood(pll_utree_t *tree);
   double FullTraversalLogLikelihood(pll_utree_t *tree);
@@ -70,10 +62,19 @@ private:
   void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
 
  private:
+  Partition(std::string newick_path, std::string fasta_path,
+            std::string RAxML_info_path);
+  Partition(const Partition &obj, pll_utree_t *tree);
+
   pll_partition_t *CreatePartition();
   void TreeBranchLengthsAux(pll_utree_t *tree);
   void TreeBranchLengths(pll_utree_t *tree);
   pll_utree_t *NNIUpdate(pll_utree_t *tree, int move_type);
+  void NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
+                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
+  void NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
+                      double cutoff, TreeTable &good, TreeTable &all,
+                      ctpl::thread_pool &pool);
   void MakeTables(double cutoff, double logl, pll_utree_t *tree,
                   TreeTable &good, TreeTable &all, ctpl::thread_pool &pool);
 };
