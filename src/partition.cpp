@@ -562,7 +562,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
         // constructors are private and object creation is delegated
         // to factory functions.
         auto this_shared = shared_from_this();
-        pool.push([this_shared, clone, cutoff, lambda, &good, &all, &pool](int id) {
+        pool.push([this_shared, clone, cutoff, lambda, &good, &all, &pool](int) {
           auto temp = pt::Partition::Create(*this_shared, clone);
           temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
           pll_utree_every(clone, cb_erase_data);
