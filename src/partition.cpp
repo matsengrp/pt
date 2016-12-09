@@ -324,7 +324,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 
     // where x_i is the current branch, f'(x_i) is the first derivative and
     // f''(x_i) is the second derivative of the likelihood function.
-    if (d2 < 0)
+    if (d2 < 0.0)
       len += d1 / d2;
     else
       len -= d1 / d2;
@@ -333,7 +333,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
     // set it to a small positive value for the next iteration. If
     // this has happened before, we stop early, as the curve is
     // probably decreasing.
-    if (len < 0) {
+    if (len < 0.0) {
       len = EPSILON;
 
       if (maybe_decreasing) {
@@ -474,7 +474,7 @@ void Partition::MakeTables(double cutoff, double logl, pll_utree_t *tree,
   tree = ToOrderedNewick(tree);
   /* if (!good.contains(ToNewick(tree))) {
      good.insert(ToNewick(tree), logl);
-     all.insert(ToNewick(tree), 0);
+     all.insert(ToNewick(tree), 0.0);
    }*/
   // Traverse the tree, performing both possible NNI moves, and sorting into
   // tables at each internal edge.
@@ -538,7 +538,7 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
   bool free_clone = true;
 
   std::string label = ToNewick(clone);
-  if (all.insert(label, 0)) {
+  if (all.insert(label, 0.0)) {
     FullBranchOpt(clone);
     /// @todo Can we save time by having FullBranchOpt return this?
     double lambda_1 = FullTraversalLogLikelihood(clone);
