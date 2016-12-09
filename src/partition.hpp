@@ -22,12 +22,15 @@ private:
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
-  unsigned int *matrix_indices_;
-  double *branch_lengths_;
-  pll_operation_t *operations_;
-  // Buffer for storing pointers to nodes of the tree in postorder traversal.
-  pll_utree_t **travbuffer_;
   unsigned int *params_indices_;
+
+  // scratch buffers for TraversalUpdate
+  pll_utree_t **travbuffer_;
+  double *branch_lengths_;
+  unsigned int *matrix_indices_;
+  pll_operation_t *operations_;
+
+  // scratch buffers for OptimizeCurrentBranch
   double *sumtable_;
 
  public:
