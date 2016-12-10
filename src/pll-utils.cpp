@@ -1,9 +1,9 @@
 #include "pll-utils.hpp"
-#include <cstdarg>
 #include <fstream>
 #include <iomanip>
 #include <map>
 #include <sstream>
+#include <stdexcept>
 #include <tuple>
 
 /// @file pll-utils.cpp
@@ -14,16 +14,6 @@
 /// Thus this is the only place where we have mixed the two style conventions.
 
 namespace pt {
-
-// if you remove this, you can remove the include for cstdarg above.
-void fatal(const char *format, ...) {
-  va_list argptr;
-  va_start(argptr, format);
-  vfprintf(stderr, format, argptr);
-  va_end(argptr);
-  fprintf(stderr, "\n");
-  exit(EXIT_FAILURE);
-}
 
 // A callback function for testing if a tree has nonzero branch lengths.
 int cb_branch_healthy(pll_utree_t *tree) {
@@ -164,8 +154,9 @@ int cb_erase_data(pll_utree_t *tree) {
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
                         char ***headers_out, char ***seqdata_out) {
   pll_fasta_t *fp = pll_fasta_open(path.c_str(), pll_map_fasta);
-  if (!fp)
-    fatal("Error opening file %s", path.c_str());
+  if (!fp) {
+    throw std::invalid_argument("Error opening file " + path);
+  }
 
   char *seq = NULL;
   char *hdr = NULL;
@@ -182,11 +173,13 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   int sites = -1;
   for (i = 0; pll_fasta_getnext(fp, &hdr, &hdrlen, &seq, &seqlen, &seqno);
        ++i) {
-    if (i >= seq_count)
-      fatal("FASTA file contains more sequences than expected.\n");
+    if (i >= seq_count) {
+      throw std::invalid_argument("FASTA file contains more sequences than expected");
+    }
 
-    if (sites != -1 && sites != seqlen)
-      fatal("FASTA file does not contain equal size sequences\n");
+    if (sites != -1 && sites != seqlen) {
+      throw std::invalid_argument("FASTA file does not contain equal size sequences");
+    }
 
     if (sites == -1)
       sites = seqlen;
@@ -196,17 +189,20 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   }
 
   // did we stop reading the file because we reached EOF?
-  if (pll_errno != PLL_ERROR_FILE_EOF)
-    fatal("Error while reading file %s", path.c_str());
+  if (pll_errno != PLL_ERROR_FILE_EOF) {
+    throw std::runtime_error("Error while reading file " + path);
+  }
 
   // close FASTA file
   pll_fasta_close(fp);
 
-  if (sites < 0)
-    fatal("Unable to read alignment");
+  if (sites < 0) {
+    throw std::runtime_error("Unable to read alignment");
+  }
 
-  if (i != seq_count)
-    fatal("Some taxa are missing from FASTA file");
+  if (i != seq_count) {
+    throw std::invalid_argument("Some taxa are missing from FASTA file");
+  }
 
   *headers_out = headers;
   *seqdata_out = seqdata;
@@ -243,7 +239,8 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
     std::tie(std::ignore, inserted) = tip_ids.emplace(label, i);
 
     if (!inserted) {
-      fatal("Error inserting label %s into map (probably a duplicate)", label.c_str());
+      throw std::invalid_argument("Error inserting tip label " + label
+                                  + " into map (possibly a duplicate)");
     }
   }
 
@@ -253,7 +250,8 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
     auto iter = tip_ids.find(header);
 
     if (iter == tip_ids.end()) {
-      fatal("Sequence with header %s does not appear in the tree", header.c_str());
+      throw std::invalid_argument("Sequence with header " + header
+                                  + " does not appear in the tree");
     }
 
     unsigned int tip_clv_index = iter->second;
@@ -309,8 +307,9 @@ void SetModelParameters(pll_partition_t *partition, std::string path) {
 
   for (unsigned int i = 0; i < ratevector.size(); i++)
     subst_params[i] = std::stod(ratevector.at(i));
-  if (ratevector.size() != (((freqvector.size()) * freqvector.size() - 4) / 2))
-    fatal("Wrong number of rate values.");
+  if (ratevector.size() != (((freqvector.size()) * freqvector.size() - 4) / 2)) {
+    throw std::invalid_argument("Wrong number of rate values.");
+  }
 
   // we'll use RATE_CATS rate categories, and currently initialize them to 0
   std::vector<double> rate_cats(RATE_CATS, 0.0);

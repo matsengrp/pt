@@ -25,7 +25,6 @@ const double EPSILON = 1e-5; // Threshold for detecting zero.
 
 enum class TraversalType { FULL, PARTIAL };
 
-void fatal(const char *format, ...);
 int cb_full_traversal(pll_utree_t *node);
 int cb_partial_traversal(pll_utree_t *node);
 int cb_copy_clv_traversal(pll_utree_t *node);

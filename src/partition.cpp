@@ -61,13 +61,15 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   // Parse the unrooted binary tree in newick format, and store the number of
   // tip nodes in tip_nodes_count.
   tree_ = pll_utree_parse_newick(newick_path.c_str(), &tip_nodes_count_);
+
   if (!tree_) {
-    std::cout << "Parsing failure: " << newick_path
-              << " must be an unrooted binary tree.\n";
-    exit(EXIT_FAILURE);
-  };
-  if (!TreeHealthy(tree_))
-    fatal("Missing branch lengths in tree.\n");
+    throw std::invalid_argument("Parsing failure: " + newick_path
+                                + " must be an unrooted binary tree");
+  }
+
+  if (!TreeHealthy(tree_)) {
+    throw std::invalid_argument("Missing branch lengths in tree");
+  }
 
   // Load in sequences and RAxML info.
   char **headers = NULL;
@@ -233,12 +235,12 @@ unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   if (type == TraversalType::FULL) {
     if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
                             &traversal_size)) {
-      fatal("Function pll_utree_traverse() requires inner nodes as parameters");
+      throw std::invalid_argument("TraversalUpdate() requires an inner node");
     }
   } else if (type == TraversalType::PARTIAL) {
     if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_,
                             &traversal_size)) {
-      fatal("Function pll_utree_traverse() requires inner nodes as parameters");
+      throw std::invalid_argument("TraversalUpdate() requires an inner node");
     }
   } else {
     throw std::invalid_argument("Invalid traversal type");
@@ -378,7 +380,7 @@ void Partition::TreeBranchLengthsAux(pll_utree_t *tree) {
 /// Tree.
 void Partition::TreeBranchLengths(pll_utree_t *tree) {
   if (!tree->next) {
-    fatal("Function TreeBranchLengths requires an inner node as parameter");
+    throw std::invalid_argument("TreeBranchLengths() requires an inner node");
   }
   TreeBranchLengthsAux(tree);
   TreeBranchLengthsAux(tree->back);
