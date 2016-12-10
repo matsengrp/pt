@@ -68,22 +68,39 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   }
 
   if (!TreeHealthy(tree_)) {
+    pll_utree_destroy(tree_);
     throw std::invalid_argument("Missing branch lengths in tree");
   }
 
+  //
   // Load in sequences and RAxML info.
+  //
+
   std::vector<std::string> headers;
   std::vector<std::string> seqdata;
-  sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), headers, seqdata);
 
-  partition_ = CreatePartition();
+  try {
+    sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), headers, seqdata);
+    partition_ = CreatePartition();
+  } catch (std::exception &e) {
+    pll_utree_destroy(tree_);
+    throw;
+  }
 
-  SetModelParameters(partition_, RAxML_info_path);
+  try {
+    SetModelParameters(partition_, RAxML_info_path);
+    EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
+                           seqdata);
+  } catch (std::exception &e) {
+    pll_partition_destroy(partition_);
+    pll_utree_destroy(tree_);
+    throw;
+  }
 
-  EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
-                         seqdata);
-
+  //
   // Allocate lots of memory for various operations.
+  //
+
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
   for (unsigned int i = 0; i < RATE_CATS; ++i) {
     params_indices_[i] = 0;
