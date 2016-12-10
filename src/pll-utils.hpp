@@ -33,10 +33,12 @@ int cb_erase_data(pll_utree_t *tree);
 
 bool TreeHealthy(pll_utree_t *tree);
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
-                        char ***headers_out, char ***seqdata_out);
+                        std::vector<std::string> &headers_out,
+                        std::vector<std::string> &seqdata_out);
 void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
-                            unsigned int tip_nodes_count, char **headers,
-                            char **seqdata);
+                            unsigned int tip_nodes_count,
+                            const std::vector<std::string>& headers,
+                            const std::vector<std::string>& seqdata);
 std::vector<std::string> ssplit(const std::string &s, char delim);
 void SetModelParameters(pll_partition_t *partition, std::string path);
 }

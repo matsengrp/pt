@@ -72,9 +72,9 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   }
 
   // Load in sequences and RAxML info.
-  char **headers = NULL;
-  char **seqdata = NULL;
-  sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), &headers, &seqdata);
+  std::vector<std::string> headers;
+  std::vector<std::string> seqdata;
+  sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), headers, seqdata);
 
   partition_ = CreatePartition();
 
@@ -82,13 +82,6 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
 
   EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
                          seqdata);
-
-  for (unsigned int i = 0; i < tip_nodes_count(); ++i) {
-    free(seqdata[i]);
-    free(headers[i]);
-  }
-  free(seqdata);
-  free(headers);
 
   // Allocate lots of memory for various operations.
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));

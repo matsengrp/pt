@@ -146,13 +146,13 @@ int cb_erase_data(pll_utree_t *tree) {
 /// @param[in] seq_count
 /// How many sequences are expected.
 /// @param[out] headers_out
-/// A pointer to a char**, which will be filled with an array of header strings
-/// that will need to be freed.
+/// A vector to fill with header strings.
 /// @param[out] seqdata_out
-/// A pointer to a char**, which will be filled with an array of sequence
-/// strings that will need to be freed.
+/// A vector to fill with sequence strings.
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
-                        char ***headers_out, char ***seqdata_out) {
+                        std::vector<std::string> &headers_out,
+                        std::vector<std::string> &seqdata_out)
+{
   pll_fasta_t *fp = pll_fasta_open(path.c_str(), pll_map_fasta);
   if (!fp) {
     throw std::invalid_argument("Error opening file " + path);
@@ -164,37 +164,43 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
   long hdrlen;
   long seqno;
 
-  // allocate arrays to store FASTA headers and sequences
-  char **headers = (char **)calloc(seq_count, sizeof(char *));
-  char **seqdata = (char **)calloc(seq_count, sizeof(char *));
+  headers_out.resize(seq_count);
+  seqdata_out.resize(seq_count);
 
   // read FASTA sequences and make sure they are all of the same length
   unsigned int i;
   int sites = -1;
   for (i = 0; pll_fasta_getnext(fp, &hdr, &hdrlen, &seq, &seqlen, &seqno);
        ++i) {
+    std::string header(hdr);
+    std::string sequence(seq);
+    free(hdr);
+    free(seq);
+
     if (i >= seq_count) {
+      pll_fasta_close(fp);
       throw std::invalid_argument("FASTA file contains more sequences than expected");
     }
 
     if (sites != -1 && sites != seqlen) {
+      pll_fasta_close(fp);
       throw std::invalid_argument("FASTA file does not contain equal size sequences");
     }
 
     if (sites == -1)
       sites = seqlen;
 
-    headers[i] = hdr;
-    seqdata[i] = seq;
+    headers_out[i] = header;
+    seqdata_out[i] = sequence;
   }
+
+  // close FASTA file
+  pll_fasta_close(fp);
 
   // did we stop reading the file because we reached EOF?
   if (pll_errno != PLL_ERROR_FILE_EOF) {
     throw std::runtime_error("Error while reading file " + path);
   }
-
-  // close FASTA file
-  pll_fasta_close(fp);
 
   if (sites < 0) {
     throw std::runtime_error("Unable to read alignment");
@@ -204,8 +210,6 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
     throw std::invalid_argument("Some taxa are missing from FASTA file");
   }
 
-  *headers_out = headers;
-  *seqdata_out = seqdata;
   return (unsigned int)sites;
 }
 
@@ -219,12 +223,14 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
 /// @param[in] tip_nodes_count
 /// The number of tip nodes.
 /// @param[in] headers
-/// An array of header strings.
+/// A vector of header strings.
 /// @param[in] seqdata
-/// An array of sequence strings.
+/// A vector of sequence strings.
 void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
-                            unsigned int tip_nodes_count, char **headers,
-                            char **seqdata) {
+                            unsigned int tip_nodes_count,
+                            const std::vector<std::string>& headers,
+                            const std::vector<std::string>& seqdata)
+{
   // obtain an array of pointers to tip nodes
   pll_utree_t **tipnodes =
       (pll_utree_t **)calloc(tip_nodes_count, sizeof(pll_utree_t *));
@@ -239,26 +245,26 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
     std::tie(std::ignore, inserted) = tip_ids.emplace(label, i);
 
     if (!inserted) {
+      free(tipnodes);
       throw std::invalid_argument("Error inserting tip label " + label
                                   + " into map (possibly a duplicate)");
     }
   }
 
+  free(tipnodes);
+
   // find sequences in hash table and link them with the corresponding taxa
   for (unsigned int i = 0; i < tip_nodes_count; ++i) {
-    std::string header = headers[i];
-    auto iter = tip_ids.find(header);
+    auto iter = tip_ids.find(headers[i]);
 
     if (iter == tip_ids.end()) {
-      throw std::invalid_argument("Sequence with header " + header
+      throw std::invalid_argument("Sequence with header " + headers[i]
                                   + " does not appear in the tree");
     }
 
     unsigned int tip_clv_index = iter->second;
-    pll_set_tip_states(partition, tip_clv_index, pll_map_nt, seqdata[i]);
+    pll_set_tip_states(partition, tip_clv_index, pll_map_nt, seqdata[i].c_str());
   }
-
-  free(tipnodes);
 }
 
 /// @brief Partition string according to delimiter.
