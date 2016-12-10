@@ -231,6 +231,14 @@ void EquipPartitionWithData(pll_partition_t *partition, pll_utree_t *tree,
                             const std::vector<std::string>& headers,
                             const std::vector<std::string>& seqdata)
 {
+  if (headers.size() != seqdata.size()) {
+    throw std::invalid_argument("Number of headers does not match number of sequences");
+  }
+
+  if (tip_nodes_count != headers.size()) {
+    throw std::invalid_argument("Unexpected number of tip nodes supplied");
+  }
+
   // obtain an array of pointers to tip nodes
   pll_utree_t **tipnodes =
       (pll_utree_t **)calloc(tip_nodes_count, sizeof(pll_utree_t *));
