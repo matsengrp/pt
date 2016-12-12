@@ -262,6 +262,7 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   REQUIRE(lnl_partial == Approx(lnl_full));
 }
 
+#if 0
 TEST_CASE("DS1", "[DS1]") {
   auto p_ds1 = pt::Partition::Create("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
                                      "test-data/hohna_datasets_fasta/DS1.fasta",
@@ -289,5 +290,6 @@ TEST_CASE("DS1", "[DS1]") {
   // Print both tables.
   //p_ds1->PrintTables(1, good_, all_);
 }
+#endif
 
 } // namespace pt
