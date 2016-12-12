@@ -262,4 +262,32 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   REQUIRE(lnl_partial == Approx(lnl_full));
 }
 
+TEST_CASE("DS1", "[DS1]") {
+  auto p_ds1 = pt::Partition::Create("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1",
+                                     "test-data/hohna_datasets_fasta/DS1.fasta",
+                                     "test-data/hohna_datasets_fasta/RAxML_info.DS1");
+
+  TreeTable good_;
+  TreeTable all_;
+  ctpl::thread_pool pool_(8);
+
+  // Optimize initial topology.
+  p_ds1->FullBranchOpt(p_ds1->tree_);
+
+  // Set ML parameter.
+  double logl = p_ds1->FullTraversalLogLikelihood(p_ds1->tree_);
+  std::cout << "lnl = " << logl << "\n";
+
+  //double cutoff = 1.022081783;
+  double cutoff = 1.0004;
+
+  p_ds1->QueueMakeTables(cutoff, logl, p_ds1->tree_, good_, all_, pool_);
+
+  // Wait until all threads in the pool have executed.
+  pool_.stop(true);
+
+  // Print both tables.
+  //p_ds1->PrintTables(1, good_, all_);
+}
+
 } // namespace pt
