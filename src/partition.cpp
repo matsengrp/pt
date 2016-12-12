@@ -82,7 +82,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
   try {
     sites_count_ = ParseFasta(fasta_path, tip_nodes_count(), headers, seqdata);
     partition_ = CreatePartition();
-  } catch (std::exception &e) {
+  } catch (const std::exception &e) {
     pll_utree_destroy(tree_);
     throw;
   }
@@ -91,7 +91,7 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
     SetModelParameters(partition_, RAxML_info_path);
     EquipPartitionWithData(partition_, tree_, tip_nodes_count(), headers,
                            seqdata);
-  } catch (std::exception &e) {
+  } catch (const std::exception &e) {
     pll_partition_destroy(partition_);
     pll_utree_destroy(tree_);
     throw;
