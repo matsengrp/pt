@@ -238,7 +238,7 @@ pll_partition_t *Partition::CreatePartition() {
 /// Tree.
 /// @param[in] type
 /// Type of traversal update to perform. See TraversalType.
-/// @return Number of nodes traversed.
+/// @return Number of partials updated.
 unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
@@ -275,7 +275,7 @@ unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   // ops_count-1.
   pll_update_partials(partition_, operations_, ops_count);
 
-  return traversal_size;
+  return ops_count;
 }
 
 /// @brief Just calculate log likelihood.
