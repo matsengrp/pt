@@ -140,6 +140,86 @@ int cb_erase_data(pll_utree_t *tree) {
   return 1;
 }
 
+/// @brief "Clone" a pll_partition_t object.
+///
+/// Note that this function does not make a perfect clone, but rather
+/// copies the data we believe is necessary for our uses. It also does
+/// not handle all the cases in which libpll can create the object.
+/// For example, if ascertainment bias correction is enabled in the
+/// object attributes, this function will copy CLVs incorrectly, among
+/// other things.
+///
+/// @param[in] rhs
+/// A pointer to the partition object to clone.
+/// @return A pointer to the newly-cloned partition object, or nullptr on error.
+pll_partition_t *pllext_partition_clone(pll_partition_t *rhs)
+{
+  pll_partition_t *lhs = pll_partition_create(
+      rhs->tips,
+      rhs->clv_buffers,
+      rhs->states,
+      rhs->sites,
+      rhs->rate_matrices,
+      rhs->prob_matrices,
+      rhs->rate_cats,
+      rhs->scale_buffers,
+      rhs->attributes);
+
+  if (!lhs) {
+    return nullptr;
+  }
+
+  for (unsigned int i = 0; i < lhs->tips + lhs->clv_buffers; ++i) {
+    for (unsigned int j = 0; j < lhs->sites * lhs->states * lhs->rate_cats; j++) {
+      lhs->clv[i][j] = rhs->clv[i][j];
+    }
+  }
+
+  for (unsigned int i = 0; i < lhs->prob_matrices; ++i) {
+    for (unsigned int j = 0; j < lhs->states * lhs->states * lhs->rate_cats; j++) {
+      lhs->pmatrix[i][j] = rhs->pmatrix[i][j];
+    }
+  }
+
+  for (unsigned int j = 0; j < lhs->rate_cats; j++) {
+    lhs->rates[j] = rhs->rates[j];
+  }
+
+  // TODO: this does not handle the case where rate_matrices is > 1
+  // see pll.c:664
+  for (unsigned int i = 0; i < lhs->states * (lhs->states - 1) / 2; i++) {
+    lhs->subst_params[0][i] = rhs->subst_params[0][i];
+  }
+
+  for (unsigned int i = 0; i < lhs->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < lhs->states; j++) {
+      lhs->frequencies[i][j] = rhs->frequencies[i][j];
+    }
+  }
+
+  for (unsigned int i = 0; i < lhs->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < lhs->states * lhs->states; j++) {
+      lhs->eigenvecs[i][j] = rhs->eigenvecs[i][j];
+    }
+  }
+
+  for (unsigned int i = 0; i < lhs->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < lhs->states * lhs->states; j++) {
+      lhs->inv_eigenvecs[i][j] = rhs->inv_eigenvecs[i][j];
+    }
+  }
+
+  for (unsigned int i = 0; i < lhs->rate_matrices; ++i) {
+    for (unsigned int j = 0; j < lhs->states; j++) {
+      lhs->eigenvals[i][j] = rhs->eigenvals[i][j];
+    }
+  }
+
+  lhs->maxstates = rhs->maxstates;
+
+  return lhs;
+}
+
 /// @brief Parse a Fasta file.
 /// @param[in] path
 /// A Fasta path.

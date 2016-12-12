@@ -31,6 +31,8 @@ int cb_copy_clv_traversal(pll_utree_t *node);
 int cb_branch_healthy(pll_utree_t *tree);
 int cb_erase_data(pll_utree_t *tree);
 
+pll_partition_t *pllext_partition_clone(pll_partition_t *rhs);
+
 bool TreeHealthy(pll_utree_t *tree);
 unsigned int ParseFasta(std::string path, unsigned int seq_count,
                         std::vector<std::string> &headers_out,

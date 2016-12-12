@@ -128,52 +128,11 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   pll_utree_every(tree_, cb_copy_clv_traversal);
   sites_count_ = obj.sites_count_;
 
-  partition_ = CreatePartition();
+  partition_ = pllext_partition_clone(obj.partition_);
 
-  for (unsigned int i = 0; i < partition_->tips + partition_->clv_buffers;
-       ++i) {
-    for (unsigned int j = 0;
-         j < partition_->sites * partition_->states * partition_->rate_cats;
-         j++)
-      partition_->clv[i][j] = obj.partition_->clv[i][j];
+  if (!partition_) {
+    throw std::runtime_error("Could not clone partition");
   }
-
-  for (unsigned int i = 0; i < partition_->prob_matrices; ++i) {
-    for (unsigned int j = 0;
-         j < partition_->states * partition_->states * partition_->rate_cats;
-         j++)
-      partition_->pmatrix[i][j] = obj.partition_->pmatrix[i][j];
-  }
-
-  for (unsigned int j = 0; j < partition_->rate_cats; j++)
-    partition_->rates[j] = obj.partition_->rates[j];
-
-  for (unsigned int i = 0;
-       i < partition_->states * (partition_->states - 1) / 2; i++) {
-    partition_->subst_params[0][i] = obj.partition_->subst_params[0][i];
-  }
-
-  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
-    for (unsigned int j = 0; j < partition_->states; j++)
-      partition_->frequencies[i][j] = obj.partition_->frequencies[i][j];
-  }
-
-  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
-    for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
-      partition_->eigenvecs[i][j] = obj.partition_->eigenvecs[i][j];
-  }
-
-  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
-    for (unsigned int j = 0; j < partition_->states * partition_->states; j++)
-      partition_->inv_eigenvecs[i][j] = obj.partition_->inv_eigenvecs[i][j];
-  }
-
-  for (unsigned int i = 0; i < partition_->rate_matrices; ++i) {
-    for (unsigned int j = 0; j < partition_->states; j++)
-      partition_->eigenvals[i][j] = obj.partition_->eigenvals[i][j];
-  }
-
-  partition_->maxstates = obj.partition_->maxstates;
 
   params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
   for (unsigned int i = 0; i < RATE_CATS; i++) {
