@@ -233,8 +233,8 @@ TEST_CASE("partial likelihoods are evaluated correctly", "[partial]") {
   unsigned int partials_updated;
 
   // Perform the first traversal of the tree. Even though we pass
-  // is_full = false here, we'll get a full traversal since none of
-  // the nodes have node_info data associated with them yet.
+  // TraversalType::PARTIAL here, we'll get a full traversal since
+  // none of the nodes have node_info data associated with them yet.
   partials_updated = p_five->TraversalUpdate(tree, TraversalType::PARTIAL);
   REQUIRE(partials_updated == p_five->inner_nodes_count());
 
