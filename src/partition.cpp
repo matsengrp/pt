@@ -236,8 +236,8 @@ pll_partition_t *Partition::CreatePartition() {
 /// @brief Perform a tree traversal and update CLV's, etc.
 /// @param[in] tree
 /// Tree.
-/// @param[in] is_full
-/// Which type of traversal update to perform. (1 = full) (0 = partial)
+/// @param[in] type
+/// Type of traversal update to perform. See TraversalType.
 /// @return Number of nodes traversed.
 unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   unsigned int traversal_size;
