@@ -129,8 +129,9 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   sites_count_ = obj.sites_count_;
 
   partition_ = pllext_partition_clone(obj.partition_);
-
   if (!partition_) {
+    pll_utree_every(tree_, cb_erase_data);
+    pll_utree_destroy(tree_);
     throw std::runtime_error("Could not clone partition");
   }
 
