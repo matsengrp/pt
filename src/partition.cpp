@@ -124,8 +124,13 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
 /// Initial tree to use. (For full copy use obj->tree_)
 Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   tip_nodes_count_ = obj.tip_nodes_count_;
+
   tree_ = pll_utree_clone(tree);
+  if (!tree_) {
+    throw std::runtime_error("Could not clone tree");
+  }
   pll_utree_every(tree_, cb_copy_clv_traversal);
+
   sites_count_ = obj.sites_count_;
 
   partition_ = pllext_partition_clone(obj.partition_);
