@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "ordered-tree.hpp"
 #include "pll-utils.hpp"
@@ -97,20 +98,17 @@ Partition::Partition(std::string newick_path, std::string fasta_path,
     throw;
   }
 
+  params_indices_.assign(RATE_CATS, 0);
+
   //
   // Allocate lots of memory for various operations.
   //
 
-  params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
-  for (unsigned int i = 0; i < RATE_CATS; ++i) {
-    params_indices_[i] = 0;
-  }
-  travbuffer_ = (pll_utree_t **)malloc(nodes_count() * sizeof(pll_utree_t *));
-  branch_lengths_ = (double *)malloc(branch_count() * sizeof(double));
-  matrix_indices_ =
-      (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
-  operations_ =
-      (pll_operation_t *)malloc(inner_nodes_count() * sizeof(pll_operation_t));
+  travbuffer_.reserve(nodes_count());
+  branch_lengths_.reserve(branch_count());
+  matrix_indices_.reserve(branch_count());
+  operations_.reserve(inner_nodes_count());
+
   sumtable_ = (double *)pll_aligned_alloc(
       partition_->sites * partition_->rate_cats * partition_->states_padded *
           sizeof(double),
@@ -140,10 +138,7 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
     throw std::runtime_error("Could not clone partition");
   }
 
-  params_indices_ = (unsigned int *)malloc(RATE_CATS * sizeof(unsigned int));
-  for (unsigned int i = 0; i < RATE_CATS; i++) {
-    params_indices_[i] = obj.params_indices_[i];
-  }
+  params_indices_ = obj.params_indices_;
 
   //
   // Allocate memory for scratch buffers. We don't need to copy their
@@ -152,12 +147,10 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
   //
 
   // scratch buffers for TraversalUpdate
-  travbuffer_ = (pll_utree_t **)malloc(nodes_count() * sizeof(pll_utree_t *));
-  branch_lengths_ = (double *)malloc(branch_count() * sizeof(double));
-  matrix_indices_ =
-      (unsigned int *)malloc(branch_count() * sizeof(unsigned int));
-  operations_ =
-      (pll_operation_t *)malloc(inner_nodes_count() * sizeof(pll_operation_t));
+  travbuffer_.reserve(nodes_count());
+  branch_lengths_.reserve(branch_count());
+  matrix_indices_.reserve(branch_count());
+  operations_.reserve(inner_nodes_count());
 
   // scratch buffers for OptimizeCurrentBranch
   sumtable_ = (double *)pll_aligned_alloc(
@@ -168,11 +161,6 @@ Partition::Partition(const Partition &obj, pll_utree_t *tree) {
 
 /// @brief Destructor for Partition.
 Partition::~Partition() {
-  free(params_indices_);
-  free(travbuffer_);
-  free(branch_lengths_);
-  free(matrix_indices_);
-  free(operations_);
   pll_aligned_free(sumtable_);
   pll_partition_destroy(partition_);
   pll_utree_every(tree_, cb_erase_data);
@@ -208,12 +196,12 @@ unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   unsigned int traversal_size;
   unsigned int matrix_count, ops_count;
   if (type == TraversalType::FULL) {
-    if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_,
+    if (!pll_utree_traverse(tree, cb_full_traversal, travbuffer_.data(),
                             &traversal_size)) {
       throw std::invalid_argument("TraversalUpdate() requires an inner node");
     }
   } else if (type == TraversalType::PARTIAL) {
-    if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_,
+    if (!pll_utree_traverse(tree, cb_partial_traversal, travbuffer_.data(),
                             &traversal_size)) {
       throw std::invalid_argument("TraversalUpdate() requires an inner node");
     }
@@ -224,21 +212,22 @@ unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
   // Given the computed traversal descriptor, generate the operations
   // structure, and the corresponding probability matrix indices that
   // may need recomputing.
-  pll_utree_create_operations(travbuffer_, traversal_size, branch_lengths_,
-                              matrix_indices_, operations_, &matrix_count,
-                              &ops_count);
+  pll_utree_create_operations(travbuffer_.data(), traversal_size,
+                              branch_lengths_.data(), matrix_indices_.data(),
+                              operations_.data(), &matrix_count, &ops_count);
 
   // Update matrix_count probability matrices for model with index 0. The i-th
   // matrix (i ranges from 0 to matrix_count - 1) is generated using branch
   // length branch_lengths[i] and can be referred to with index
   // matrix_indices[i].
-  pll_update_prob_matrices(partition_, params_indices_, matrix_indices_,
-                           branch_lengths_, matrix_count);
+  pll_update_prob_matrices(partition_, params_indices_.data(),
+                           matrix_indices_.data(), branch_lengths_.data(),
+                           matrix_count);
 
   // Use the operations array to compute all ops_count inner CLVs. Operations
   // will be carried out sequentially starting from operation 0 towrds
   // ops_count-1.
-  pll_update_partials(partition_, operations_, ops_count);
+  pll_update_partials(partition_, operations_.data(), ops_count);
 
   return ops_count;
 }
@@ -249,7 +238,7 @@ unsigned int Partition::TraversalUpdate(pll_utree_t *tree, TraversalType type) {
 double Partition::LogLikelihood(pll_utree_t *tree) {
   double logl = pll_compute_edge_loglikelihood(
       partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
-      tree->back->scaler_index, tree->pmatrix_index, params_indices_,
+      tree->back->scaler_index, tree->pmatrix_index, params_indices_.data(),
       nullptr); // Can supply a persite_lnl parameter as last argument.
 
   return logl;
@@ -275,7 +264,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
   // Compute the sumtable for the particular branch once before proceeding with
   // the optimization.
   pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
-                      params_indices_, sumtable_);
+                      params_indices_.data(), sumtable_);
 
   double len = tree->length;
   bool maybe_decreasing = false;
@@ -286,7 +275,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 
     pll_compute_likelihood_derivatives(
         partition_, parent->scaler_index, child->scaler_index, len,
-        params_indices_, sumtable_, &d1, &d2);
+        params_indices_.data(), sumtable_, &d1, &d2);
 
     // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,
     // opt_logl, d1,d2);
@@ -327,7 +316,7 @@ double Partition::OptimizeCurrentBranch(pll_utree_t *tree) {
 
   // Update this branch's probability matrix now that the branch
   // length has changed. No CLVs need to be invalidated.
-  pll_update_prob_matrices(partition_, params_indices_, &(parent->pmatrix_index),
+  pll_update_prob_matrices(partition_, params_indices_.data(), &(parent->pmatrix_index),
                            &(parent->length), 1);
 
   return len;

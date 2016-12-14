@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 
 #include <cuckoohash_map.hh>
 
@@ -22,13 +23,13 @@ private:
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
-  unsigned int *params_indices_;
+  std::vector<unsigned int> params_indices_;
 
   // scratch buffers for TraversalUpdate
-  pll_utree_t **travbuffer_;
-  double *branch_lengths_;
-  unsigned int *matrix_indices_;
-  pll_operation_t *operations_;
+  std::vector<pll_utree_t *> travbuffer_;
+  std::vector<double> branch_lengths_;
+  std::vector<unsigned int> matrix_indices_;
+  std::vector<pll_operation_t> operations_;
 
   // scratch buffers for OptimizeCurrentBranch
   double *sumtable_;
