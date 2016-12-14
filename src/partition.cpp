@@ -587,14 +587,23 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
 void Partition::NNITraverse(pll_utree_t *tree, double lambda, double cutoff,
                             TreeTable &good, TreeTable &all,
                             ctpl::thread_pool &pool) {
-  if (!tree->next)
-    return;
-  if (!tree->back->next) {
-    NNITraverse(tree->next, lambda, cutoff, good, all, pool);
+  std::vector<pll_utree_t *> inner_nodes(inner_nodes_count(), nullptr);
+  unsigned int nodes_found = pll_utree_query_innernodes(tree, inner_nodes.data());
+
+  if (nodes_found != inner_nodes.size()) {
+    throw std::invalid_argument("Unexpected number of inner nodes");
   }
-  NNIComputeEdge(tree, PLL_UTREE_MOVE_NNI_LEFT, lambda, cutoff, good, all, pool);
-  NNIComputeEdge(tree, PLL_UTREE_MOVE_NNI_RIGHT, lambda, cutoff, good, all, pool);
-  NNITraverse(tree->next->back, lambda, cutoff, good, all, pool);
-  NNITraverse(tree->next->next->back, lambda, cutoff, good, all, pool);
+
+  for (unsigned int i = 0; i < inner_nodes.size(); ++i) {
+    pll_utree_t *node = inner_nodes[i];
+
+    // skip any pendant edges
+    if (!node->back->next) {
+      continue;
+    }
+
+    NNIComputeEdge(node, PLL_UTREE_MOVE_NNI_LEFT, lambda, cutoff, good, all, pool);
+    NNIComputeEdge(node, PLL_UTREE_MOVE_NNI_RIGHT, lambda, cutoff, good, all, pool);
+  }
 }
 }
