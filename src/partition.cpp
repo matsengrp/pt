@@ -14,6 +14,9 @@
 
 namespace pt {
 
+std::queue<std::future<void>> Partition::futures_;
+std::mutex Partition::futures_mutex_;
+
 /// @brief Create a Partition object from a tree and an alignment.
 ///
 /// This factory function (and private constructor) ensures that
@@ -48,6 +51,30 @@ std::shared_ptr<Partition> Partition::Create(const Partition &obj,
                                              pll_utree_t *tree)
 {
   return std::shared_ptr<Partition>(new Partition(obj, tree));
+}
+
+/// @brief Add a future to the monitor queue.
+///
+/// @param[in] future
+/// Future returned from queuing a thread pool task.
+void Partition::QueueFuture(std::future<void>&& future)
+{
+  std::lock_guard<std::mutex> lock(futures_mutex_);
+  futures_.push(std::move(future));
+}
+
+/// @brief Wait for tasks in the monitor queue to complete.
+void Partition::Wait()
+{
+  while (futures_.size() > 0) {
+    std::cout << "futures_.size() = " << futures_.size() << "\n";
+
+    futures_.front().get();
+    {
+      std::lock_guard<std::mutex> lock(futures_mutex_);
+      futures_.pop();
+    }
+  }
 }
 
 /// @brief Private constructor for Partition from a tree and an alignment.
@@ -412,9 +439,12 @@ void Partition::QueueMakeTables(double cutoff, double logl, pll_utree_t *tree,
                                 ctpl::thread_pool &pool)
 {
   auto this_shared = shared_from_this();
-  pool.push([this_shared, cutoff, logl, tree, &good, &all, &pool](int) {
-      this_shared->MakeTables(cutoff, logl, tree, good, all, pool);
-    });
+  std::future<void> future = pool.push(
+      [this_shared, cutoff, logl, tree, &good, &all, &pool](int) {
+        this_shared->MakeTables(cutoff, logl, tree, good, all, pool);
+      });
+
+  QueueFuture(std::move(future));
 }
 
 ///@brief Perform every possible NNI move from the current state, and sort them
@@ -528,12 +558,15 @@ void Partition::NNIComputeEdge(pll_utree_t *tree, int move_type, double lambda,
         // constructors are private and object creation is delegated
         // to factory functions.
         auto this_shared = shared_from_this();
-        pool.push([this_shared, clone, cutoff, lambda, &good, &all, &pool](int) {
-          auto temp = pt::Partition::Create(*this_shared, clone);
-          temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
-          pll_utree_every(clone, cb_erase_data);
-          pll_utree_destroy(clone);
-        });
+        std::future<void> future = pool.push(
+            [this_shared, clone, cutoff, lambda, &good, &all, &pool](int) {
+              auto temp = pt::Partition::Create(*this_shared, clone);
+              temp->MakeTables(cutoff, lambda, temp->tree_, good, all, pool);
+              pll_utree_every(clone, cb_erase_data);
+              pll_utree_destroy(clone);
+            });
+
+        QueueFuture(std::move(future));
 
         std::cout << "work queue size: " << pool.queue_size() << "\n";
       }

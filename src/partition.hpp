@@ -20,6 +20,9 @@ typedef cuckoohash_map<std::string, double> TreeTable;
 /// @brief The representation of a tree, alignment, and all associated data.
 class Partition : public std::enable_shared_from_this<Partition> {
 private:
+  static std::queue<std::future<void>> futures_;
+  static std::mutex futures_mutex_;
+
   pll_partition_t *partition_;
   unsigned int sites_count_;
   unsigned int tip_nodes_count_;
@@ -40,6 +43,8 @@ private:
                                            const std::string &RAxML_info_path);
   static std::shared_ptr<Partition> Create(const Partition &obj,
                                            pll_utree_t *tree);
+
+  static void Wait();
 
   virtual ~Partition();
 
@@ -64,6 +69,8 @@ private:
   void PrintTables(bool print_all, TreeTable &good, TreeTable &all);
 
  private:
+  static void QueueFuture(std::future<void>&& future);
+
   Partition(std::string newick_path, std::string fasta_path,
             std::string RAxML_info_path);
   Partition(const Partition &obj, pll_utree_t *tree);

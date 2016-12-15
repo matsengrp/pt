@@ -31,7 +31,12 @@ TEST_CASE("Partition", "[partition]") {
   // Tree topologies and likelihoods for all possible NNI moves for newton tree.
   p_newton->QueueMakeTables(4, logl, p_newton->tree_, good_, all_, pool_);
 
-  pool_.stop(true);
+  // Wait until all MakeTables tasks have finished.
+  Partition::Wait();
+
+  // Check that the pool agrees the tasks have finished.
+  REQUIRE(pool_.queue_size() == 0);
+
   // Print All Tables
   p_newton->PrintTables(1, good_, all_);
 
@@ -74,8 +79,11 @@ TEST_CASE("MultiThreading", "[multithreading]") {
   // -3737.47).
   p_five->QueueMakeTables(1.022081783, logl, p_five->tree_, good_, all_, pool_);
 
-  // Wait until all threads in the pool have executed.
-  pool_.stop(true);
+  // Wait until all MakeTables tasks have finished.
+  Partition::Wait();
+
+  // Check that the pool agrees the tasks have finished.
+  REQUIRE(pool_.queue_size() == 0);
 
   // Print both tables.
   // Note that program returns all 15 topologies for a 5-leaf tree.
@@ -201,8 +209,12 @@ TEST_CASE("BigExample", "[BigExample]") {
                p_DS1_2->FullTraversalLogLikelihood(p_DS1_2->tree_));
   all_.insert(ToNewick(p_DS1_2->tree_), 0);
   p_DS1_2->QueueMakeTables(1.000001, logl, p_DS1_2->tree_, good_, all_, pool_);
-  // Wait until all threads in the pool have executed.
-  pool_.stop(true);
+
+  // Wait until all MakeTables tasks have finished.
+  Partition::Wait();
+
+  // Check that the pool agrees the tasks have finished.
+  REQUIRE(pool_.queue_size() == 0);
 
   // Print good table.
   p_DS1->PrintTables(0, good_, all_);
@@ -284,8 +296,11 @@ TEST_CASE("DS1", "[DS1]") {
 
   p_ds1->QueueMakeTables(cutoff, logl, p_ds1->tree_, good_, all_, pool_);
 
-  // Wait until all threads in the pool have executed.
-  pool_.stop(true);
+  // Wait until all MakeTables tasks have finished.
+  Partition::Wait();
+
+  // Check that the pool agrees the tasks have finished.
+  REQUIRE(pool_.queue_size() == 0);
 
   // Print both tables.
   //p_ds1->PrintTables(1, good_, all_);
