@@ -1,7 +1,11 @@
 #include "partition.hpp"
 
+#include <future>
 #include <memory>
+#include <mutex>
+#include <queue>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "ordered-tree.hpp"

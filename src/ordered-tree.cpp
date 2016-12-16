@@ -1,4 +1,7 @@
 #include "ordered-tree.hpp"
+
+#include <string>
+
 #include "pll-utils.hpp"
 
 namespace pt {

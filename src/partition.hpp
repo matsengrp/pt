@@ -1,8 +1,12 @@
 #ifndef PT_PARTITION_
 #define PT_PARTITION_
 
+#include <future>
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <queue>
+#include <string>
 #include <vector>
 
 #include <cuckoohash_map.hh>

@@ -1,10 +1,13 @@
 #include "pll-utils.hpp"
+
 #include <fstream>
 #include <iomanip>
 #include <map>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <tuple>
+#include <vector>
 
 /// @file pll-utils.cpp
 /// @brief Utilities for interfacing with libpll.

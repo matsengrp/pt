@@ -1,7 +1,8 @@
 #ifndef ORDERED_TREE_HPP_INCLUDED
 #define ORDERED_TREE_HPP_INCLUDED
 
-#include "partition.hpp"
+#include <string>
+
 #include "pll-utils.hpp"
 
 namespace pt {
