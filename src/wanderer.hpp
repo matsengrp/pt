@@ -45,7 +45,7 @@ class Wanderer {
   Authority& authority_;
 
   pll_partition_t* partition_;
-  pll_utree_t* tree_;
+  pll_utree_t* current_tree_;
 
   // a data structure that makes more sense for this might be a stack
   // of pairs like {tree, move_queue}. MoveBack() could pop the top of
@@ -63,8 +63,6 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
   std::stack<pll_utree_t*> trees_;
 
-  std::stack<TreeMove> move_history_;
-
  public:
   Wanderer(Authority& authority, pll_partition_t* partition,
            pll_utree_t* tree);
@@ -75,7 +73,9 @@ class Wanderer {
  private:
   void QueueMoves();
 
-  void Move(pll_utree_t* node, MoveType type);
+  bool TryMove(pll_utree_t* node, MoveType type);
+
+  void MoveForward();
   void MoveBack();
 
   void Teleport(pll_utree_t* tree);
@@ -85,7 +85,7 @@ class Wanderer {
 
   double LogLikelihood();
 
-  void Update(pll_utree_t* node, TraversalType type);
+  void UpdatePartition(pll_utree_t* node, TraversalType type);
 };
 
 } // namespace pt
