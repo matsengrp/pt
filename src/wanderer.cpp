@@ -3,6 +3,12 @@
 #include <queue>
 #include <vector>
 
+// pll.h is missing a header guard
+#ifndef LIBPLL_PLL_H_
+#define LIBPLL_PLL_H_
+#include <libpll/pll.h>
+#endif
+
 namespace pt {
 
 //
@@ -28,213 +34,158 @@ void Authority::SetThreshold(double lnl)
 // Wanderer
 //
 
-Wanderer::Wanderer(const Authority& authority, pll_partition_t* partition,
-                   pll_utree_t* tree) :
+Wanderer::Wanderer(Authority& authority, pll_partition_t* partition,
+                   pll_utree_t* initial_tree, bool try_all_moves) :
     authority_(authority),
     partition_(partition),
-    current_tree_(tree)
-{ }
+    try_all_moves_(try_all_moves)
+{
+  trees_.push(initial_tree);
+}
 
 Wanderer::~Wanderer()
 {
-  pll_utree_every(current_tree_, cb_erase_data);
-  pll_utree_destroy(current_tree_);
+  for (pll_utree_t* tree : trees_) {
+    pll_utree_every(tree, cb_erase_data);
+    pll_utree_destroy(tree);
+  }
 
   pll_partition_destroy(partition_);
 }
 
 void Wanderer::Start()
 {
-  UpdatePartition(current_tree_, TraversalType::FULL);
+  TraversalUpdate(trees_.top(), TraversalType::FULL);
   QueueMoves();
 
   // note that move_queues_.top() and move_queues_.top().front() can
   // change during iteration, so we don't store references to them
   // inside the loops. we always want to be looking at the next move
   // in the top queue.
-  while (move_queues_.size() > 0) {
-    while (move_queues_.top().size() > 0) {
+  while (!move_queues_.empty()) {
+    while (!move_queues_.top().empty()) {
       // somewhere here is where we would check to see if there are
       // any idle monks, and use Teleport() (or ask the authority to)
       // to have the idle monk go there instead of taking the move
       // ourselves
 
       MoveForward();
-      QueueMoves();
     }
 
-    // we have an empty move queue for the current tree
-    move_queues_.pop();
+    // we have an empty move queue for the current tree, so move back
     MoveBack();
   }
-
 }
 
-bool Wanderer::TryMove(pll_utree_t* node, MoveType type)
+bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
 {
   pll_utree_nni(node, type, nullptr);
 
-  std::string newick_str = ToOrderedNewick(current_tree_);
+  // unlike the existing ToOrderedNewick() function in pll-utils.hpp,
+  // this one should clone the tree, reorder it lexicographically, and
+  // return a newick string (after freeing the clone). reordering the
+  // tree in-place runs the risk of making the rollback move invalid,
+  // since the branches leading away from the edge may not be in the
+  // same places as they were when the move was made.
+  std::string newick_str = ToOrderedNewick(node);
 
-  // it would probably be better here if this was an insert rather
-  // than a contains, so that we know for certain that this Wanderer
-  // "owns" the tree it's currently evaluating. otherwise the code
-  // that follows may be evaluated by multiple monks
-  if (all_trees.contains(newick_str)) {
+  // try and insert the tree into the "all" table. if successful, this
+  // Wanderer owns the tree and we can proceed.
+  if (!all_trees_.insert(newick_str, 0.0)) {
     // undo the move and reject
     pll_utree_nni(node, type, nullptr);
     return false;
   }
 
-  // if PT_TEST_SINGLE_BRANCH is defined, TryMove() will optimize the
-  // branch length and use the resulting log-likelihood to determine
-  // if this move should be accepted. if it's not defined, TryMove()
-  // will always return true if this tree hasn't been visited before.
-#ifdef PT_TEST_SINGLE_BRANCH
   //
-  // so the big question here is, when do we use current_tree_ as the argument
-  // to the various functions below, and when do we use node?
+  // If try_all_moves_ is true, TestMove() will always return true if
+  // this tree hasn't been visited before. Otherwise, TestMove() will
+  // optimize the branch length and use the resulting log-likelihood
+  // to determine if this move should be accepted.
   //
 
-  const double original_length = node->length;
+  if (try_all_moves_) {
+    // undo the move and accept
+    pll_utree_nni(node, type, nullptr);
+    return true;
+  } else {
+    const double original_length = node->length;
 
-  OptimizeBranch(node);
+    // update so that CLVs are pointing at node and optimize branch
+    TraversalUpdate(node, TraversalType::PARTIAL);
+    OptimizeBranch(node);
 
-  // when OptimizeBranch() returns, will the CLVs be oriented toward
-  // the optimized edge, or will they be pointing back to current_tree_ (our
-  // "root")? what CLVs need to be invalidated, in either case? my
-  // belief is that if we use the optimized edge for computing the
-  // log-likelihood, no CLVs need to be invalidated. if we use the
-  // "root", the CLVs around that edge must be invalidated first.
+    // when OptimizeBranch() returns, where will the CLVs be oriented?
+    // do CLVs need to be invalidated? my belief is that if we use the
+    // optimized edge for computing the log-likelihood, no CLVs need to
+    // be invalidated first.
 
-  // invalidate CLVs?
-  // ...
+    // no need for another traversal, since the CLVs are already
+    // pointing at node
+    const double test_lnl = LogLikelihood(node);
 
-  const double test_lnl = LogLikelihood(node);
+    bool accept_move = false;
+    if (test_lnl >= authority.GetThreshold()) {
+      accept_move = true;
+    }
 
-  bool accept_move = false;
-  if (test_lnl > authority.GetThreshold()) {
-    accept_move = true;
+    // store the test log-likelihood along with the tree in the "all"
+    // table; it might be useful later for comparison
+    all_trees_.update(newick_str, test_lnl);
+
+    // restore the branch length and undo the move. CLVs will remain
+    // pointed toward node, so future operations on this tree will need
+    // to orient the CLVs as appropriate
+    UpdateBranchLength(node, original_length);
+    pll_utree_nni(node, type, nullptr);
+
+    return accept_move;
   }
-
-  // store the test log-likelihood along with the tree in the "all"
-  // table; it might be useful later for comparison
-  all_trees_.insert(newick_str, test_lnl);
-
-  // restore the branch length, undo the move, invalidate any CLVs
-  // (?), and do a partial traversal to restore the partition to its
-  // pre-TryMove() state (?)
-
-  UpdateBranchLength(node, original_length);
-  pll_utree_nni(node, type, nullptr);
-
-  // invalidate CLVs? maybe UpdateBranchLength() does this
-  // ...
-
-  UpdatePartition(current_tree_, TraversalType::PARTIAL); // ?
-
-  return accept_move;
-#else
-  // undo the move
-  pll_utree_nni(node, type, nullptr);
-
-  // store the tree in the "all" table; we don't have any log-likelihood for it
-  all_trees_.insert(newick_str, 0.0);
-
-  return true;
-#endif
 }
 
 void Wanderer::MoveForward()
 {
-  // clone tree onto the tree history stack
+  // the move actually has to be applied to the *original* tree before
+  // it's cloned, since the node pointer stored in the move queue
+  // points at that tree and not the clone. so we apply the move,
+  // clone the tree, and then reverse the move on the original tree.
 
   // apply move. the move we're applying should be
   // move_queues_.top().front(), I think
+  TreeMove move = move_queues_.top().pop_front();
+  pll_utree_nni(move.node_, move.type_);
 
-  // do full branch optimization
+  // clone the tree with move applied
+  pll_utree_t* tree = pll_utree_clone(trees_.top());
+  pll_utree_every(tree, cb_copy_clv_traversal);
 
-  // compute log-likelihood
+  // undo the move on the original tree
+  pll_utree_nni(move.node_, move.type_);
 
-  // add tree to "good" table
+  // do full branch optimization. this function will handle its own
+  // traversal updates.
+  OptimizeAllBranches(tree);
 
-  // should QueueMoves() be called in here, or in the caller?
-}
+  // orient CLVs and compute log-likelihood
+  TraversalUpdate(tree, TraversalType::PARTIAL);
+  double lnl = LogLikelihood(tree);
 
-void Wanderer::MoveBack()
-{
-  // restore previous tree by popping the current tree off the top of
-  // the tree history stack
+  // if log-likelihood is above the threshold, add tree to "good"
+  // table, push it onto the stack, and queue moves
+  if (lnl >= authority_.GetThreshold()) {
+    good_trees_.insert(ToOrderedNewick(tree), lnl);
 
-  // resynchronize partition and tree with a full traversal? this may
-  // be pointless if the move queue for the previous tree is empty
-}
+    // if we find a new maximum likelihood, update the authority. note
+    // there could be a race between getting and setting the maximum
+    // here. maybe we need an Authority::SetMaximumIfBetter() with a
+    // proper mutex or something?
+    if (lnl > authority_.GetMaximum()) {
+      authority_.SetMaximum(lnl);
+    }
 
-
-
-
-bool Wanderer::Move(const TreeMove& move)
-{
-  pll_utree_nni(move.node_, move.type_, nullptr);
-
-  // unlike the existing ToOrderedNewick() function in pll-utils.hpp,
-  // this one should clone the tree, reorder it lexicographically, and
-  // return a newick string (after freeing the clone). reordering
-  // current_tree_ in-place runs the risk of making the rollback move invalid,
-  // since the branches leading away from the edge may not be in the
-  // same places as they were when the move was made.
-  std::string newick_str = ToOrderedNewick(current_tree_);
-
-  if (all_trees_.contains(newick_str)) {
-    // as below it might not make sense to use MoveBack() here, since
-    // we just need to reverse one move and restore a branch length,
-    // then bring the partition back in sync. maybe this function
-    // should be called "TryMove()" and we could have a "RejectMove()"
-    // method that resets it back to the way it was if TryMove()
-    // returns false?
-    MoveBack();
-    return false;
+    trees_.push(tree);
+    QueueMoves();
   }
-
-  // invalidate CLVs around edge
-  // ...
-
-  double test_lnl = OptimizeBranch(move.node_);
-  // how do we restore this branch length when we move back? should
-  // OptimizeBranch() also ensure that the CLVs are oriented back
-  // toward our "root"?
-
-  all_trees_.insert(newick_str, test_lnl);
-
-  if (test_lnl < authority_.GetThreshold()) {
-    // it might make sense not to use MoveBack() here, since we really
-    // only need to reverse a single move and restore a single branch
-    // length, then bring the partition back in sync with a partial
-    // traversal. maybe MoveBack() could be reserved for when a move
-    // is actually accepted and further moves from that tree are
-    // queued up.
-
-    MoveBack();
-    return false;
-  }
-
-  double lnl = OptimizeAllBranches();
-  // how do we restore all the branch lengths when we move back?
-  // should OptimizeAllBranches() also ensure that the CLVs are
-  // oriented back toward our "root"?
-
-  // if we find a new maximum likelihood, update the authority. note
-  // there could be a race between getting and setting the maximum
-  // here. maybe we need an Authority::SetMaximumIfBetter() with a
-  // proper mutex or something?
-  if (lnl > authority_.GetMaximum()) {
-    authority_.SetMaximum(lnl);
-  }
-
-  good_trees_.insert(newick_str, lnl);
-  QueueMoves();
-
-  return true;
 }
 
 void Wanderer::MoveBack()
@@ -243,13 +194,26 @@ void Wanderer::MoveBack()
   // its previous state, so it must ensure that branch lengths are all
   // restored as well as rolling back the NNI move
 
-  // would it just make more sense to clone the tree before a move?
-  // we'd have to worry about getting the partition back in sync again
-  // after popping a tree off the stack, which gets us back to the
-  // problem of requiring a full traversal every time a move (or step
-  // back) is made. though I think technically we'd only have to
-  // update the partition again if there are moves left to make on the
-  // restored tree, otherwise we just pop that tree off the stack too.
+  // pop the current tree's move queue off the top of the stack
+  move_queues_.pop();
+
+  // restore previous tree by destroying the current tree and popping
+  // it off the top of the tree history stack
+  pll_utree_every(trees_.top(), cb_erase_data);
+  pll_utree_destroy(trees_.top());
+  trees_.pop();
+
+  // if the tree stack is empty, we're done.
+  if (trees_.empty()) {
+    return;
+  }
+
+  // resynchronize partition and tree with a full traversal. if the
+  // move queue for the tree is empty, this is pointless and can be
+  // skipped.
+  if (!move_queues_.top().empty()) {
+    TraversalUpdate(trees_.top(), TraversalType::FULL);
+  }
 }
 
 void Wanderer::QueueMoves()
@@ -259,9 +223,9 @@ void Wanderer::QueueMoves()
   // pll_utree_query_innernodes() finds is the same as the size of the
   // vector
   std::vector<pll_utree_t*> inner_nodes(partition_->tips - 2, nullptr);
-  pll_utree_query_innernodes(current_tree_, inner_nodes.data());
+  pll_utree_query_innernodes(trees_.top(), inner_nodes.data());
 
-  std::queue<TreeMove> available_moves;
+  std::queue<TreeMove> move_queue;
   for (auto node : inner_nodes) {
     // skip any pendant edges
     if (!node->back->next) {
@@ -277,46 +241,52 @@ void Wanderer::QueueMoves()
     // move and restore the original branch length, then repeat for
     // the move in the other "direction".
 
-    // assume we have a TryMove() method that applies the move,
+    // assume we have a TestMove() method that applies the move,
     // optimizes the branch length, and compares the log-likelihood to
     // the authority's threshold. it then reverses the move and
     // restores the branch length. it may be okay if the CLVs are
-    // oriented differently than they were before TryMove() gets
-    // called, since TryMove() will have to do a partial traversal
-    // anyway, right? TryMove() will return true if the move is worth
+    // oriented differently than they were before TestMove() gets
+    // called, since TestMove() will have to do a partial traversal
+    // anyway, right? TestMove() will return true if the move is worth
     // taking, false otherwise.
 
-    // TryMove() could probably also be the place where we check to
-    // see if the tree has already been tested/visited.
-
-    // if the single-branch optimization behavior isn't desired,
-    // TryMove() could instead just always return true, and the move
-    // will be taken and full branch optimization will be performed.
-
-    if (TryMove(node, MoveType::LEFT)) {
-      available_moves.push(TreeMove{node, MoveType::LEFT});
+    if (TestMove(node, MoveType::LEFT)) {
+      move_queue.push(TreeMove{node, MoveType::LEFT});
     }
 
-    if (TryMove(node, MoveType::RIGHT)) {
-      available_moves.push(TreeMove{node, MoveType::RIGHT});
+    if (TestMove(node, MoveType::RIGHT)) {
+      move_queue.push(TreeMove{node, MoveType::RIGHT});
     }
   }
 
-  // note: if we're using the TryMove() strategy described above,
-  // we'll need to handle the case where the available move queue is
-  // empty, both here and in the calling function.
-  move_queues_.push(std::move(available_moves));
+  // it's legitimate to push an empty queue onto the stack here; if
+  // that happens, it will just result in a move back on the next
+  // iteration.
+  move_queues_.push(std::move(move_queue));
 }
 
-// this function should only be called when move_queues_ and
-// move_history_ are empty, i.e. the wanderer is idle
+// this function should only be called when trees_ and move_queues_
+// are empty, i.e., the Wanderer is idle
 void Wanderer::Teleport(pll_utree_t* tree)
 {
-  pll_utree_every(current_tree_, cb_erase_data);
-  pll_utree_destroy(current_tree_);
+  if (!trees_.empty()) {
+    throw std::logic_error("trees_ is not empty");
+  }
 
-  current_tree_ = pll_utree_clone(tree);
+  if (!move_queues_.empty()) {
+    throw std::logic_error("move_queues_ is not empty");
+  }
 
+  // push the tree onto the stack. we assume here that this Wanderer
+  // takes ownership of the passed tree. if that is not the case we'll
+  // need to clone it instead, being wary of the fact that the monk
+  // who offered us this tree may still modify or destroy it. in other
+  // words, the offering monk would have to pause until the teleport
+  // is complete.
+  trees_.push(tree);
+
+  // would it be better to require the caller to call Start() rather
+  // than doing it here?
   Start();
 }
 
