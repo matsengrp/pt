@@ -153,7 +153,7 @@ void Wanderer::MoveForward()
   // apply move. the move we're applying should be
   // move_queues_.top().front(), I think
   TreeMove move = move_queues_.top().pop_front();
-  pll_utree_nni(move.node_, move.type_);
+  pll_utree_nni(move.node, move.type);
 
   // clone the tree with move applied
   pll_utree_t* tree = pll_utree_clone(trees_.top());

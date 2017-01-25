@@ -23,8 +23,8 @@ enum class MoveType { LEFT = PLL_UTREE_MOVE_NNI_LEFT,
 enum class TraversalType { FULL, PARTIAL };
 
 struct TreeMove {
-  pll_utree_t* node_;
-  MoveType type_;
+  pll_utree_t* node;
+  MoveType type;
 };
 
 class Authority {
