@@ -9,6 +9,8 @@
 #include <libpll/pll.h>
 #endif
 
+#include "pll-utils.hpp"
+
 namespace pt {
 
 //
@@ -25,7 +27,7 @@ double Authority::GetThreshold() const
   return ml_lnl_ * lambda_;
 }
 
-void Authority::SetThreshold(double lnl)
+void Authority::SetMaximum(double lnl)
 {
   ml_lnl_ = lnl;
 }
@@ -45,9 +47,10 @@ Wanderer::Wanderer(Authority& authority, pll_partition_t* partition,
 
 Wanderer::~Wanderer()
 {
-  for (pll_utree_t* tree : trees_) {
-    pll_utree_every(tree, cb_erase_data);
-    pll_utree_destroy(tree);
+  while (!trees_.empty()) {
+    pll_utree_every(trees_.top(), cb_erase_data);
+    pll_utree_destroy(trees_.top());
+    trees_.pop();
   }
 
   pll_partition_destroy(partition_);
@@ -125,7 +128,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     const double test_lnl = LogLikelihood(node);
 
     bool accept_move = false;
-    if (test_lnl >= authority.GetThreshold()) {
+    if (test_lnl >= authority_.GetThreshold()) {
       accept_move = true;
     }
 
@@ -152,7 +155,9 @@ void Wanderer::MoveForward()
 
   // apply move. the move we're applying should be
   // move_queues_.top().front(), I think
-  TreeMove move = move_queues_.top().pop_front();
+  TreeMove move = move_queues_.top().front();
+  move_queues_.top().pop();
+
   pll_utree_nni(move.node, move.type);
 
   // clone the tree with move applied
@@ -160,7 +165,7 @@ void Wanderer::MoveForward()
   pll_utree_every(tree, cb_copy_clv_traversal);
 
   // undo the move on the original tree
-  pll_utree_nni(move.node_, move.type_);
+  pll_utree_nni(move.node, move.type);
 
   // do full branch optimization. this function will handle its own
   // traversal updates.

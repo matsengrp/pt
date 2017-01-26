@@ -13,14 +13,14 @@
 #include <libpll/pll.h>
 #endif
 
+#include "pll-utils.hpp"
+
 namespace pt {
 
 using TreeTable = cuckoohash_map<std::string, double>;
 
 enum class MoveType { LEFT = PLL_UTREE_MOVE_NNI_LEFT,
                       RIGHT = PLL_UTREE_MOVE_NNI_RIGHT };
-
-enum class TraversalType { FULL, PARTIAL };
 
 struct TreeMove {
   pll_utree_t* node;
