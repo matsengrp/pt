@@ -4,7 +4,11 @@
 #include <string>
 #include <vector>
 
+// pll.h is missing a header guard
+#ifndef LIBPLL_PLL_H_
+#define LIBPLL_PLL_H_
 #include <libpll/pll.h>
+#endif
 
 /// @file pll-utils.hpp
 /// @brief Utilities for interfacing with libpll.
