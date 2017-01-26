@@ -9,9 +9,30 @@
 #include <libpll/pll.h>
 #endif
 
+#include "ordered-tree.hpp"
 #include "pll-utils.hpp"
 
 namespace pt {
+
+//
+// free functions
+//
+
+std::string OrderedNewickString(pll_utree_t* tree)
+{
+  // clone the tree, because ToOrderedNewick() reorders the tree in
+  // place and we don't want to modify the tree we were given. note
+  // that we aren't modifying any of the node user data (via the
+  // node->data pointers) so we don't have to copy or free those.
+  pll_utree_t* clone = pll_utree_clone(tree);
+
+  // ToOrderedNewick() only reorders the tree, despite its name
+  ToOrderedNewick(clone);
+  std::string newick_str = ToNewick(clone);
+
+  pll_utree_destroy(clone);
+  return newick_str;
+}
 
 //
 // Authority
@@ -90,7 +111,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
   // tree in-place runs the risk of making the rollback move invalid,
   // since the branches leading away from the edge may not be in the
   // same places as they were when the move was made.
-  std::string newick_str = ToOrderedNewick(node);
+  std::string newick_str = OrderedNewickString(node);
 
   // try and insert the tree into the "all" table. if successful, this
   // Wanderer owns the tree and we can proceed.
@@ -178,7 +199,7 @@ void Wanderer::MoveForward()
   // if log-likelihood is above the threshold, add tree to "good"
   // table, push it onto the stack, and queue moves
   if (lnl >= authority_.GetThreshold()) {
-    good_trees_.insert(ToOrderedNewick(tree), lnl);
+    good_trees_.insert(OrderedNewickString(tree), lnl);
 
     // if we find a new maximum likelihood, update the authority. note
     // there could be a race between getting and setting the maximum
