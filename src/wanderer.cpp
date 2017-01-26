@@ -158,14 +158,14 @@ void Wanderer::MoveForward()
   TreeMove move = move_queues_.top().front();
   move_queues_.top().pop();
 
-  pll_utree_nni(move.node, move.type);
+  pll_utree_nni(move.node, move.type, nullptr);
 
   // clone the tree with move applied
   pll_utree_t* tree = pll_utree_clone(trees_.top());
   pll_utree_every(tree, cb_copy_clv_traversal);
 
   // undo the move on the original tree
-  pll_utree_nni(move.node, move.type);
+  pll_utree_nni(move.node, move.type, nullptr);
 
   // do full branch optimization. this function will handle its own
   // traversal updates.
