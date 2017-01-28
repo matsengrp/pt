@@ -23,6 +23,11 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
                      const std::vector<std::string>& sequences) :
     tip_node_count_(tip_node_count)
 {
+  // TODO: accepting tip_node_count as a constructor parameter is
+  //       redundant, since it's also the number of labels and
+  //       sequences. might be useful as a sanity check, but the
+  //       caller could be in charge of that...
+
   // tree is already parsed
 
   // check that tree is healthy (i.e., every branch has a length)
