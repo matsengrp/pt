@@ -184,7 +184,7 @@ unsigned int Partition::TraversalUpdate(pll_utree_t* root, TraversalType type)
                            matrix_count);
 
   // Use the operations array to compute all ops_count inner CLVs. Operations
-  // will be carried out sequentially starting from operation 0 towrds
+  // will be carried out sequentially starting from operation 0 towards
   // ops_count-1.
   pll_update_partials(partition_, operations_.data(), ops_count);
 
