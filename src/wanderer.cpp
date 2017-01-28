@@ -48,6 +48,11 @@ double Authority::GetThreshold() const
   return ml_lnl_ * lambda_;
 }
 
+double Authority::GetMaximum() const
+{
+  return ml_lnl_;
+}
+
 void Authority::SetMaximum(double lnl)
 {
   ml_lnl_ = lnl;
