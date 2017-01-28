@@ -43,8 +43,8 @@ class Authority {
 
 class Wanderer {
  private:
-  static TreeTable good_trees_;
   static TreeTable all_trees_;
+  static TreeTable good_trees_;
 
   Authority& authority_;
   pll_partition_t* partition_;

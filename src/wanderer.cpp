@@ -62,6 +62,9 @@ void Authority::SetMaximum(double lnl)
 // Wanderer
 //
 
+TreeTable Wanderer::all_trees_;
+TreeTable Wanderer::good_trees_;
+
 Wanderer::Wanderer(Authority& authority, pll_partition_t* partition,
                    pll_utree_t* initial_tree, bool try_all_moves) :
     authority_(authority),
