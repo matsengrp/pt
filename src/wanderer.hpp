@@ -83,6 +83,8 @@ class Wanderer {
 
   void Teleport(pll_utree_t* tree);
 
+  void UpdateBranchLength(pll_utree_t* node, double length);
+
   void OptimizeBranch(pll_utree_t* node);
   void OptimizeAllBranchesOnce(pll_utree_t* tree);
   void OptimizeAllBranches(pll_utree_t* tree);
