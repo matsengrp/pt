@@ -1,4 +1,5 @@
 set(PT_SRC
+  model_parameters.cpp
   ordered-tree.cpp
   partition.cpp
   pll_partition.cpp

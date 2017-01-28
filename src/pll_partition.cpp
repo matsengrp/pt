@@ -12,6 +12,7 @@
 #include <libpll/pll.h>
 #endif
 
+#include "model_parameters.hpp"
 #include "pll-utils.hpp"
 
 namespace pt { namespace pll {

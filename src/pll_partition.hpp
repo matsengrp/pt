@@ -10,15 +10,12 @@
 #include <libpll/pll.h>
 #endif
 
+#include "model_parameters.hpp"
+
 namespace pt { namespace pll {
 
 enum class TraversalType { FULL, PARTIAL };
 
-struct ModelParameters {
-  double alpha;
-  std::vector<double> frequencies;
-  std::vector<double> subst_params;
-};
 
 class Partition
 {
