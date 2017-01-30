@@ -13,6 +13,7 @@
 #include <libpll/pll.h>
 #endif
 
+#include "pll_partition.hpp"
 #include "pll-utils.hpp"
 
 namespace pt {
@@ -33,12 +34,24 @@ class Authority {
   const double lambda_;
 
  public:
+  // TODO: make authority constructor private and add a factory
+  //       function that returns a shared pointer
   Authority(double ml_lnl, double lambda);
 
   double GetThreshold() const;
 
+  // TODO: with multiple threads there can be a race between getting
+  //       and setting the maximum, so what we really need is a
+  //       SetMaximumIfBetter() function with a proper mutex. see the
+  //       comments in Wanderer::MoveForward().
   double GetMaximum() const;
   void SetMaximum(double lnl);
+
+  // TODO: move tree tables here
+
+  // TODO: for when the tree tables are moved here:
+  // bool InsertVisitedTree(const std::string& newick_str);
+  // bool InsertGoodTree(const std::string& newick_str);
 };
 
 class Wanderer {
@@ -46,8 +59,11 @@ class Wanderer {
   static TreeTable all_trees_;
   static TreeTable good_trees_;
 
+  // TODO: the authority should be a shared pointer constructed via a
+  //       factory function
   Authority& authority_;
-  pll_partition_t* partition_;
+  pll::Partition partition_;
+
   const bool try_all_moves_;
 
   // a data structure that makes more sense for this might be a stack
@@ -67,7 +83,7 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(Authority& authority, pll_partition_t* partition,
+  Wanderer(Authority& authority, pll::Partition& partition,
            pll_utree_t* initial_tree, bool try_all_moves = false);
   ~Wanderer();
 
@@ -82,16 +98,6 @@ class Wanderer {
   void MoveBack();
 
   void Teleport(pll_utree_t* tree);
-
-  void UpdateBranchLength(pll_utree_t* node, double length);
-
-  void OptimizeBranch(pll_utree_t* node);
-  void OptimizeAllBranchesOnce(pll_utree_t* tree);
-  void OptimizeAllBranches(pll_utree_t* tree);
-
-  double LogLikelihood(pll_utree_t* tree);
-
-  void TraversalUpdate(pll_utree_t* root, TraversalType type);
 };
 
 } // namespace pt

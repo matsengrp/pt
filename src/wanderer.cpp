@@ -10,6 +10,7 @@
 #endif
 
 #include "ordered-tree.hpp"
+#include "pll_partition.hpp"
 #include "pll-utils.hpp"
 
 namespace pt {
@@ -65,7 +66,7 @@ void Authority::SetMaximum(double lnl)
 TreeTable Wanderer::all_trees_;
 TreeTable Wanderer::good_trees_;
 
-Wanderer::Wanderer(Authority& authority, pll_partition_t* partition,
+Wanderer::Wanderer(Authority& authority, pll::Partition& partition,
                    pll_utree_t* initial_tree, bool try_all_moves) :
     authority_(authority),
     partition_(partition),
@@ -76,18 +77,20 @@ Wanderer::Wanderer(Authority& authority, pll_partition_t* partition,
 
 Wanderer::~Wanderer()
 {
+  // FIXME: we should not be freeing the initial tree passed to the
+  //        constructor, which gets pushed onto the tree stack. we
+  //        should either leave it alone or (better) clone it.
+
   while (!trees_.empty()) {
     pll_utree_every(trees_.top(), cb_erase_data);
     pll_utree_destroy(trees_.top());
     trees_.pop();
   }
-
-  pll_partition_destroy(partition_);
 }
 
 void Wanderer::Start()
 {
-  TraversalUpdate(trees_.top(), TraversalType::FULL);
+  partition_.TraversalUpdate(trees_.top(), pll::TraversalType::FULL);
   QueueMoves();
 
   // note that move_queues_.top() and move_queues_.top().front() can
@@ -144,8 +147,8 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     const double original_length = node->length;
 
     // update so that CLVs are pointing at node and optimize branch
-    TraversalUpdate(node, TraversalType::PARTIAL);
-    OptimizeBranch(node);
+    partition_.TraversalUpdate(node, pll::TraversalType::PARTIAL);
+    partition_.OptimizeBranch(node);
 
     // when OptimizeBranch() returns, where will the CLVs be oriented?
     // do CLVs need to be invalidated? my belief is that if we use the
@@ -154,7 +157,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
 
     // no need for another traversal, since the CLVs are already
     // pointing at node
-    const double test_lnl = LogLikelihood(node);
+    const double test_lnl = partition_.LogLikelihood(node);
 
     bool accept_move = false;
     if (test_lnl >= authority_.GetThreshold()) {
@@ -168,7 +171,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     // restore the branch length and undo the move. CLVs will remain
     // pointed toward node, so future operations on this tree will need
     // to orient the CLVs as appropriate
-    UpdateBranchLength(node, original_length);
+    partition_.UpdateBranchLength(node, original_length);
     pll_utree_nni(node, type, nullptr);
 
     return accept_move;
@@ -198,11 +201,11 @@ void Wanderer::MoveForward()
 
   // do full branch optimization. this function will handle its own
   // traversal updates.
-  OptimizeAllBranches(tree);
+  partition_.OptimizeAllBranches(tree);
 
   // orient CLVs and compute log-likelihood
-  TraversalUpdate(tree, TraversalType::PARTIAL);
-  double lnl = LogLikelihood(tree);
+  partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
+  double lnl = partition_.LogLikelihood(tree);
 
   // if log-likelihood is above the threshold, add tree to "good"
   // table, push it onto the stack, and queue moves
@@ -246,7 +249,7 @@ void Wanderer::MoveBack()
   // move queue for the tree is empty, this is pointless and can be
   // skipped.
   if (!move_queues_.top().empty()) {
-    TraversalUpdate(trees_.top(), TraversalType::FULL);
+    partition_.TraversalUpdate(trees_.top(), pll::TraversalType::FULL);
   }
 }
 
@@ -256,7 +259,7 @@ void Wanderer::QueueMoves()
   // should add an error check to see if the number of nodes
   // pll_utree_query_innernodes() finds is the same as the size of the
   // vector
-  std::vector<pll_utree_t*> inner_nodes(partition_->tips - 2, nullptr);
+  std::vector<pll_utree_t*> inner_nodes(partition_.inner_node_count(), nullptr);
   pll_utree_query_innernodes(trees_.top(), inner_nodes.data());
 
   std::queue<TreeMove> move_queue;

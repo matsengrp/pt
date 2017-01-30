@@ -12,6 +12,7 @@
 #include "model_parameters.hpp"
 #include "pll-utils.hpp"
 #include "pll_partition.hpp"
+#include "wanderer.hpp"
 
 TEST_CASE("partition operations are correct", "[partition]")
 {
@@ -52,6 +53,27 @@ TEST_CASE("partition operations are correct", "[partition]")
     REQUIRE(tree->length == optimized_length);
     REQUIRE(tree->back->length == optimized_length);
   }
+
+  // FIXME: this is just temporary, to see if a Wanderer can be
+  //        created and destroyed
+  SECTION("wanderers are created correctly")
+  {
+    pt::Authority authority(-33.387713, 1.1);
+    pt::Wanderer wanderer(authority, partition, tree);
+
+    // FIXME: because wanderer.partition_ is currently (and stupidly)
+    //        copy-constructed, both wanderer.partition_ and partition
+    //        own pointers to the pll_partition_t and we're going to
+    //        get a double free. Partition needs to have proper copy
+    //        or move constructors and a std::unique_ptr would be
+    //        appropriate to make sure this kind of thing doesn't
+    //        happen in the future.
+  }
+
+  // FIXME: because the first tree put onto the wanderer.trees_ stack
+  //        is tree, wanderer will try to destroy it in its destructor
+  //        and we're going to get a double free here. see comment in
+  //        Wanderer::~Wanderer().
 
   pll_utree_destroy(tree);
 }
