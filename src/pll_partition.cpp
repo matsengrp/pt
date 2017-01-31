@@ -31,9 +31,15 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
   //       sequences. might be useful as a sanity check, but the
   //       caller could be in charge of that...
 
+  // FIXME: the variable tip_node_count shadows the member function
+  //        tip_node_count() here. I'm okay with this for now as the
+  //        variable is not long for this world.
+
   // tree is already parsed
 
   // check that tree is healthy (i.e., every branch has a length)
+  //
+  // TODO: should the caller be responsible for checking the tree?
   if (!TreeHealthy(tree)) {
     throw std::invalid_argument("Tree is missing branch lengths");
   }
@@ -59,7 +65,9 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
   SetModelParameters(parameters);
   SetTipStates(tree, labels, sequences);
 
-  // TODO: is there a better place for this?
+  // TODO: is there a better place for this? as far as I can tell from
+  //       the docs, this array is never updated, so it could probably
+  //       be a const vector and initialized in the initializer list
   params_indices_.assign(RATE_CATS, 0);
 
   AllocateScratchBuffers();
@@ -107,6 +115,9 @@ void Partition::SetTipStates(pll_utree_t* tree,
     throw std::invalid_argument("Number of labels does not match number of sequences");
   }
 
+  // TODO: if tip_node_count_ is inferred from the size of the labels
+  //       or sequences vector in the constructor, this check becomes
+  //       redundant
   if (tip_node_count_ != labels.size()) {
     throw std::invalid_argument("Unexpected number of tip nodes supplied");
   }
