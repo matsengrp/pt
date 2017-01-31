@@ -63,14 +63,6 @@ TEST_CASE("partition operations are correct", "[partition]")
     // FIXME: the wanderer takes ownership of tree here. this is
     //        unexpected and dangerous!
     pt::Wanderer wanderer(authority, std::move(partition), tree);
-
-    // FIXME: because wanderer.partition_ is currently (and stupidly)
-    //        copy-constructed, both wanderer.partition_ and partition
-    //        own pointers to the pll_partition_t and we're going to
-    //        get a double free. Partition needs to have proper copy
-    //        or move constructors and a std::unique_ptr would be
-    //        appropriate to make sure this kind of thing doesn't
-    //        happen in the future.
   }
 
   // FIXME: because the first tree put onto the wanderer.trees_ stack
