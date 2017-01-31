@@ -59,7 +59,7 @@ TEST_CASE("partition operations are correct", "[partition]")
   SECTION("wanderers are created correctly")
   {
     pt::Authority authority(-33.387713, 1.1);
-    pt::Wanderer wanderer(authority, partition, tree);
+    pt::Wanderer wanderer(authority, std::move(partition), tree);
 
     // FIXME: because wanderer.partition_ is currently (and stupidly)
     //        copy-constructed, both wanderer.partition_ and partition

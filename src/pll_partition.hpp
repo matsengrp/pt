@@ -2,6 +2,7 @@
 #define PT_PLL_PARTITION_HPP_
 
 #include <string>
+#include <memory>
 #include <vector>
 
 // pll.h is missing a header guard
@@ -20,8 +21,11 @@ enum class TraversalType { FULL, PARTIAL };
 class Partition
 {
  private:
+  using PartitionPtr = std::unique_ptr<pll_partition_t,
+                                       decltype(&pll_partition_destroy)>;
+
   const unsigned int tip_node_count_;
-  pll_partition_t* partition_;
+  PartitionPtr partition_;
   std::vector<unsigned int> params_indices_;
 
   // scratch buffers for TraversalUpdate()
@@ -39,6 +43,14 @@ class Partition
             const ModelParameters& parameters,
             const std::vector<std::string>& labels,
             const std::vector<std::string>& sequences);
+
+  // move constructor
+  Partition(Partition&& rhs);
+
+  // explicitly mark other operations as deleted
+  Partition(const Partition& rhs) = delete;
+  Partition& operator=(const Partition& rhs) = delete;
+  Partition& operator=(Partition&& rhs) = delete;
 
   ~Partition();
 
@@ -66,6 +78,8 @@ class Partition
   void SetTipStates(pll_utree_t* tree, const std::vector<std::string>& labels,
                     const std::vector<std::string>& sequences);
 
+  void AllocateScratchBuffers();
+  void FreeScratchBuffers();
 };
 
 //

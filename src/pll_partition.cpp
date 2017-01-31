@@ -1,6 +1,7 @@
 #include "pll_partition.hpp"
 
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -21,7 +22,9 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
                      const ModelParameters& parameters,
                      const std::vector<std::string>& labels,
                      const std::vector<std::string>& sequences) :
-    tip_node_count_(tip_node_count)
+    tip_node_count_(tip_node_count),
+    partition_(nullptr, &pll_partition_destroy),
+    sumtable_(nullptr)
 {
   // TODO: accepting tip_node_count as a constructor parameter is
   //       redundant, since it's also the number of labels and
@@ -35,23 +38,21 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
     throw std::invalid_argument("Tree is missing branch lengths");
   }
 
-  const unsigned int inner_node_count = tip_node_count - 2;
-  const unsigned int node_count = tip_node_count + inner_node_count;
-  const unsigned int branch_count = node_count - 1;
-
   const unsigned int site_count = sequences[0].size();
 
   // TODO: replace macros/global variables with enums or arguments as
   //       appropriate. should they go in the model parameters?
-  partition_ = pll_partition_create(tip_node_count_,
-                                    inner_node_count,
-                                    STATES,
-                                    site_count,
-                                    1,
-                                    branch_count,
-                                    RATE_CATS,
-                                    inner_node_count,
-                                    ARCH_FLAGS);
+  partition_ = PartitionPtr(
+      pll_partition_create(tip_node_count_,     // tips
+                           inner_node_count(),  // clv_buffers
+                           STATES,              // states
+                           site_count,          // sites
+                           1,                   // rate_matrices
+                           branch_count(),      // prob_matrices
+                           RATE_CATS,           // rate_cats
+                           inner_node_count(),  // scale_buffers
+                           ARCH_FLAGS),         // attributes
+      &pll_partition_destroy);
 
   // TODO: try/catch?
   // TODO: should these be static member functions? does it matter?
@@ -61,22 +62,23 @@ Partition::Partition(pll_utree_t* tree, unsigned int tip_node_count,
   // TODO: is there a better place for this?
   params_indices_.assign(RATE_CATS, 0);
 
-  // allocate scratch buffers for TraversalUpdate()
-  travbuffer_.reserve(node_count);
-  branch_lengths_.reserve(branch_count);
-  matrix_indices_.reserve(branch_count);
-  operations_.reserve(inner_node_count);
+  AllocateScratchBuffers();
+}
 
-  // allocate scratch buffers for OptimizeBranch()
-  sumtable_ = (double*) pll_aligned_alloc(
-      partition_->sites * partition_->rate_cats * partition_->states_padded * sizeof(double),
-      ALIGNMENT);
+Partition::Partition(Partition&& rhs) :
+    tip_node_count_(rhs.tip_node_count_),
+    partition_(nullptr, &pll_partition_destroy),
+    sumtable_(nullptr)
+{
+  partition_ = std::move(rhs.partition_);
+  params_indices_.assign(RATE_CATS, 0);
+
+  AllocateScratchBuffers();
 }
 
 Partition::~Partition()
 {
-  pll_aligned_free(sumtable_);
-  pll_partition_destroy(partition_);
+  FreeScratchBuffers();
 }
 
 void Partition::SetModelParameters(const ModelParameters& parameters)
@@ -88,13 +90,13 @@ void Partition::SetModelParameters(const ModelParameters& parameters)
                          rate_cats.data());
 
   // set frequencies at model with index 0 (we currently have only one model).
-  pll_set_frequencies(partition_, 0, parameters.frequencies.data());
+  pll_set_frequencies(partition_.get(), 0, parameters.frequencies.data());
 
   // set 6 substitution parameters at model with index 0
-  pll_set_subst_params(partition_, 0, parameters.subst_params.data());
+  pll_set_subst_params(partition_.get(), 0, parameters.subst_params.data());
 
   // set rate categories
-  pll_set_category_rates(partition_, rate_cats.data());
+  pll_set_category_rates(partition_.get(), rate_cats.data());
 }
 
 void Partition::SetTipStates(pll_utree_t* tree,
@@ -137,16 +139,38 @@ void Partition::SetTipStates(pll_utree_t* tree,
     }
 
     unsigned int tip_clv_index = iter->second;
-    pll_set_tip_states(partition_, tip_clv_index, pll_map_nt, sequences[i].c_str());
+    pll_set_tip_states(partition_.get(), tip_clv_index, pll_map_nt, sequences[i].c_str());
+  }
+}
+
+void Partition::AllocateScratchBuffers()
+{
+  // allocate scratch buffers for TraversalUpdate()
+  travbuffer_.resize(node_count());
+  branch_lengths_.resize(branch_count());
+  matrix_indices_.resize(branch_count());
+  operations_.resize(inner_node_count());
+
+  // allocate scratch buffers for OptimizeBranch()
+  sumtable_ = (double*) pll_aligned_alloc(
+      partition_->sites * partition_->rate_cats * partition_->states_padded * sizeof(double),
+      ALIGNMENT);
+}
+
+void Partition::FreeScratchBuffers()
+{
+  if (sumtable_) {
+    pll_aligned_free(sumtable_);
+    sumtable_ = nullptr;
   }
 }
 
 double Partition::LogLikelihood(pll_utree_t* tree)
 {
   double lnl = pll_compute_edge_loglikelihood(
-      partition_, tree->clv_index, tree->scaler_index, tree->back->clv_index,
-      tree->back->scaler_index, tree->pmatrix_index, params_indices_.data(),
-      nullptr);
+      partition_.get(), tree->clv_index, tree->scaler_index,
+      tree->back->clv_index, tree->back->scaler_index, tree->pmatrix_index,
+      params_indices_.data(), nullptr);
 
   return lnl;
 }
@@ -184,14 +208,14 @@ unsigned int Partition::TraversalUpdate(pll_utree_t* root, TraversalType type)
   // matrix (i ranges from 0 to matrix_count - 1) is generated using branch
   // length branch_lengths[i] and can be referred to with index
   // matrix_indices[i].
-  pll_update_prob_matrices(partition_, params_indices_.data(),
+  pll_update_prob_matrices(partition_.get(), params_indices_.data(),
                            matrix_indices_.data(), branch_lengths_.data(),
                            matrix_count);
 
   // Use the operations array to compute all ops_count inner CLVs. Operations
   // will be carried out sequentially starting from operation 0 towards
   // ops_count-1.
-  pll_update_partials(partition_, operations_.data(), ops_count);
+  pll_update_partials(partition_.get(), operations_.data(), ops_count);
 
   return ops_count;
 }
@@ -204,7 +228,7 @@ void Partition::UpdateBranchLength(pll_utree_t* node, double length)
 
   // Update this branch's probability matrix now that the branch
   // length has changed. No CLVs need to be invalidated.
-  pll_update_prob_matrices(partition_, params_indices_.data(),
+  pll_update_prob_matrices(partition_.get(), params_indices_.data(),
                            &(node->pmatrix_index),
                            &(node->length), 1);
 }
@@ -216,7 +240,7 @@ double Partition::OptimizeBranch(pll_utree_t* node)
 
   // Compute the sumtable for the particular branch once before proceeding with
   // the optimization.
-  pll_update_sumtable(partition_, parent->clv_index, child->clv_index,
+  pll_update_sumtable(partition_.get(), parent->clv_index, child->clv_index,
                       params_indices_.data(), sumtable_);
 
   double len = node->length;
@@ -227,7 +251,7 @@ double Partition::OptimizeBranch(pll_utree_t* node)
     double d2; // Second derivative.
 
     pll_compute_likelihood_derivatives(
-        partition_, parent->scaler_index, child->scaler_index, len,
+        partition_.get(), parent->scaler_index, child->scaler_index, len,
         params_indices_.data(), sumtable_, &d1, &d2);
 
     // printf("Branch length: %f log-L: %f Derivative: %f D2: %f\n", len,

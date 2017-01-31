@@ -83,7 +83,7 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(Authority& authority, pll::Partition& partition,
+  Wanderer(Authority& authority, pll::Partition&& partition,
            pll_utree_t* initial_tree, bool try_all_moves = false);
   ~Wanderer();
 
