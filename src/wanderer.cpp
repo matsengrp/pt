@@ -270,6 +270,17 @@ void Wanderer::QueueMoves()
       continue;
     }
 
+    // TODO: I think that the traversal that starts at trees_.top()
+    //       produces a collection of inner nodes that includes the
+    //       node at the other end of the "current" edge (that is,
+    //       trees_.top()->back). this results in testing duplicate
+    //       moves across that edge, doesn't it? we might need
+    //       something like the following to avoid this
+    //
+    // if (node == trees_.top()->back) {
+    //   continue;
+    // }
+
     // here is where we can try applying a move, optimizing the
     // current branch length, and then comparing the log-likelihood to
     // the threshold to see if the move is worth taking (since if we
