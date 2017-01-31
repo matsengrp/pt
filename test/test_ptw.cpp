@@ -59,16 +59,8 @@ TEST_CASE("partition operations are correct", "[partition]")
   SECTION("wanderers are created correctly")
   {
     pt::Authority authority(-33.387713, 1.1);
-
-    // FIXME: the wanderer takes ownership of tree here. this is
-    //        unexpected and dangerous!
     pt::Wanderer wanderer(authority, std::move(partition), tree);
   }
-
-  // FIXME: because the first tree put onto the wanderer.trees_ stack
-  //        is tree, wanderer will try to destroy it in its destructor
-  //        and we're going to get a double free here. see comment in
-  //        Wanderer::~Wanderer().
 
   pll_utree_destroy(tree);
 }

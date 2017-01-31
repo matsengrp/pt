@@ -72,15 +72,16 @@ Wanderer::Wanderer(Authority& authority, pll::Partition&& partition,
     partition_(std::move(partition)),
     try_all_moves_(try_all_moves)
 {
-  trees_.push(initial_tree);
+  // we don't want to take ownership of initial_tree, so clone it
+  // first and push the clone onto the stack
+  pll_utree_t* tree = pll_utree_clone(initial_tree);
+  pll_utree_every(tree, cb_copy_clv_traversal);
+
+  trees_.push(tree);
 }
 
 Wanderer::~Wanderer()
 {
-  // FIXME: we should not be freeing the initial tree passed to the
-  //        constructor, which gets pushed onto the tree stack. we
-  //        should either leave it alone or (better) clone it.
-
   while (!trees_.empty()) {
     pll_utree_every(trees_.top(), cb_erase_data);
     pll_utree_destroy(trees_.top());
