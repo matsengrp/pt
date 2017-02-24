@@ -176,12 +176,12 @@ void Partition::FreeScratchBuffers()
   }
 }
 
-double Partition::LogLikelihood(pll_utree_t* tree)
+double Partition::LogLikelihood(pll_utree_t* tree, double* per_site_lnl)
 {
   double lnl = pll_compute_edge_loglikelihood(
       partition_.get(), tree->clv_index, tree->scaler_index,
       tree->back->clv_index, tree->back->scaler_index, tree->pmatrix_index,
-      params_indices_.data(), nullptr);
+      params_indices_.data(), per_site_lnl);
 
   return lnl;
 }

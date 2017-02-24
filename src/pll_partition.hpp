@@ -54,7 +54,7 @@ class Partition
 
   ~Partition();
 
-  double LogLikelihood(pll_utree_t* tree);
+  double LogLikelihood(pll_utree_t* tree, double* per_site_lnl = nullptr);
 
   unsigned int TraversalUpdate(pll_utree_t* root, TraversalType type);
   void UpdateBranchLength(pll_utree_t* node, double length);
