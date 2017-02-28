@@ -1,11 +1,10 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
-find_library(LIBPLL libpll.a pll)
 
 add_executable(test_pt test_pt.cpp)
-target_link_libraries(test_pt ${LIBPLL} pt-static)
+target_link_libraries(test_pt pll pt-static)
 
 add_executable(test_ptw test_ptw.cpp)
-target_link_libraries(test_ptw ${LIBPLL} pt-static)
+target_link_libraries(test_ptw pll pt-static)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test-data
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
