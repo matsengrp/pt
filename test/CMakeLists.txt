@@ -1,10 +1,13 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../src)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 add_executable(test_pt test_pt.cpp)
-target_link_libraries(test_pt pll pt-static)
+target_link_libraries(test_pt Threads::Threads pll pt-static)
 
 add_executable(test_ptw test_ptw.cpp)
-target_link_libraries(test_ptw pll pt-static)
+target_link_libraries(test_ptw Threads::Threads pll pt-static)
 
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/test-data
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
