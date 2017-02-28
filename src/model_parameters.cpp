@@ -1,6 +1,7 @@
 #include "model_parameters.hpp"
 
 #include <fstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
