@@ -91,6 +91,12 @@ Wanderer::~Wanderer()
 
 void Wanderer::Start()
 {
+  // TODO: should Start() add trees_.top() to the visited table, then
+  //       compute the log-likelihood and check to see if it should be
+  //       added to the good table? otherwise it will be a candidate
+  //       for moving back to later. if so, do we optimize it and
+  //       everything?
+
   partition_.TraversalUpdate(trees_.top(), pll::TraversalType::FULL);
   QueueMoves();
 
