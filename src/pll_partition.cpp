@@ -131,8 +131,10 @@ void Partition::SetTipStates(pll_utree_t* tree,
   // populate a hash table with tree tip labels
   for (unsigned int i = 0; i < tip_node_count_; ++i) {
     std::string label = tip_nodes[i]->label;
+    unsigned int tip_clv_index = tip_nodes[i]->clv_index;
+
     bool inserted;
-    std::tie(std::ignore, inserted) = tip_ids.emplace(label, i);
+    std::tie(std::ignore, inserted) = tip_ids.emplace(label, tip_clv_index);
 
     if (!inserted) {
       throw std::invalid_argument("Error inserting tip label " + label
