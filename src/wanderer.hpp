@@ -89,6 +89,9 @@ class Wanderer {
 
   void Start();
 
+  TreeTable& GetVisitedTreeTable();
+  TreeTable& GetGoodTreeTable();
+
  private:
   void QueueMoves();
 
@@ -99,6 +102,16 @@ class Wanderer {
 
   void Teleport(pll_utree_t* tree);
 };
+
+inline TreeTable& Wanderer::GetVisitedTreeTable()
+{
+  return all_trees_;
+}
+
+inline TreeTable& Wanderer::GetGoodTreeTable()
+{
+  return good_trees_;
+}
 
 } // namespace pt
 
