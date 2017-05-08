@@ -26,13 +26,12 @@ void WriteTreeTable(pt::TreeTable& trees, const std::string& path)
 
 int main(int argc, const char* argv[])
 {
-  if (argc != 8) {
+  if (argc != 7) {
     std::cerr << "usage:\n\n"
               << "ptw\n"
               << "\t<input_tree>\n"
               << "\t<input_alignment>\n"
               << "\t<input_raxml_info>\n"
-              << "\t<ml_lnl>\n"
               << "\t<lambda>\n"
               << "\t<output_good_trees>\n"
               << "\t<output_visited_trees>\n";
@@ -47,11 +46,10 @@ int main(int argc, const char* argv[])
   std::string fasta_path(argv[2]);
   std::string raxml_path(argv[3]);
 
-  double ml_lnl = std::stod(argv[4]);
-  double lambda = std::stod(argv[5]);
+  double lambda = std::stod(argv[4]);
 
-  std::string good_trees_path(argv[6]);
-  std::string visited_trees_path(argv[7]);
+  std::string good_trees_path(argv[5]);
+  std::string visited_trees_path(argv[6]);
 
   //
   // load tree, sequences, and model info
@@ -73,8 +71,9 @@ int main(int argc, const char* argv[])
 
   pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
   partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
+  double initial_lnl = partition.LogLikelihood(tree);
 
-  pt::Authority authority(ml_lnl, lambda);
+  pt::Authority authority(initial_lnl, lambda);
   pt::Wanderer wanderer(authority, std::move(partition), tree);
 
   //
