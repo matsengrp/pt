@@ -39,14 +39,14 @@ std::string OrderedNewickString(pll_utree_t* tree)
 // Authority
 //
 
-Authority::Authority(double ml_lnl, double lambda) :
+Authority::Authority(double ml_lnl, double lnl_offset) :
     ml_lnl_(ml_lnl),
-    lambda_(lambda)
+    lnl_offset_(lnl_offset)
 { }
 
 double Authority::GetThreshold() const
 {
-  return ml_lnl_ * lambda_;
+  return ml_lnl_ + lnl_offset_;
 }
 
 double Authority::GetMaximum() const

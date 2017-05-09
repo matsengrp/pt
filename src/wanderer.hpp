@@ -31,12 +31,12 @@ struct TreeMove {
 class Authority {
  private:
   std::atomic<double> ml_lnl_;
-  const double lambda_;
+  const double lnl_offset_;
 
  public:
   // TODO: make authority constructor private and add a factory
   //       function that returns a shared pointer
-  Authority(double ml_lnl, double lambda);
+  Authority(double ml_lnl, double lnl_offset);
 
   double GetThreshold() const;
 

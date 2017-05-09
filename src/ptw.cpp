@@ -32,7 +32,7 @@ int main(int argc, const char* argv[])
               << "\t<input_tree>\n"
               << "\t<input_alignment>\n"
               << "\t<input_raxml_info>\n"
-              << "\t<lambda>\n"
+              << "\t<lnl_offset>\n"
               << "\t<output_good_trees>\n"
               << "\t<output_visited_trees>\n";
     return 1;
@@ -46,10 +46,15 @@ int main(int argc, const char* argv[])
   std::string fasta_path(argv[2]);
   std::string raxml_path(argv[3]);
 
-  double lambda = std::stod(argv[4]);
+  double lnl_offset = std::stod(argv[4]);
 
   std::string good_trees_path(argv[5]);
   std::string visited_trees_path(argv[6]);
+
+  if (lnl_offset > 0.0) {
+    std::cerr << "error: expected an lnl_offset < 0.\n";
+    return 1;
+  }
 
   //
   // load tree, sequences, and model info
@@ -73,7 +78,7 @@ int main(int argc, const char* argv[])
   partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
   double initial_lnl = partition.LogLikelihood(tree);
 
-  pt::Authority authority(initial_lnl, lambda);
+  pt::Authority authority(initial_lnl, lnl_offset);
   pt::Wanderer wanderer(authority, std::move(partition), tree);
 
   //
