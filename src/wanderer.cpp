@@ -91,13 +91,30 @@ Wanderer::~Wanderer()
 
 void Wanderer::Start()
 {
-  // TODO: should Start() add trees_.top() to the visited table, then
-  //       compute the log-likelihood and check to see if it should be
-  //       added to the good table? otherwise it will be a candidate
-  //       for moving back to later. if so, do we optimize it and
-  //       everything?
+  // mark the initial tree as visited, then check its log-likelihood
+  // (without any branch length optimization) and see if it should be
+  // added to the "good" table. if this isn't done, the initial tree
+  // may never be visited.
+  //
+  // TODO: should we optimize the initial tree first?
+  pll_utree_t* tree = trees_.top();
+  std::string newick_str = OrderedNewickString(tree);
 
-  partition_.TraversalUpdate(trees_.top(), pll::TraversalType::FULL);
+  if (!all_trees_.insert(newick_str, 0.0)) {
+    throw std::runtime_error("initial tree has already been visited");
+  }
+
+  partition_.TraversalUpdate(tree, pll::TraversalType::FULL);
+  double lnl = partition_.LogLikelihood(tree);
+
+  if (lnl >= authority_.GetThreshold()) {
+    good_trees_.insert(newick_str, lnl);
+
+    if (lnl > authority_.GetMaximum()) {
+      authority_.SetMaximum(lnl);
+    }
+  }
+
   QueueMoves();
 
   // note that move_queues_.top() and move_queues_.top().front() can
