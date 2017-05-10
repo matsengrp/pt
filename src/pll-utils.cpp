@@ -1,5 +1,6 @@
 #include "pll-utils.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <iomanip>
 #include <map>
@@ -274,6 +275,14 @@ unsigned int ParseFasta(std::string path, unsigned int seq_count,
       sites = seqlen;
 
     headers_out[i] = header;
+
+    // TODO: the current version of libpll (commit 5727e25) strips '?'
+    //       rather than treating it as a gap. see the mapping of
+    //       character 0x3F in pll_map_fasta in maps.c. despite this,
+    //       '?' is treated the same as '-' (0x2D) in pll_map_nt. this
+    //       is fixed in the dev branch; when we upgrade, this
+    //       replacement is no longer necessary.
+    std::replace(sequence.begin(), sequence.end(), '?', '-');
     seqdata_out[i] = sequence;
   }
 
