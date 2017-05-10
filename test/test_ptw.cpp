@@ -74,7 +74,7 @@ TEST_CASE("partition operations are correct", "[partition]")
   //        created and destroyed
   SECTION("wanderers are created correctly")
   {
-    pt::Authority authority(-33.387713, 1.1);
+    pt::Authority authority(-33.387713, -1.0);
     pt::Wanderer wanderer(authority, std::move(partition), tree);
   }
 

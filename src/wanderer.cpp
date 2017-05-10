@@ -1,6 +1,7 @@
 #include "wanderer.hpp"
 
 #include <queue>
+#include <stdexcept>
 #include <vector>
 
 // pll.h is missing a header guard
@@ -42,7 +43,11 @@ std::string OrderedNewickString(pll_utree_t* tree)
 Authority::Authority(double ml_lnl, double lnl_offset) :
     ml_lnl_(ml_lnl),
     lnl_offset_(lnl_offset)
-{ }
+{
+  if (lnl_offset_ > 0.0) {
+    throw std::invalid_argument("lnl_offset is greater than zero");
+  }
+}
 
 double Authority::GetThreshold() const
 {
