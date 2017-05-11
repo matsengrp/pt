@@ -14,6 +14,29 @@
 #include "pll_partition.hpp"
 #include "wanderer.hpp"
 
+//
+// free functions
+//
+
+std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
+{
+  std::map<std::string, double> tree_lnls;
+
+  std::ifstream file(filename);
+  std::string line;
+
+  while (std::getline(file, line)) {
+    std::vector<std::string> tokens = pt::ssplit(line, '\t');
+    tree_lnls[tokens[0]] = std::stod(tokens[1]);
+  }
+
+  return tree_lnls;
+}
+
+//
+// tests
+//
+
 TEST_CASE("partition operations are correct", "[partition]")
 {
   std::string newick_path("test-data/tiny/newton.tre");
@@ -70,12 +93,91 @@ TEST_CASE("partition operations are correct", "[partition]")
     pll_utree_destroy(other_tree);
   }
 
-  // FIXME: this is just temporary, to see if a Wanderer can be
-  //        created and destroyed
-  SECTION("wanderers are created correctly")
-  {
-    pt::Authority authority(-33.387713, -1.0);
-    pt::Wanderer wanderer(authority, std::move(partition), tree);
+  pll_utree_destroy(tree);
+}
+
+TEST_CASE("wanderer operations are correct", "[wanderer]") {
+  std::string newick_path("test-data/five/RAxML_bestTree.five");
+  std::string fasta_path("test-data/five/five.fasta");
+  std::string raxml_path("test-data/five/RAxML_info.five");
+
+  unsigned int tip_node_count;
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
+                                             &tip_node_count);
+
+  std::vector<std::string> labels;
+  std::vector<std::string> sequences;
+  pt::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+
+  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+
+  pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
+  partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
+
+  SECTION("the initial tree's log-likelihood is computed correctly") {
+    REQUIRE(partition.LogLikelihood(tree) == Approx(-3737.47));
+  }
+
+  SECTION("wanderers agree with other methods") {
+    // from test_pt.cpp: good trees are those with a log-likelihood of
+    // at least -3820 (ML is -3737.47).
+    double lnl_offset = -3820.0 - (-3737.47);
+
+    pt::Authority authority(-3737.47, lnl_offset);
+    pt::Wanderer wanderer(authority, std::move(partition), tree, true);
+
+    wanderer.Start();
+
+    pt::TreeTable& good_trees = wanderer.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = wanderer.GetVisitedTreeTable();
+
+    SECTION("wanderers agree with old pt") {
+      CHECK(good_trees.size() == 13);
+      CHECK(visited_trees.size() == 15);
+
+      CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                                "((Ref.A1.RW.92.92RW008.AB253421,"
+                                "Ref.A1.UG.92.92UG037.AB253429),"
+                                "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                                "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+    }
+
+    SECTION("wanderers agree with RAxML") {
+      std::map<std::string, double> raxml_lnls =
+          ReadRaxmlTest("test-data/five/good_trees.five.raxml");
+
+      REQUIRE(raxml_lnls.size() == good_trees.size());
+
+      std::vector<std::pair<std::string, double>> raxml_pairs;
+      std::vector<std::pair<std::string, double>> pt_pairs;
+
+      for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
+        std::string tree_str = iter->first;
+        double raxml_lnl = iter->second;
+        double pt_lnl = good_trees.find(tree_str);
+
+        // Test that pt's log-likelihoods are close to RAxML's.
+        CHECK(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
+
+        // Store the (tree_str, lnl) pairs for comparing relative order below.
+        raxml_pairs.push_back(std::make_pair(tree_str, raxml_lnl));
+        pt_pairs.push_back(std::make_pair(tree_str, pt_lnl));
+      }
+
+      // Sort the pt and RAxML (tree_str, lnl) pairs by log-likelihood.
+      auto pair_cmp = [](const std::pair<std::string, double>& lhs,
+                         const std::pair<std::string, double>& rhs) {
+        return lhs.second < rhs.second;
+      };
+
+      std::sort(raxml_pairs.begin(), raxml_pairs.end(), pair_cmp);
+      std::sort(pt_pairs.begin(), pt_pairs.end(), pair_cmp);
+
+      // Test that the tree ordering is the same for pt and RAxML.
+      for (size_t i = 0; i < raxml_pairs.size(); ++i) {
+        REQUIRE(raxml_pairs[i].first == pt_pairs[i].first);
+      }
+    }
   }
 
   pll_utree_destroy(tree);
