@@ -28,8 +28,10 @@ std::string OrderedNewickString(pll_utree_t* tree)
   // node->data pointers) so we don't have to copy or free those.
   pll_utree_t* clone = pll_utree_clone(tree);
 
-  // ToOrderedNewick() only reorders the tree, despite its name
-  ToOrderedNewick(clone);
+  // ToOrderedNewick() only reorders the tree, despite its name. its
+  // return value is the rerooted and reordered tree, which we assign
+  // to our pointer before continuing.
+  clone = ToOrderedNewick(clone);
   std::string newick_str = ToNewick(clone);
 
   pll_utree_destroy(clone);
