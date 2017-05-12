@@ -121,7 +121,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
   SECTION("wanderers agree with other methods") {
     // from test_pt.cpp: good trees are those with a log-likelihood of
     // at least -3820 (ML is -3737.47).
-    double lnl_offset = -3820.0 - (-3737.47);
+    double lnl_offset = -3820.0 - (-3737.47);  // -82.53
 
     pt::Authority authority(-3737.47, lnl_offset);
     pt::Wanderer wanderer(authority, std::move(partition), tree);
