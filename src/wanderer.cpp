@@ -10,6 +10,7 @@
 #include <libpll/pll.h>
 #endif
 
+#include "authority.hpp"
 #include "ordered-tree.hpp"
 #include "pll_partition.hpp"
 #include "pll-utils.hpp"
@@ -36,34 +37,6 @@ std::string OrderedNewickString(pll_utree_t* tree)
 
   pll_utree_destroy(clone);
   return newick_str;
-}
-
-//
-// Authority
-//
-
-Authority::Authority(double ml_lnl, double lnl_offset) :
-    ml_lnl_(ml_lnl),
-    lnl_offset_(lnl_offset)
-{
-  if (lnl_offset_ > 0.0) {
-    throw std::invalid_argument("lnl_offset is greater than zero");
-  }
-}
-
-double Authority::GetThreshold() const
-{
-  return ml_lnl_ + lnl_offset_;
-}
-
-double Authority::GetMaximum() const
-{
-  return ml_lnl_;
-}
-
-void Authority::SetMaximum(double lnl)
-{
-  ml_lnl_ = lnl;
 }
 
 //

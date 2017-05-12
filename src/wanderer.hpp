@@ -1,7 +1,6 @@
 #ifndef PT_WANDERER_HPP_
 #define PT_WANDERER_HPP_
 
-#include <atomic>
 #include <queue>
 #include <stack>
 
@@ -13,12 +12,11 @@
 #include <libpll/pll.h>
 #endif
 
+#include "authority.hpp"
 #include "pll_partition.hpp"
 #include "pll-utils.hpp"
 
 namespace pt {
-
-using TreeTable = cuckoohash_map<std::string, double>;
 
 enum MoveType : int { LEFT = PLL_UTREE_MOVE_NNI_LEFT,
                       RIGHT = PLL_UTREE_MOVE_NNI_RIGHT };
@@ -26,39 +24,6 @@ enum MoveType : int { LEFT = PLL_UTREE_MOVE_NNI_LEFT,
 struct TreeMove {
   pll_utree_t* node;
   MoveType type;
-};
-
-class Authority {
- private:
-  TreeTable visited_trees_;
-  TreeTable good_trees_;
-
-  std::atomic<double> ml_lnl_;
-  const double lnl_offset_;
-
- public:
-  // TODO: make authority constructor private and add a factory
-  //       function that returns a shared pointer
-  Authority(double ml_lnl, double lnl_offset);
-
-  double GetThreshold() const;
-
-  // TODO: with multiple threads there can be a race between getting
-  //       and setting the maximum, so what we really need is a
-  //       SetMaximumIfBetter() function with a proper mutex. see the
-  //       comments in Wanderer::MoveForward().
-  double GetMaximum() const;
-  void SetMaximum(double lnl);
-
-  // TODO: these break encapsulation
-  TreeTable& GetVisitedTreeTable();
-  TreeTable& GetGoodTreeTable();
-
-  bool InsertVisitedTree(const std::string& newick_str, double lnl);
-  bool InsertGoodTree(const std::string& newick_str, double lnl);
-
-  bool UpdateVisitedTree(const std::string& newick_str, double lnl);
-  bool UpdateGoodTree(const std::string& newick_str, double lnl);
 };
 
 class Wanderer {
@@ -103,40 +68,6 @@ class Wanderer {
 
   void Teleport(pll_utree_t* tree);
 };
-
-//
-// inline functions
-//
-
-inline TreeTable& Authority::GetVisitedTreeTable()
-{
-  return visited_trees_;
-}
-
-inline TreeTable& Authority::GetGoodTreeTable()
-{
-  return good_trees_;
-}
-
-inline bool Authority::InsertVisitedTree(const std::string& newick_str, double lnl)
-{
-  return visited_trees_.insert(newick_str, lnl);
-}
-
-inline bool Authority::InsertGoodTree(const std::string& newick_str, double lnl)
-{
-  return good_trees_.insert(newick_str, lnl);
-}
-
-inline bool Authority::UpdateVisitedTree(const std::string& newick_str, double lnl)
-{
-  return visited_trees_.update(newick_str, lnl);
-}
-
-inline bool Authority::UpdateGoodTree(const std::string& newick_str, double lnl)
-{
-  return good_trees_.update(newick_str, lnl);
-}
 
 } // namespace pt
 
