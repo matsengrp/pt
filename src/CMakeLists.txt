@@ -1,6 +1,6 @@
 set(PT_SRC
   authority.cpp
-  ordered-tree.cpp
+  ordered_tree.cpp
   wanderer.cpp)
 
 add_library(pt_static STATIC ${PT_SRC})

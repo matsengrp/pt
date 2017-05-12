@@ -11,7 +11,7 @@
 #endif
 
 #include "authority.hpp"
-#include "ordered-tree.hpp"
+#include "ordered_tree.hpp"
 #include "pll_partition.hpp"
 
 namespace pt {
