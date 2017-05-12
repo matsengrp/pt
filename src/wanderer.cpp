@@ -70,9 +70,6 @@ void Authority::SetMaximum(double lnl)
 // Wanderer
 //
 
-TreeTable Wanderer::all_trees_;
-TreeTable Wanderer::good_trees_;
-
 Wanderer::Wanderer(Authority& authority, pll::Partition&& partition,
                    pll_utree_t* initial_tree, bool try_all_moves) :
     authority_(authority),
@@ -107,7 +104,7 @@ void Wanderer::Start()
   pll_utree_t* tree = trees_.top();
   std::string newick_str = OrderedNewickString(tree);
 
-  if (!all_trees_.insert(newick_str, 0.0)) {
+  if (!authority_.InsertVisitedTree(newick_str, 0.0)) {
     throw std::runtime_error("initial tree has already been visited");
   }
 
@@ -115,7 +112,7 @@ void Wanderer::Start()
   double lnl = partition_.LogLikelihood(tree);
 
   if (lnl >= authority_.GetThreshold()) {
-    good_trees_.insert(newick_str, lnl);
+    authority_.InsertGoodTree(newick_str, lnl);
 
     if (lnl > authority_.GetMaximum()) {
       authority_.SetMaximum(lnl);
@@ -157,7 +154,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
 
   // try and insert the tree into the "all" table. if successful, this
   // Wanderer owns the tree and we can proceed.
-  if (!all_trees_.insert(newick_str, 0.0)) {
+  if (!authority_.InsertVisitedTree(newick_str, 0.0)) {
     // undo the move and reject
     pll_utree_nni(node, type, nullptr);
     return false;
@@ -197,7 +194,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
 
     // store the test log-likelihood along with the tree in the "all"
     // table; it might be useful later for comparison
-    all_trees_.update(newick_str, test_lnl);
+    authority_.UpdateVisitedTree(newick_str, test_lnl);
 
     // restore the branch length and undo the move. CLVs will remain
     // pointed toward node, so future operations on this tree will need
@@ -241,7 +238,7 @@ void Wanderer::MoveForward()
   // if log-likelihood is above the threshold, add tree to "good"
   // table, push it onto the stack, and queue moves
   if (lnl >= authority_.GetThreshold()) {
-    good_trees_.insert(OrderedNewickString(tree), lnl);
+    authority_.InsertGoodTree(OrderedNewickString(tree), lnl);
 
     // if we find a new maximum likelihood, update the authority. note
     // there could be a race between getting and setting the maximum

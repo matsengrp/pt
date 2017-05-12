@@ -128,8 +128,8 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     wanderer.Start();
 
-    pt::TreeTable& good_trees = wanderer.GetGoodTreeTable();
-    pt::TreeTable& visited_trees = wanderer.GetVisitedTreeTable();
+    pt::TreeTable& good_trees = authority.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
 
     SECTION("wanderers agree with old pt") {
       CHECK(good_trees.size() == 13);

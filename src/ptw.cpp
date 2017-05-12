@@ -91,8 +91,8 @@ int main(int argc, const char* argv[])
   // write output
   //
 
-  WriteTreeTable(wanderer.GetGoodTreeTable(), good_trees_path);
-  WriteTreeTable(wanderer.GetVisitedTreeTable(), visited_trees_path);
+  WriteTreeTable(authority.GetGoodTreeTable(), good_trees_path);
+  WriteTreeTable(authority.GetVisitedTreeTable(), visited_trees_path);
 
   return 0;
 }
