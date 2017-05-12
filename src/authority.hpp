@@ -40,6 +40,9 @@ class Authority {
   TreeTable& GetVisitedTreeTable();
   TreeTable& GetGoodTreeTable();
 
+  void FilterGoodTreeTable(double lnl_threshold);
+  void FilterGoodTreeTable();
+
   bool InsertVisitedTree(const std::string& newick_str, double lnl);
   bool InsertGoodTree(const std::string& newick_str, double lnl);
 

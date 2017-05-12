@@ -178,6 +178,14 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
         REQUIRE(raxml_pairs[i].first == pt_pairs[i].first);
       }
     }
+
+    SECTION("good tree tables are filtered correctly") {
+      // There are 3 good trees with a log-likelihood greater than -3800.
+      authority.FilterGoodTreeTable(-3800.0);
+
+      // We already have a reference to the live table.
+      CHECK(good_trees.size() == 3);
+    }
   }
 
   pll_utree_destroy(tree);
