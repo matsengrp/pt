@@ -10,7 +10,7 @@ release:
 
 test: release
 	cd _build/test && \
-	./test_pt
+	./test_ptw
 
 clean:
 	rm -rf _build
