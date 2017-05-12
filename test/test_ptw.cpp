@@ -114,16 +114,19 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
   pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
   partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
 
+  double ml_lnl = partition.LogLikelihood(tree);
+
   SECTION("the initial tree's log-likelihood is computed correctly") {
-    REQUIRE(partition.LogLikelihood(tree) == Approx(-3737.47));
+    REQUIRE(ml_lnl == Approx(-3737.47));
   }
 
   SECTION("wanderers agree with other methods") {
     // from test_pt.cpp: good trees are those with a log-likelihood of
     // at least -3820 (ML is -3737.47).
-    double lnl_offset = -3820.0 - (-3737.47);  // -82.53
+    double lnl_threshold = -3820.0;
+    double lnl_offset = lnl_threshold - ml_lnl;  // -82.53
 
-    pt::Authority authority(-3737.47, lnl_offset);
+    pt::Authority authority(ml_lnl, lnl_offset);
     pt::Wanderer wanderer(authority, std::move(partition), tree);
 
     wanderer.Start();
@@ -180,8 +183,10 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
 
     SECTION("good tree tables are filtered correctly") {
+      double new_lnl_threshold = -3800.0;
+
       // There are 3 good trees with a log-likelihood greater than -3800.
-      authority.FilterGoodTreeTable(-3800.0);
+      authority.FilterGoodTreeTable(new_lnl_threshold);
 
       // We already have a reference to the live table.
       CHECK(good_trees.size() == 3);
