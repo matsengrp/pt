@@ -100,5 +100,12 @@ int main(int argc, const char* argv[])
   WriteTreeTable(authority.GetGoodTreeTable(), good_trees_path);
   WriteTreeTable(authority.GetVisitedTreeTable(), visited_trees_path);
 
+  //
+  // clean up and return
+  //
+
+  pll_utree_every(tree, pt::pll::cb_erase_data);
+  pll_utree_destroy(tree);
+
   return 0;
 }
