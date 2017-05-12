@@ -13,7 +13,6 @@
 #include "authority.hpp"
 #include "ordered-tree.hpp"
 #include "pll_partition.hpp"
-#include "pll-utils.hpp"
 
 namespace pt {
 
@@ -52,7 +51,7 @@ Wanderer::Wanderer(Authority& authority, pll::Partition&& partition,
   // we don't want to take ownership of initial_tree, so clone it
   // first and push the clone onto the stack
   pll_utree_t* tree = pll_utree_clone(initial_tree);
-  pll_utree_every(tree, cb_copy_clv_traversal);
+  pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
   trees_.push(tree);
 }
@@ -60,7 +59,7 @@ Wanderer::Wanderer(Authority& authority, pll::Partition&& partition,
 Wanderer::~Wanderer()
 {
   while (!trees_.empty()) {
-    pll_utree_every(trees_.top(), cb_erase_data);
+    pll_utree_every(trees_.top(), pll::cb_erase_data);
     pll_utree_destroy(trees_.top());
     trees_.pop();
   }
@@ -195,7 +194,7 @@ void Wanderer::MoveForward()
 
   // clone the tree with move applied
   pll_utree_t* tree = pll_utree_clone(trees_.top());
-  pll_utree_every(tree, cb_copy_clv_traversal);
+  pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
   // undo the move on the original tree
   pll_utree_nni(move.node, move.type, nullptr);
@@ -237,7 +236,7 @@ void Wanderer::MoveBack()
 
   // restore previous tree by destroying the current tree and popping
   // it off the top of the tree history stack
-  pll_utree_every(trees_.top(), cb_erase_data);
+  pll_utree_every(trees_.top(), pll::cb_erase_data);
   pll_utree_destroy(trees_.top());
   trees_.pop();
 

@@ -1,7 +1,9 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include <sstream>
 #include <string>
+#include <vector>
 
 // pll.h is missing a header guard
 #ifndef LIBPLL_PLL_H_
@@ -10,13 +12,22 @@
 #endif
 
 #include "model_parameters.hpp"
-#include "pll-utils.hpp"
 #include "pll_partition.hpp"
 #include "wanderer.hpp"
 
 //
 // free functions
 //
+
+std::vector<std::string> ssplit(const std::string &s, char delim) {
+  std::stringstream ss(s);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (std::getline(ss, item, delim)) {
+    tokens.push_back(item);
+  }
+  return tokens;
+}
 
 std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
 {
@@ -26,7 +37,7 @@ std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
   std::string line;
 
   while (std::getline(file, line)) {
-    std::vector<std::string> tokens = pt::ssplit(line, '\t');
+    std::vector<std::string> tokens = ssplit(line, '\t');
     tree_lnls[tokens[0]] = std::stod(tokens[1]);
   }
 
@@ -49,7 +60,7 @@ TEST_CASE("partition operations are correct", "[partition]")
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
@@ -107,7 +118,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 

@@ -5,7 +5,6 @@
 
 #include "model_parameters.hpp"
 #include "pll_partition.hpp"
-#include "pll-utils.hpp"
 #include "wanderer.hpp"
 
 // pll.h is missing a header guard
@@ -66,7 +65,7 @@ int main(int argc, const char* argv[])
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
