@@ -226,6 +226,10 @@ void Wanderer::MoveForward()
 
     trees_.push(tree);
     QueueMoves();
+  } else {
+    // otherwise, we're done with this tree, so destroy it
+    pll_utree_every(tree, pll::cb_erase_data);
+    pll_utree_destroy(tree);
   }
 }
 
