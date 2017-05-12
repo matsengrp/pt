@@ -53,7 +53,7 @@ class Wanderer {
 
  public:
   Wanderer(Authority& authority, pll::Partition&& partition,
-           pll_utree_t* initial_tree, bool try_all_moves = false);
+           pll_utree_t* initial_tree, bool try_all_moves = true);
   ~Wanderer();
 
   void Start();

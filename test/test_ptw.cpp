@@ -124,7 +124,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     double lnl_offset = -3820.0 - (-3737.47);
 
     pt::Authority authority(-3737.47, lnl_offset);
-    pt::Wanderer wanderer(authority, std::move(partition), tree, true);
+    pt::Wanderer wanderer(authority, std::move(partition), tree);
 
     wanderer.Start();
 
