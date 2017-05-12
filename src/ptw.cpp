@@ -91,6 +91,9 @@ int main(int argc, const char* argv[])
   // write output
   //
 
+  // ensure that the good tree table is filtered based on the final threshold
+  authority.FilterGoodTreeTable();
+
   WriteTreeTable(authority.GetGoodTreeTable(), good_trees_path);
   WriteTreeTable(authority.GetVisitedTreeTable(), visited_trees_path);
 
