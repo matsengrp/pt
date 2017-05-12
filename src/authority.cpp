@@ -1,6 +1,8 @@
 #include "authority.hpp"
 
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace pt {
 

@@ -4,16 +4,15 @@
 #include <queue>
 #include <stack>
 
-#include <cuckoohash_map.hh>
-
 // pll.h is missing a header guard
 #ifndef LIBPLL_PLL_H_
 #define LIBPLL_PLL_H_
 #include <libpll/pll.h>
 #endif
 
+#include <pll_partition.hpp>
+
 #include "authority.hpp"
-#include "pll_partition.hpp"
 
 namespace pt {
 

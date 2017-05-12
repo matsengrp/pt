@@ -2,6 +2,8 @@
 
 #include <queue>
 #include <stdexcept>
+#include <string>
+#include <utility>
 #include <vector>
 
 // pll.h is missing a header guard
@@ -10,9 +12,11 @@
 #include <libpll/pll.h>
 #endif
 
+#include <pll_partition.hpp>
+#include <pll_util.hpp>
+
 #include "authority.hpp"
 #include "ordered_tree.hpp"
-#include "pll_partition.hpp"
 
 namespace pt {
 

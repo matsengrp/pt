@@ -1,8 +1,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#include <algorithm>
+#include <map>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 // pll.h is missing a header guard
@@ -11,8 +14,11 @@
 #include <libpll/pll.h>
 #endif
 
-#include "model_parameters.hpp"
-#include "pll_partition.hpp"
+#include <model_parameters.hpp>
+#include <pll_partition.hpp>
+#include <pll_util.hpp>
+
+#include "authority.hpp"
 #include "wanderer.hpp"
 
 //
