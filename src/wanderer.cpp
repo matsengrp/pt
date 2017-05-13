@@ -13,6 +13,7 @@
 #include <libpll/pll.h>
 #endif
 
+#include <model_parameters.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
@@ -58,6 +59,29 @@ Wanderer::Wanderer(std::shared_ptr<Authority> authority,
   // first and push the clone onto the stack
   pll_utree_t* tree = pll_utree_clone(starting_tree);
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
+
+  trees_.push(tree);
+}
+
+Wanderer::Wanderer(std::shared_ptr<Authority> authority,
+                   pll_utree_t* starting_tree, unsigned int tip_node_count,
+                   const pll::ModelParameters& model_parameters,
+                   const std::vector<std::string>& labels,
+                   const std::vector<std::string>& sequences,
+                   bool try_all_moves) :
+    authority_(authority),
+    partition_(starting_tree, tip_node_count, model_parameters, labels, sequences),
+    try_all_moves_(try_all_moves)
+{
+  // we don't want to take ownership of starting_tree, so clone it
+  // first and push the clone onto the stack
+  pll_utree_t* tree = pll_utree_clone(starting_tree);
+  pll_utree_every(tree, pll::cb_copy_clv_traversal);
+
+  // TODO: should we do a TraversalUpdate() here? Start() does one so
+  //       we probably don't need to, but it might be good to ensure
+  //       that the wanderer is ready as soon as the constructor
+  //       returns
 
   trees_.push(tree);
 }

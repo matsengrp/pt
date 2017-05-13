@@ -4,6 +4,8 @@
 #include <memory>
 #include <queue>
 #include <stack>
+#include <string>
+#include <vector>
 
 // pll.h is missing a header guard
 #ifndef LIBPLL_PLL_H_
@@ -11,6 +13,7 @@
 #include <libpll/pll.h>
 #endif
 
+#include <model_parameters.hpp>
 #include <pll_partition.hpp>
 
 #include "authority.hpp"
@@ -51,6 +54,14 @@ class Wanderer {
  public:
   Wanderer(std::shared_ptr<Authority> authority, pll::Partition&& partition,
            pll_utree_t* starting_tree, bool try_all_moves = true);
+
+  Wanderer(std::shared_ptr<Authority> authority,
+           pll_utree_t* starting_tree, unsigned int tip_node_count,
+           const pll::ModelParameters& model_parameters,
+           const std::vector<std::string>& labels,
+           const std::vector<std::string>& sequences,
+           bool try_all_moves = true);
+
   ~Wanderer();
 
   void Start();
