@@ -36,7 +36,7 @@ std::vector<std::string> ssplit(const std::string &s, char delim) {
   return tokens;
 }
 
-std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
+std::map<std::string, double> ReadRaxmlTestData(const std::string& filename)
 {
   std::map<std::string, double> tree_lnls;
 
@@ -49,6 +49,43 @@ std::map<std::string, double> ReadRaxmlTest(const std::string& filename)
   }
 
   return tree_lnls;
+}
+
+void RunRaxmlTest(const std::string& raxml_data_filename, pt::TreeTable& good_trees)
+{
+  std::map<std::string, double> raxml_lnls = ReadRaxmlTestData(raxml_data_filename);
+
+  REQUIRE(raxml_lnls.size() == good_trees.size());
+
+  std::vector<std::pair<std::string, double>> raxml_pairs;
+  std::vector<std::pair<std::string, double>> pt_pairs;
+
+  for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
+    std::string tree_str = iter->first;
+    double raxml_lnl = iter->second;
+    double pt_lnl = good_trees.find(tree_str);
+
+    // Test that pt's log-likelihoods are close to RAxML's.
+    CHECK(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
+
+    // Store the (tree_str, lnl) pairs for comparing relative order below.
+    raxml_pairs.push_back(std::make_pair(tree_str, raxml_lnl));
+    pt_pairs.push_back(std::make_pair(tree_str, pt_lnl));
+  }
+
+  // Sort the pt and RAxML (tree_str, lnl) pairs by log-likelihood.
+  auto pair_cmp = [](const std::pair<std::string, double>& lhs,
+                     const std::pair<std::string, double>& rhs) {
+    return lhs.second < rhs.second;
+  };
+
+  std::sort(raxml_pairs.begin(), raxml_pairs.end(), pair_cmp);
+  std::sort(pt_pairs.begin(), pt_pairs.end(), pair_cmp);
+
+  // Test that the tree ordering is the same for pt and RAxML.
+  for (size_t i = 0; i < raxml_pairs.size(); ++i) {
+    REQUIRE(raxml_pairs[i].first == pt_pairs[i].first);
+  }
 }
 
 //
@@ -165,40 +202,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
 
     SECTION("wanderers agree with RAxML") {
-      std::map<std::string, double> raxml_lnls =
-          ReadRaxmlTest("test-data/five/good_trees.five.raxml");
-
-      REQUIRE(raxml_lnls.size() == good_trees.size());
-
-      std::vector<std::pair<std::string, double>> raxml_pairs;
-      std::vector<std::pair<std::string, double>> pt_pairs;
-
-      for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
-        std::string tree_str = iter->first;
-        double raxml_lnl = iter->second;
-        double pt_lnl = good_trees.find(tree_str);
-
-        // Test that pt's log-likelihoods are close to RAxML's.
-        CHECK(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
-
-        // Store the (tree_str, lnl) pairs for comparing relative order below.
-        raxml_pairs.push_back(std::make_pair(tree_str, raxml_lnl));
-        pt_pairs.push_back(std::make_pair(tree_str, pt_lnl));
-      }
-
-      // Sort the pt and RAxML (tree_str, lnl) pairs by log-likelihood.
-      auto pair_cmp = [](const std::pair<std::string, double>& lhs,
-                         const std::pair<std::string, double>& rhs) {
-        return lhs.second < rhs.second;
-      };
-
-      std::sort(raxml_pairs.begin(), raxml_pairs.end(), pair_cmp);
-      std::sort(pt_pairs.begin(), pt_pairs.end(), pair_cmp);
-
-      // Test that the tree ordering is the same for pt and RAxML.
-      for (size_t i = 0; i < raxml_pairs.size(); ++i) {
-        REQUIRE(raxml_pairs[i].first == pt_pairs[i].first);
-      }
+      RunRaxmlTest("test-data/five/good_trees.five.raxml", good_trees);
     }
 
     SECTION("good tree tables are filtered correctly") {
