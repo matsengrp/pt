@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -143,13 +144,14 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     double lnl_threshold = -3820.0;
     double lnl_offset = lnl_threshold - ml_lnl;  // -82.53
 
-    pt::Authority authority(ml_lnl, lnl_offset);
+    std::shared_ptr<pt::Authority> authority =
+        pt::Authority::Create(ml_lnl, lnl_offset);
     pt::Wanderer wanderer(authority, std::move(partition), tree);
 
     wanderer.Start();
 
-    pt::TreeTable& good_trees = authority.GetGoodTreeTable();
-    pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
+    pt::TreeTable& good_trees = authority->GetGoodTreeTable();
+    pt::TreeTable& visited_trees = authority->GetVisitedTreeTable();
 
     SECTION("wanderers agree with old pt") {
       CHECK(good_trees.size() == 13);
@@ -203,7 +205,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
       double new_lnl_threshold = -3800.0;
 
       // There are 3 good trees with a log-likelihood greater than -3800.
-      authority.FilterGoodTreeTable(new_lnl_threshold);
+      authority->FilterGoodTreeTable(new_lnl_threshold);
 
       // We already have a reference to the live table.
       CHECK(good_trees.size() == 3);

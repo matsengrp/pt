@@ -1,6 +1,7 @@
 #ifndef PT_WANDERER_HPP_
 #define PT_WANDERER_HPP_
 
+#include <memory>
 #include <queue>
 #include <stack>
 
@@ -26,9 +27,7 @@ struct TreeMove {
 
 class Wanderer {
  private:
-  // TODO: the authority should be a shared pointer constructed via a
-  //       factory function
-  Authority& authority_;
+  std::shared_ptr<Authority> authority_;
   pll::Partition partition_;
 
   const bool try_all_moves_;
@@ -50,7 +49,7 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(Authority& authority, pll::Partition&& partition,
+  Wanderer(std::shared_ptr<Authority> authority, pll::Partition&& partition,
            pll_utree_t* initial_tree, bool try_all_moves = true);
   ~Wanderer();
 

@@ -81,7 +81,9 @@ int main(int argc, const char* argv[])
   partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
   double initial_lnl = partition.LogLikelihood(tree);
 
-  pt::Authority authority(initial_lnl, lnl_offset);
+  std::shared_ptr<pt::Authority> authority =
+      pt::Authority::Create(initial_lnl, lnl_offset);
+
   pt::Wanderer wanderer(authority, std::move(partition), tree);
 
   //
@@ -95,10 +97,10 @@ int main(int argc, const char* argv[])
   //
 
   // ensure that the good tree table is filtered based on the final threshold
-  authority.FilterGoodTreeTable();
+  authority->FilterGoodTreeTable();
 
-  WriteTreeTable(authority.GetGoodTreeTable(), good_trees_path);
-  WriteTreeTable(authority.GetVisitedTreeTable(), visited_trees_path);
+  WriteTreeTable(authority->GetGoodTreeTable(), good_trees_path);
+  WriteTreeTable(authority->GetVisitedTreeTable(), visited_trees_path);
 
   //
   // clean up and return

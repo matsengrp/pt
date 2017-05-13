@@ -2,6 +2,7 @@
 #define PT_AUTHORITY_HPP_
 
 #include <atomic>
+#include <memory>
 #include <string>
 
 #include <cuckoohash_map.hh>
@@ -23,9 +24,9 @@ class Authority {
   const double lnl_offset_;
 
  public:
-  // TODO: make authority constructor private and add a factory
-  //       function that returns a shared pointer
-  Authority(double ml_lnl, double lnl_offset);
+  // perfect-forwarding factory function; see Effective Modern C++ p. 132
+  template <typename... Ts>
+  static std::shared_ptr<Authority> Create(Ts&&... params);
 
   // TODO: with multiple threads there can be a race between getting
   //       and setting the maximum, so what we really need is a
@@ -48,7 +49,17 @@ class Authority {
 
   bool UpdateVisitedTree(const std::string& newick_str, double lnl);
   bool UpdateGoodTree(const std::string& newick_str, double lnl);
+
+ private:
+  Authority(double ml_lnl, double lnl_offset);
 };
+
+template <typename... Ts>
+std::shared_ptr<Authority> Authority::Create(Ts&&... params)
+{
+  // we can't use std::make_shared here, because the constructor is private
+  return std::shared_ptr<Authority>(new Authority(std::forward<Ts>(params)...));
+}
 
 } // namespace pt
 
