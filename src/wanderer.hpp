@@ -50,7 +50,7 @@ class Wanderer {
 
  public:
   Wanderer(std::shared_ptr<Authority> authority, pll::Partition&& partition,
-           pll_utree_t* initial_tree, bool try_all_moves = true);
+           pll_utree_t* starting_tree, bool try_all_moves = true);
   ~Wanderer();
 
   void Start();

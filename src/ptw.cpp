@@ -79,10 +79,10 @@ int main(int argc, const char* argv[])
 
   pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
   partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
-  double initial_lnl = partition.LogLikelihood(tree);
+  double ml_lnl = partition.LogLikelihood(tree);
 
   std::shared_ptr<pt::Authority> authority =
-      pt::Authority::Create(initial_lnl, lnl_offset);
+      pt::Authority::Create(ml_lnl, lnl_offset);
 
   pt::Wanderer wanderer(authority, std::move(partition), tree);
 

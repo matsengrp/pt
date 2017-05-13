@@ -48,15 +48,15 @@ std::string OrderedNewickString(pll_utree_t* tree)
 //
 
 Wanderer::Wanderer(std::shared_ptr<Authority> authority,
-                   pll::Partition&& partition, pll_utree_t* initial_tree,
+                   pll::Partition&& partition, pll_utree_t* starting_tree,
                    bool try_all_moves) :
     authority_(authority),
     partition_(std::move(partition)),
     try_all_moves_(try_all_moves)
 {
-  // we don't want to take ownership of initial_tree, so clone it
+  // we don't want to take ownership of starting_tree, so clone it
   // first and push the clone onto the stack
-  pll_utree_t* tree = pll_utree_clone(initial_tree);
+  pll_utree_t* tree = pll_utree_clone(starting_tree);
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
   trees_.push(tree);
@@ -73,17 +73,17 @@ Wanderer::~Wanderer()
 
 void Wanderer::Start()
 {
-  // mark the initial tree as visited, then check its log-likelihood
+  // mark the starting tree as visited, then check its log-likelihood
   // (without any branch length optimization) and see if it should be
-  // added to the "good" table. if this isn't done, the initial tree
+  // added to the "good" table. if this isn't done, the starting tree
   // may never be visited.
   //
-  // TODO: should we optimize the initial tree first?
+  // TODO: should we optimize the starting tree first?
   pll_utree_t* tree = trees_.top();
   std::string newick_str = OrderedNewickString(tree);
 
   if (!authority_->InsertVisitedTree(newick_str, 0.0)) {
-    throw std::runtime_error("initial tree has already been visited");
+    throw std::runtime_error("starting tree has already been visited");
   }
 
   partition_.TraversalUpdate(tree, pll::TraversalType::FULL);
