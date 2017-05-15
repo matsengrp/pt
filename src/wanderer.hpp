@@ -1,7 +1,6 @@
 #ifndef PT_WANDERER_HPP_
 #define PT_WANDERER_HPP_
 
-#include <memory>
 #include <queue>
 #include <stack>
 #include <string>
@@ -30,7 +29,7 @@ struct TreeMove {
 
 class Wanderer {
  private:
-  std::shared_ptr<Authority> authority_;
+  Authority& authority_;
   pll::Partition partition_;
 
   const bool try_all_moves_;
@@ -52,10 +51,10 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(std::shared_ptr<Authority> authority, pll::Partition&& partition,
+  Wanderer(Authority& authority, pll::Partition&& partition,
            pll_utree_t* starting_tree, bool try_all_moves = true);
 
-  Wanderer(std::shared_ptr<Authority> authority,
+  Wanderer(Authority& authority,
            pll_utree_t* starting_tree, unsigned int tip_node_count,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
