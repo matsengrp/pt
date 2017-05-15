@@ -136,6 +136,7 @@ TEST_CASE("partition operations are correct", "[partition]")
     // clone the tree in such a way that the tips returned by
     // pll_utree_query_tipnodes() are in a different order
     pll_utree_t* other_tree = pll_utree_clone(tree->back->next->next);
+    pll_utree_every(other_tree, pt::pll::cb_copy_clv_traversal);
 
     pt::pll::Partition other_partition(other_tree, tip_node_count, parameters,
                                        labels, sequences);
@@ -144,9 +145,13 @@ TEST_CASE("partition operations are correct", "[partition]")
     REQUIRE(other_partition.LogLikelihood(other_tree) ==
             Approx(partition.LogLikelihood(tree)));
 
+    // We did a TraversalUpdate() on this tree, so free its node data.
+    pll_utree_every(other_tree, pt::pll::cb_erase_data);
     pll_utree_destroy(other_tree);
   }
 
+  // We did a TraversalUpdate() on this tree, so free its node data.
+  pll_utree_every(tree, pt::pll::cb_erase_data);
   pll_utree_destroy(tree);
 }
 
@@ -252,5 +257,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
   }
 
+  // We did a TraversalUpdate() on this tree, so free its node data.
+  pll_utree_every(tree, pt::pll::cb_erase_data);
   pll_utree_destroy(tree);
 }
