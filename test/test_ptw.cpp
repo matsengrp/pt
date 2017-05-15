@@ -19,6 +19,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "guru.hpp"
 #include "wanderer.hpp"
 
 //
@@ -259,5 +260,49 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
   // We did a TraversalUpdate() on this tree, so free its node data.
   pll_utree_every(tree, pt::pll::cb_erase_data);
+  pll_utree_destroy(tree);
+}
+
+TEST_CASE("simple guru operations are correct", "[guru_simple]") {
+  std::string newick_path("test-data/five/RAxML_bestTree.five");
+  std::string fasta_path("test-data/five/five.fasta");
+  std::string raxml_path("test-data/five/RAxML_info.five");
+
+  unsigned int tip_node_count;
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
+                                             &tip_node_count);
+
+  std::vector<std::string> labels;
+  std::vector<std::string> sequences;
+  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+
+  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+
+  // from test_pt.cpp: good trees are those with a log-likelihood of
+  // at least -3820 (ML is -3737.47).
+  double lnl_offset = -82.53;
+  size_t thread_count = 1;
+
+  pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+                labels, sequences);
+
+  guru.Start();
+
+  pt::Authority& authority = guru.GetAuthority();
+
+  pt::TreeTable& good_trees = authority.GetGoodTreeTable();
+  pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
+
+  CHECK(good_trees.size() == 13);
+  CHECK(visited_trees.size() == 15);
+
+  CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                            "((Ref.A1.RW.92.92RW008.AB253421,"
+                            "Ref.A1.UG.92.92UG037.AB253429),"
+                            "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                            "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+
+  // Unlike in earlier tests, TraversalUpdate() is never called on
+  // this tree, so we don't have to free any node data.
   pll_utree_destroy(tree);
 }
