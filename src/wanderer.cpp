@@ -167,7 +167,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     // we're just testing whether or not to try the move, so we don't
     // report the score to the authority yet
     bool accept_move = false;
-    if (test_lnl >= authority_.GetThreshold()) {
+    if (test_lnl >= authority_.GetThresholdScore()) {
       accept_move = true;
     }
 

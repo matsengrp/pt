@@ -32,9 +32,9 @@ class Authority {
  public:
   Authority(double ml_lnl, double lnl_offset);
 
-  double GetMaximum() const;
-  void SetMaximum(double lnl);
-  double GetThreshold() const;
+  double GetMaximumScore() const;
+  void SetMaximumScore(double lnl);
+  double GetThresholdScore() const;
   std::string GetKey(pll_utree_t* tree) const;
 
   // TODO: these break encapsulation

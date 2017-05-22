@@ -49,17 +49,17 @@ Authority::Authority(double ml_lnl, double lnl_offset) :
   }
 }
 
-double Authority::GetMaximum() const
+double Authority::GetMaximumScore() const
 {
   return ml_lnl_;
 }
 
-void Authority::SetMaximum(double lnl)
+void Authority::SetMaximumScore(double lnl)
 {
   ml_lnl_ = lnl;
 }
 
-double Authority::GetThreshold() const
+double Authority::GetThresholdScore() const
 {
   return ml_lnl_ + lnl_offset_;
 }
@@ -109,7 +109,7 @@ void Authority::FilterGoodTreeTable(double lnl_threshold)
 
 void Authority::FilterGoodTreeTable()
 {
-  FilterGoodTreeTable(GetThreshold());
+  FilterGoodTreeTable(GetThresholdScore());
 }
 
 std::pair<bool, std::string> Authority::RequestTree(pll_utree_t* tree)
@@ -133,7 +133,7 @@ bool Authority::ReportTreeScore(const std::string& newick_str, double lnl)
     throw std::logic_error("tree is not in the visited table");
   }
 
-  if (lnl < GetThreshold()) {
+  if (lnl < GetThresholdScore()) {
     return false;
   }
 

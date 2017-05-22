@@ -38,7 +38,7 @@ Guru::Guru(double lnl_offset,
 
   // use the starting tree's log-likelihood as the authority's initial maximum
   partition_.TraversalUpdate(starting_trees_.front(), pll::TraversalType::FULL);
-  authority_.SetMaximum(partition_.LogLikelihood(starting_trees_.front()));
+  authority_.SetMaximumScore(partition_.LogLikelihood(starting_trees_.front()));
 }
 
 Guru::~Guru()
