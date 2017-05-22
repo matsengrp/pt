@@ -3,6 +3,13 @@
 
 #include <atomic>
 #include <string>
+#include <utility>
+
+// pll.h is missing a header guard
+#ifndef LIBPLL_PLL_H_
+#define LIBPLL_PLL_H_
+#include <libpll/pll.h>
+#endif
 
 #include <cuckoohash_map.hh>
 
@@ -25,14 +32,10 @@ class Authority {
  public:
   Authority(double ml_lnl, double lnl_offset);
 
-  // TODO: with multiple threads there can be a race between getting
-  //       and setting the maximum, so what we really need is a
-  //       SetMaximumIfBetter() function with a proper mutex. see the
-  //       comments in Wanderer::MoveForward().
   double GetMaximum() const;
   void SetMaximum(double lnl);
-
   double GetThreshold() const;
+  std::string GetKey(pll_utree_t* tree) const;
 
   // TODO: these break encapsulation
   TreeTable& GetVisitedTreeTable();
@@ -41,11 +44,12 @@ class Authority {
   void FilterGoodTreeTable(double lnl_threshold);
   void FilterGoodTreeTable();
 
-  bool InsertVisitedTree(const std::string& newick_str, double lnl);
-  bool InsertGoodTree(const std::string& newick_str, double lnl);
+  // returns (request_accepted, newick_str)
+  std::pair<bool, std::string> RequestTree(pll_utree_t* tree);
 
-  bool UpdateVisitedTree(const std::string& newick_str, double lnl);
-  bool UpdateGoodTree(const std::string& newick_str, double lnl);
+  // returns true if the tree is good, false otherwise
+  bool ReportTreeScore(pll_utree_t* tree, double lnl);
+  bool ReportTreeScore(const std::string& newick_str, double lnl);
 };
 
 } // namespace pt

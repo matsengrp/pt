@@ -4,7 +4,37 @@
 #include <string>
 #include <vector>
 
+// pll.h is missing a header guard
+#ifndef LIBPLL_PLL_H_
+#define LIBPLL_PLL_H_
+#include <libpll/pll.h>
+#endif
+
+#include "ordered_tree.hpp"
+
 namespace pt {
+
+//
+// free functions
+//
+
+std::string OrderedNewickString(pll_utree_t* tree)
+{
+  // clone the tree, because ToOrderedNewick() reorders the tree in
+  // place and we don't want to modify the tree we were given. note
+  // that we aren't modifying any of the node user data (via the
+  // node->data pointers) so we don't have to copy or free those.
+  pll_utree_t* clone = pll_utree_clone(tree);
+
+  // ToOrderedNewick() only reorders the tree, despite its name. its
+  // return value is the rerooted and reordered tree, which we assign
+  // to our pointer before continuing.
+  clone = ToOrderedNewick(clone);
+  std::string newick_str = ToNewick(clone);
+
+  pll_utree_destroy(clone);
+  return newick_str;
+}
 
 //
 // Authority
@@ -32,6 +62,11 @@ void Authority::SetMaximum(double lnl)
 double Authority::GetThreshold() const
 {
   return ml_lnl_ + lnl_offset_;
+}
+
+std::string Authority::GetKey(pll_utree_t* tree) const
+{
+  return OrderedNewickString(tree);
 }
 
 TreeTable& Authority::GetVisitedTreeTable()
@@ -77,24 +112,40 @@ void Authority::FilterGoodTreeTable()
   FilterGoodTreeTable(GetThreshold());
 }
 
-bool Authority::InsertVisitedTree(const std::string& newick_str, double lnl)
+std::pair<bool, std::string> Authority::RequestTree(pll_utree_t* tree)
 {
-  return visited_trees_.insert(newick_str, lnl);
+  std::string newick_str = GetKey(tree);
+
+  return std::make_pair(visited_trees_.insert(newick_str, 0.0), newick_str);
 }
 
-bool Authority::InsertGoodTree(const std::string& newick_str, double lnl)
+bool Authority::ReportTreeScore(pll_utree_t* tree, double lnl)
 {
-  return good_trees_.insert(newick_str, lnl);
+  return ReportTreeScore(GetKey(tree), lnl);
 }
 
-bool Authority::UpdateVisitedTree(const std::string& newick_str, double lnl)
+bool Authority::ReportTreeScore(const std::string& newick_str, double lnl)
 {
-  return visited_trees_.update(newick_str, lnl);
-}
+  // TODO: add locks here where appropriate, such as between getting
+  //       and setting the maximum
 
-bool Authority::UpdateGoodTree(const std::string& newick_str, double lnl)
-{
-  return good_trees_.update(newick_str, lnl);
+  if (!visited_trees_.contains(newick_str)) {
+    throw std::logic_error("tree is not in the visited table");
+  }
+
+  if (lnl < GetThreshold()) {
+    return false;
+  }
+
+  if (!good_trees_.insert(newick_str, lnl)) {
+    throw std::logic_error("tree is already in the good table");
+  }
+
+  if (lnl > ml_lnl_) {
+    ml_lnl_ = lnl;
+  }
+
+  return true;
 }
 
 } // namespace pt

@@ -17,31 +17,8 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
-#include "ordered_tree.hpp"
 
 namespace pt {
-
-//
-// free functions
-//
-
-std::string OrderedNewickString(pll_utree_t* tree)
-{
-  // clone the tree, because ToOrderedNewick() reorders the tree in
-  // place and we don't want to modify the tree we were given. note
-  // that we aren't modifying any of the node user data (via the
-  // node->data pointers) so we don't have to copy or free those.
-  pll_utree_t* clone = pll_utree_clone(tree);
-
-  // ToOrderedNewick() only reorders the tree, despite its name. its
-  // return value is the rerooted and reordered tree, which we assign
-  // to our pointer before continuing.
-  clone = ToOrderedNewick(clone);
-  std::string newick_str = ToNewick(clone);
-
-  pll_utree_destroy(clone);
-  return newick_str;
-}
 
 //
 // Wanderer
@@ -103,22 +80,23 @@ void Wanderer::Start()
   //
   // TODO: should we optimize the starting tree first?
   pll_utree_t* tree = trees_.top();
-  std::string newick_str = OrderedNewickString(tree);
 
-  if (!authority_.InsertVisitedTree(newick_str, 0.0)) {
+  // RequestTree() will also return the ordered Newick string used as
+  // the table key that we can use below if the request is accepted.
+  bool request_accepted;
+  std::string newick_str;
+  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree);
+
+  if (!request_accepted) {
     throw std::runtime_error("starting tree has already been visited");
   }
 
   partition_.TraversalUpdate(tree, pll::TraversalType::FULL);
   double lnl = partition_.LogLikelihood(tree);
 
-  if (lnl >= authority_.GetThreshold()) {
-    authority_.InsertGoodTree(newick_str, lnl);
-
-    if (lnl > authority_.GetMaximum()) {
-      authority_.SetMaximum(lnl);
-    }
-  }
+  // report the score to the authority. we don't care if it's good or
+  // not, as we're going to queue the available moves anyway.
+  authority_.ReportTreeScore(newick_str, lnl);
 
   QueueMoves();
 
@@ -145,17 +123,15 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
 {
   pll_utree_nni(node, type, nullptr);
 
-  // unlike the existing ToOrderedNewick() function in pll-utils.hpp,
-  // this one should clone the tree, reorder it lexicographically, and
-  // return a newick string (after freeing the clone). reordering the
-  // tree in-place runs the risk of making the rollback move invalid,
-  // since the branches leading away from the edge may not be in the
-  // same places as they were when the move was made.
-  std::string newick_str = OrderedNewickString(node);
+  // request permission to proceed from the authority. if successful,
+  // this Wanderer owns the tree and we can proceed. RequestTree()
+  // will also return the ordered Newick string used as the table key
+  // that we can use below if the request is accepted.
+  bool request_accepted;
+  std::string newick_str;
+  std::tie(request_accepted, newick_str) = authority_.RequestTree(node);
 
-  // try and insert the tree into the "all" table. if successful, this
-  // Wanderer owns the tree and we can proceed.
-  if (!authority_.InsertVisitedTree(newick_str, 0.0)) {
+  if (!request_accepted) {
     // undo the move and reject
     pll_utree_nni(node, type, nullptr);
     return false;
@@ -188,14 +164,12 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     // pointing at node
     const double test_lnl = partition_.LogLikelihood(node);
 
+    // we're just testing whether or not to try the move, so we don't
+    // report the score to the authority yet
     bool accept_move = false;
     if (test_lnl >= authority_.GetThreshold()) {
       accept_move = true;
     }
-
-    // store the test log-likelihood along with the tree in the "all"
-    // table; it might be useful later for comparison
-    authority_.UpdateVisitedTree(newick_str, test_lnl);
 
     // restore the branch length and undo the move. CLVs will remain
     // pointed toward node, so future operations on this tree will need
@@ -236,19 +210,9 @@ void Wanderer::MoveForward()
   partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
   double lnl = partition_.LogLikelihood(tree);
 
-  // if log-likelihood is above the threshold, add tree to "good"
-  // table, push it onto the stack, and queue moves
-  if (lnl >= authority_.GetThreshold()) {
-    authority_.InsertGoodTree(OrderedNewickString(tree), lnl);
-
-    // if we find a new maximum likelihood, update the authority. note
-    // there could be a race between getting and setting the maximum
-    // here. maybe we need an Authority::SetMaximumIfBetter() with a
-    // proper mutex or something?
-    if (lnl > authority_.GetMaximum()) {
-      authority_.SetMaximum(lnl);
-    }
-
+  // report the score to the authority. if it returns true, this is a
+  // good tree, and we should push it onto the stack and queue moves
+  if (authority_.ReportTreeScore(tree, lnl)) {
     trees_.push(tree);
     QueueMoves();
   } else {
