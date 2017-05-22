@@ -49,6 +49,9 @@ Authority::Authority(double ml_lnl, double lnl_offset) :
   }
 }
 
+Authority::~Authority()
+{ }
+
 double Authority::GetMaximumScore() const
 {
   return ml_lnl_;

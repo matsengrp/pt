@@ -20,9 +20,8 @@
 
 namespace pt {
 
-class Guru {
+class Guru : public Authority {
  private:
-  Authority authority_;
   size_t thread_count_;
   unsigned int tip_node_count_;
   pll::ModelParameters model_parameters_;
@@ -48,13 +47,11 @@ class Guru {
        const std::vector<std::string>& sequences,
        bool try_all_moves = true);
 
-  ~Guru();
+  ~Guru() override;
 
   void AddStartingTree(pll_utree_t* starting_tree);
 
   void Start();
-
-  Authority& GetAuthority();
 };
 
 } // namespace pt

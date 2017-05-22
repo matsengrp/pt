@@ -25,7 +25,7 @@ Guru::Guru(double lnl_offset,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
            bool try_all_moves) :
-    authority_(0.0, lnl_offset),
+    Authority(0.0, lnl_offset),
     thread_count_(thread_count),
     tip_node_count_(tip_node_count),
     model_parameters_(model_parameters),
@@ -38,7 +38,7 @@ Guru::Guru(double lnl_offset,
 
   // use the starting tree's log-likelihood as the authority's initial maximum
   partition_.TraversalUpdate(starting_trees_.front(), pll::TraversalType::FULL);
-  authority_.SetMaximumScore(partition_.LogLikelihood(starting_trees_.front()));
+  SetMaximumScore(partition_.LogLikelihood(starting_trees_.front()));
 }
 
 Guru::~Guru()
@@ -69,7 +69,7 @@ void Guru::Start()
   while (wanderers_.size() < thread_count_ && !starting_trees_.empty()) {
     pll_utree_t* tree = starting_trees_.front();
 
-    wanderers_.emplace_back(authority_, tree, tip_node_count_,
+    wanderers_.emplace_back(*this, tree, tip_node_count_,
                             model_parameters_, labels_, sequences_,
                             try_all_moves_);
 
@@ -84,11 +84,6 @@ void Guru::Start()
   for (auto& wanderer : wanderers_) {
     wanderer.Start();
   }
-}
-
-Authority& Guru::GetAuthority()
-{
-  return authority_;
 }
 
 } // namespace pt

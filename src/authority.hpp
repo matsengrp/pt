@@ -32,6 +32,8 @@ class Authority {
  public:
   Authority(double ml_lnl, double lnl_offset);
 
+  virtual ~Authority();
+
   double GetMaximumScore() const;
   void SetMaximumScore(double lnl);
   double GetThresholdScore() const;

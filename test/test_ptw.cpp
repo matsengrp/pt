@@ -288,10 +288,8 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
   guru.Start();
 
-  pt::Authority& authority = guru.GetAuthority();
-
-  pt::TreeTable& good_trees = authority.GetGoodTreeTable();
-  pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
+  pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+  pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
 
   CHECK(good_trees.size() == 13);
   CHECK(visited_trees.size() == 15);
