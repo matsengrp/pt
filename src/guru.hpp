@@ -31,6 +31,7 @@ class Guru : public Authority {
   bool try_all_moves_;
 
   pll::Partition partition_;
+  pll_utree_t* default_tree_;
   std::queue<pll_utree_t*> starting_trees_;
 
   // we use a list here because using a vector would require that
