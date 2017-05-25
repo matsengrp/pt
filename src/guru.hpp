@@ -1,6 +1,7 @@
 #ifndef PT_GURU_HPP_
 #define PT_GURU_HPP_
 
+#include <future>
 #include <list>
 #include <queue>
 #include <string>
@@ -36,6 +37,7 @@ class Guru : public Authority {
   // wanderers were copy-constructible, which they're not because
   // their partitions can't be copied
   std::list<Wanderer> wanderers_;
+  std::vector<std::future<void>> futures_;
 
  public:
   Guru(double lnl_offset,
@@ -52,6 +54,7 @@ class Guru : public Authority {
   void AddStartingTree(pll_utree_t* starting_tree);
 
   void Start();
+  void Wait();
 };
 
 } // namespace pt

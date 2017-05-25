@@ -1,5 +1,6 @@
 #include "guru.hpp"
 
+#include <future>
 #include <string>
 #include <vector>
 
@@ -73,16 +74,29 @@ void Guru::Start()
                             model_parameters_, labels_, sequences_,
                             try_all_moves_);
 
+    // if an earlier wanderer happens to move to this wanderer's
+    // starting tree before this wanderer is started, the wanderer's
+    // Start() method will return immediately and it will go idle.
+
+    auto& wanderer = wanderers_.back();
+    futures_.emplace_back(std::async(std::launch::async,
+                                     [&wanderer]() { wanderer.Start(); }));
+
     // the wanderer will clone the tree for itself, so we're done with it
     pll_utree_every(tree, pll::cb_erase_data);
     pll_utree_destroy(tree);
 
     starting_trees_.pop();
   }
+}
 
-  // TODO: parallelize this
-  for (auto& wanderer : wanderers_) {
-    wanderer.Start();
+void Guru::Wait()
+{
+  for (auto& future : futures_) {
+    future.wait();
+
+    // ensure exceptions are propagated
+    future.get();
   }
 }
 

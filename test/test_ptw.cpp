@@ -287,6 +287,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
                 labels, sequences);
 
   guru.Start();
+  guru.Wait();
 
   pt::TreeTable& good_trees = guru.GetGoodTreeTable();
   pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
