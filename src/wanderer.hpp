@@ -63,6 +63,7 @@ class Wanderer {
 
   ~Wanderer();
 
+  void Teleport(pll_utree_t* starting_tree);
   void Start();
 
  private:
@@ -72,8 +73,6 @@ class Wanderer {
 
   void MoveForward();
   void MoveBack();
-
-  void Teleport(pll_utree_t* tree);
 };
 
 } // namespace pt

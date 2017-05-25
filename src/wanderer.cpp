@@ -313,7 +313,7 @@ void Wanderer::QueueMoves()
 
 // this function should only be called when trees_ and move_queues_
 // are empty, i.e., the Wanderer is idle
-void Wanderer::Teleport(pll_utree_t* tree)
+void Wanderer::Teleport(pll_utree_t* starting_tree)
 {
   if (!trees_.empty()) {
     throw std::logic_error("trees_ is not empty");
@@ -323,17 +323,11 @@ void Wanderer::Teleport(pll_utree_t* tree)
     throw std::logic_error("move_queues_ is not empty");
   }
 
-  // push the tree onto the stack. we assume here that this Wanderer
-  // takes ownership of the passed tree. if that is not the case we'll
-  // need to clone it instead, being wary of the fact that the monk
-  // who offered us this tree may still modify or destroy it. in other
-  // words, the offering monk would have to pause until the teleport
-  // is complete.
-  trees_.push(tree);
+  // clone the tree and push it onto the stack
+  pll_utree_t* tree = pll_utree_clone(starting_tree);
+  pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
-  // would it be better to require the caller to call Start() rather
-  // than doing it here?
-  Start();
+  trees_.push(tree);
 }
 
 } // namespace pt
