@@ -88,7 +88,8 @@ void Wanderer::Start()
   std::tie(request_accepted, newick_str) = authority_.RequestTree(tree);
 
   if (!request_accepted) {
-    throw std::runtime_error("starting tree has already been visited");
+    // if the starting tree has already been visited, we're done.
+    return;
   }
 
   partition_.TraversalUpdate(tree, pll::TraversalType::FULL);
