@@ -89,6 +89,10 @@ void Wanderer::Start()
 
   if (!request_accepted) {
     // if the starting tree has already been visited, we're done.
+    pll_utree_every(tree, pll::cb_erase_data);
+    pll_utree_destroy(tree);
+    trees_.pop();
+
     return;
   }
 
