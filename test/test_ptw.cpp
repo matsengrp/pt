@@ -305,16 +305,16 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   }
 
   SECTION("multi-threaded operation is correct") {
-    size_t thread_count = 2;
+    size_t thread_count = 4;
 
     SECTION("duplicate starting trees don't affect results") {
       pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
                     labels, sequences);
 
       // Add the starting tree again. Since we've requested multiple
-      // threads, the guru will create a second wanderer, which will
-      // go idle immediately upon seeing that its starting tree has
-      // already been visited. This shouldn't affect the results.
+      // threads, the guru will create wanderers which will go idle
+      // immediately upon seeing that their starting tree has already
+      // been visited. This shouldn't affect the results.
       guru.AddStartingTree(tree);
 
       guru.Start();
