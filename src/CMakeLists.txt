@@ -11,3 +11,6 @@ find_package(Threads REQUIRED)
 
 add_executable(ptw ptw.cpp)
 target_link_libraries(ptw pt_static ptpll_static pll Threads::Threads)
+
+add_executable(ptw_threads ptw_threads.cpp)
+target_link_libraries(ptw_threads pt_static ptpll_static pll Threads::Threads)
