@@ -96,12 +96,24 @@ void Wanderer::Start()
     return;
   }
 
-  partition_.TraversalUpdate(tree, pll::TraversalType::FULL);
+  // do full branch optimization. this function will handle its own
+  // traversal updates.
+  partition_.OptimizeAllBranches(tree);
+
+  partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
   double lnl = partition_.LogLikelihood(tree);
 
-  // report the score to the authority. we don't care if it's good or
-  // not, as we're going to queue the available moves anyway.
-  authority_.ReportTreeScore(newick_str, lnl);
+  // report the score to the authority. if it returns false, this
+  // isn't a good tree and we're done with it, so destroy it and
+  // return
+  if (!authority_.ReportTreeScore(newick_str, lnl)) {
+    // if the starting tree isn't good, we're done.
+    pll_utree_every(tree, pll::cb_erase_data);
+    pll_utree_destroy(tree);
+    trees_.pop();
+
+    return;
+  }
 
   QueueMoves();
 
