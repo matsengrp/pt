@@ -83,9 +83,10 @@ void Wanderer::Start()
 
   // RequestTree() will also return the ordered Newick string used as
   // the table key that we can use below if the request is accepted.
+  // we also inform the authority that this is our first tree.
   bool request_accepted;
   std::string newick_str;
-  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree);
+  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree, true);
 
   if (!request_accepted) {
     // if the starting tree has already been visited, we're done.
@@ -143,10 +144,11 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
   // request permission to proceed from the authority. if successful,
   // this Wanderer owns the tree and we can proceed. RequestTree()
   // will also return the ordered Newick string used as the table key
-  // that we can use below if the request is accepted.
+  // that we can use below if the request is accepted. we also inform
+  // the authority that this is not our first tree.
   bool request_accepted;
   std::string newick_str;
-  std::tie(request_accepted, newick_str) = authority_.RequestTree(node);
+  std::tie(request_accepted, newick_str) = authority_.RequestTree(node, false);
 
   if (!request_accepted) {
     // undo the move and reject

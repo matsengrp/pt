@@ -59,7 +59,8 @@ class Guru : public Authority {
   ~Guru() override;
 
   void AddStartingTree(pll_utree_t* starting_tree);
-  std::pair<bool, std::string> RequestTree(pll_utree_t* tree) override;
+  std::pair<bool, std::string> RequestTree(pll_utree_t* tree,
+                                           bool first_tree) override;
 
   void Start();
   void Wait();

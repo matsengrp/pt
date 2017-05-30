@@ -85,7 +85,7 @@ void Guru::AddStartingTree(pll_utree_t* starting_tree)
   starting_trees_.push(tree);
 }
 
-std::pair<bool, std::string> Guru::RequestTree(pll_utree_t* tree)
+std::pair<bool, std::string> Guru::RequestTree(pll_utree_t* tree, bool first_tree)
 {
   std::string newick_str = GetKey(tree);
 
@@ -93,15 +93,8 @@ std::pair<bool, std::string> Guru::RequestTree(pll_utree_t* tree)
     return std::make_pair(false, newick_str);
   }
 
-  // TODO: will this cause the the last running wanderer to trade a
-  //       tree to another wanderer and back forever? what about other
-  //       unintended effects? how do we decide when to steal a tree
-  //       and when not to? do we need to know if this is the
-  //       wanderer's last available move or something? even though
-  //       this appears to work for now I feel like it's programming
-  //       by coincidence
-
-  if (idle_wanderer_count_ > 0) {
+  // if this is the wanderer's first tree, don't steal it
+  if (!first_tree && idle_wanderer_count_ > 0) {
     std::lock_guard<std::mutex> lock(mutex_);
     AddStartingTree(tree);
 

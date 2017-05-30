@@ -115,7 +115,8 @@ void Authority::FilterGoodTreeTable()
   FilterGoodTreeTable(GetThresholdScore());
 }
 
-std::pair<bool, std::string> Authority::RequestTree(pll_utree_t* tree)
+std::pair<bool, std::string> Authority::RequestTree(pll_utree_t* tree,
+                                                    bool /* first_tree */)
 {
   std::string newick_str = GetKey(tree);
 
