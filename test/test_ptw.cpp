@@ -336,3 +336,55 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   // this tree, so we don't have to free any node data.
   pll_utree_destroy(tree);
 }
+
+TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
+  std::string newick_path("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1");
+  std::string fasta_path("test-data/hohna_datasets_fasta/DS1.fasta");
+  std::string raxml_path("test-data/hohna_datasets_fasta/RAxML_info.DS1");
+
+  unsigned int tip_node_count;
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
+                                             &tip_node_count);
+
+  std::vector<std::string> labels;
+  std::vector<std::string> sequences;
+  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+
+  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+
+  double lnl_offset = -2.0;
+
+  SECTION("single-threaded operation is correct") {
+    size_t thread_count = 1;
+
+    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+                  labels, sequences);
+
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 15);
+    CHECK(visited_trees.size() == 659);
+  }
+
+  SECTION("multi-threaded operation is correct") {
+    size_t thread_count = 4;
+
+    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+                  labels, sequences);
+
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 15);
+    CHECK(visited_trees.size() == 659);
+  }
+
+  pll_utree_destroy(tree);
+}
