@@ -304,34 +304,32 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
                               "Ref.A2.CD.97.97CDKTB48.AF286238);"));
   }
 
-  SECTION("multi-threaded operation is correct") {
-    size_t thread_count = 4;
+  SECTION("duplicate starting trees don't affect results") {
+    size_t thread_count = 2;
 
-    SECTION("duplicate starting trees don't affect results") {
-      pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
-                    labels, sequences);
+    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+                  labels, sequences);
 
-      // Add the starting tree again. Since we've requested multiple
-      // threads, the guru will create wanderers which will go idle
-      // immediately upon seeing that their starting tree has already
-      // been visited. This shouldn't affect the results.
-      guru.AddStartingTree(tree);
+    // Add the starting tree again. Since we've requested multiple
+    // threads, the guru will create wanderers which will go idle
+    // immediately upon seeing that their starting tree has already
+    // been visited. This shouldn't affect the results.
+    guru.AddStartingTree(tree);
 
-      guru.Start();
-      guru.Wait();
+    guru.Start();
+    guru.Wait();
 
-      pt::TreeTable& good_trees = guru.GetGoodTreeTable();
-      pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
 
-      CHECK(good_trees.size() == 13);
-      CHECK(visited_trees.size() == 15);
+    CHECK(good_trees.size() == 13);
+    CHECK(visited_trees.size() == 15);
 
-      CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                                "((Ref.A1.RW.92.92RW008.AB253421,"
-                                "Ref.A1.UG.92.92UG037.AB253429),"
-                                "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                                "Ref.A2.CD.97.97CDKTB48.AF286238);"));
-    }
+    CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                              "((Ref.A1.RW.92.92RW008.AB253421,"
+                              "Ref.A1.UG.92.92UG037.AB253429),"
+                              "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                              "Ref.A2.CD.97.97CDKTB48.AF286238);"));
   }
 
   // Unlike in earlier tests, TraversalUpdate() is never called on
