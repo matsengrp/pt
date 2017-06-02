@@ -73,12 +73,15 @@ Wanderer::~Wanderer()
 
 void Wanderer::Start()
 {
-  // mark the starting tree as visited, then check its log-likelihood
-  // (without any branch length optimization) and see if it should be
-  // added to the "good" table. if this isn't done, the starting tree
-  // may never be visited.
   //
-  // TODO: should we optimize the starting tree first?
+  // It's important that Start() behaves as if the wanderer arrived at
+  // its starting tree during exploration, so we do the same things
+  // here that are done in MoveForward(). We check that the tree
+  // hasn't been visited, optimize its branch lengths and see if it's
+  // good. If this isn't done, teleported wanderers will behave
+  // differently than exploring ones.
+  //
+
   pll_utree_t* tree = trees_.top();
 
   // RequestTree() will also return the ordered Newick string used as
@@ -101,6 +104,7 @@ void Wanderer::Start()
   // traversal updates.
   partition_.OptimizeAllBranches(tree);
 
+  // orient CLVs and compute log-likelihood
   partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
   double lnl = partition_.LogLikelihood(tree);
 
@@ -124,11 +128,6 @@ void Wanderer::Start()
   // in the top queue.
   while (!move_queues_.empty()) {
     while (!move_queues_.top().empty()) {
-      // somewhere here is where we would check to see if there are
-      // any idle monks, and use Teleport() (or ask the authority to)
-      // to have the idle monk go there instead of taking the move
-      // ourselves
-
       MoveForward();
     }
 
@@ -173,11 +172,6 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
     // update so that CLVs are pointing at node and optimize branch
     partition_.TraversalUpdate(node, pll::TraversalType::PARTIAL);
     partition_.OptimizeBranch(node);
-
-    // when OptimizeBranch() returns, where will the CLVs be oriented?
-    // do CLVs need to be invalidated? my belief is that if we use the
-    // optimized edge for computing the log-likelihood, no CLVs need to
-    // be invalidated first.
 
     // no need for another traversal, since the CLVs are already
     // pointing at node
@@ -271,10 +265,9 @@ void Wanderer::MoveBack()
 
 void Wanderer::QueueMoves()
 {
-  // is n_tips - 2 correct for the number of inner nodes? probably
-  // should add an error check to see if the number of nodes
-  // pll_utree_query_innernodes() finds is the same as the size of the
-  // vector
+  // TODO: add an error check to see if the number of nodes
+  //       pll_utree_query_innernodes() finds is the same as the size
+  //       of the vector
   std::vector<pll_utree_t*> inner_nodes(partition_.inner_node_count(), nullptr);
   pll_utree_query_innernodes(trees_.top(), inner_nodes.data());
 
@@ -296,23 +289,6 @@ void Wanderer::QueueMoves()
     //   continue;
     // }
 
-    // here is where we can try applying a move, optimizing the
-    // current branch length, and then comparing the log-likelihood to
-    // the threshold to see if the move is worth taking (since if we
-    // do take the move, we'll be performing a full branch length
-    // optimization). if the move is worth taking, we add the move to
-    // the move queue. regardless, after testing the move, we undo the
-    // move and restore the original branch length, then repeat for
-    // the move in the other "direction".
-
-    // assume we have a TestMove() method that applies the move,
-    // optimizes the branch length, and compares the log-likelihood to
-    // the authority's threshold. it then reverses the move and
-    // restores the branch length. it may be okay if the CLVs are
-    // oriented differently than they were before TestMove() gets
-    // called, since TestMove() will have to do a partial traversal
-    // anyway, right? TestMove() will return true if the move is worth
-    // taking, false otherwise.
 
     if (TestMove(node, MoveType::LEFT)) {
       move_queue.push(TreeMove{node, MoveType::LEFT});
