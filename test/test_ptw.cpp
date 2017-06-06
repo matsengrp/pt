@@ -97,20 +97,20 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
   std::string fasta_path("test-data/five/five.fasta");
   std::string raxml_path("test-data/five/RAxML_info.five");
 
-  unsigned int tip_node_count;
-  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
-                                             &tip_node_count);
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
-  pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
-  partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
+  pt::pll::Partition partition(tree, parameters, labels, sequences);
 
-  double ml_lnl = partition.LogLikelihood(tree);
+  pll_unode_t* node = tree->nodes[tree->tip_count + tree->inner_count - 1];
+  partition.TraversalUpdate(node, pt::pll::TraversalType::FULL);
+
+  double ml_lnl = partition.LogLikelihood(node);
 
   SECTION("the initial tree's log-likelihood is computed correctly") {
     REQUIRE(ml_lnl == Approx(-3737.47));
@@ -159,7 +159,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
 
     SECTION("using in-place partition constructor") {
-      pt::Wanderer wanderer(authority, tree, tip_node_count, parameters,
+      pt::Wanderer wanderer(authority, tree, parameters,
                             labels, sequences);
 
       wanderer.Start();
@@ -195,8 +195,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
   }
 
   // We did a TraversalUpdate() on this tree, so free its node data.
-  pll_utree_every(tree, pt::pll::cb_erase_data);
-  pll_utree_destroy(tree);
+  pll_utree_destroy(tree, pt::pll::cb_erase_data);
 }
 
 TEST_CASE("simple guru operations are correct", "[guru_simple]") {
@@ -204,13 +203,11 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   std::string fasta_path("test-data/five/five.fasta");
   std::string raxml_path("test-data/five/RAxML_info.five");
 
-  unsigned int tip_node_count;
-  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
-                                             &tip_node_count);
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
@@ -221,7 +218,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
                   labels, sequences);
 
     guru.Start();
@@ -243,7 +240,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   SECTION("duplicate starting trees don't affect results") {
     size_t thread_count = 2;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
                   labels, sequences);
 
     // Add the starting tree again. Since we've requested multiple
@@ -270,7 +267,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
   // Unlike in earlier tests, TraversalUpdate() is never called on
   // this tree, so we don't have to free any node data.
-  pll_utree_destroy(tree);
+  pll_utree_destroy(tree, nullptr);
 }
 
 TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
@@ -278,13 +275,11 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   std::string fasta_path("test-data/hohna_datasets_fasta/DS1.fasta");
   std::string raxml_path("test-data/hohna_datasets_fasta/RAxML_info.DS1");
 
-  unsigned int tip_node_count;
-  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
-                                             &tip_node_count);
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
@@ -293,7 +288,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
                   labels, sequences);
 
     guru.Start();
@@ -309,7 +304,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   SECTION("multi-threaded operation is correct") {
     size_t thread_count = 4;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, tip_node_count, parameters,
+    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
                   labels, sequences);
 
     guru.Start();
@@ -322,5 +317,5 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     CHECK(visited_trees.size() == 659);
   }
 
-  pll_utree_destroy(tree);
+  pll_utree_destroy(tree, nullptr);
 }
