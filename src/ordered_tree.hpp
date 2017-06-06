@@ -10,15 +10,15 @@
 #endif
 
 namespace pt {
-pll_utree_t *SetNewickRoot(pll_utree_t *tree);
-bool SetLabelRoot(std::string label, pll_utree_t *tree, pll_utree_t **root);
-void RecursiveOrderedNewick(pll_utree_t *tree);
-std::string FindRootNode(pll_utree_t *tree);
-pll_utree_t *ToOrderedNewick(pll_utree_t *tree);
-std::string ToNewick(pll_utree_t *tree);
-std::string ToFullNewick(pll_utree_t *tree);
-char *utree_short_newick(pll_utree_t *tree);
-static char *newick_utree_recurse(pll_utree_t *tree);
+pll_unode_t *SetNewickRoot(pll_unode_t *tree);
+bool SetLabelRoot(std::string label, pll_unode_t *tree, pll_unode_t **root);
+void RecursiveOrderedNewick(pll_unode_t *tree);
+std::string FindRootNode(pll_unode_t *tree);
+pll_unode_t *ToOrderedNewick(pll_unode_t *tree);
+std::string ToNewick(pll_unode_t *tree);
+std::string ToFullNewick(pll_unode_t *tree);
+char *utree_short_newick(pll_unode_t *tree);
+static char *newick_utree_recurse(pll_unode_t *tree);
 }
 
 #endif // ORDERED_TREE_HPP_INCLUDED
