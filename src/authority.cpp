@@ -29,10 +29,10 @@ std::string OrderedNewickString(pll_utree_t* tree)
   // ToOrderedNewick() only reorders the tree, despite its name. its
   // return value is the rerooted and reordered tree, which we assign
   // to our pointer before continuing.
-  clone = ToOrderedNewick(clone);
-  std::string newick_str = ToNewick(clone);
+  pll_unode_t* root = ToOrderedNewick(GetVirtualRoot(clone));
+  std::string newick_str = ToNewick(root);
 
-  pll_utree_destroy(clone);
+  pll_utree_destroy(clone, nullptr);
   return newick_str;
 }
 
