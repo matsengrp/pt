@@ -23,7 +23,7 @@ enum MoveType : int { LEFT = PLL_UTREE_MOVE_NNI_LEFT,
                       RIGHT = PLL_UTREE_MOVE_NNI_RIGHT };
 
 struct TreeMove {
-  pll_utree_t* node;
+  pll_unode_t* node;
   MoveType type;
 };
 

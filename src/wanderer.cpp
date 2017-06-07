@@ -17,6 +17,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "ordered_tree.hpp"
 
 namespace pt {
 
@@ -98,13 +99,16 @@ void Wanderer::Start()
     return;
   }
 
+  // get an inner node of the tree
+  pll_unode_t* root = GetVirtualRoot(tree);
+
   // do full branch optimization. this function will handle its own
   // traversal updates.
-  partition_.OptimizeAllBranches(tree);
+  partition_.OptimizeAllBranches(root);
 
   // orient CLVs and compute log-likelihood
-  partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
-  double lnl = partition_.LogLikelihood(tree);
+  partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
+  double lnl = partition_.LogLikelihood(root);
 
   // report the score to the authority. if it returns false, this
   // isn't a good tree and we're done with it, so destroy it and
@@ -144,7 +148,7 @@ bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
   // the authority that this is not our first tree.
   bool request_accepted;
   std::string newick_str;
-  std::tie(request_accepted, newick_str) = authority_.RequestTree(node, false);
+  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree, false);
 
   if (!request_accepted) {
     // undo the move and reject
@@ -212,13 +216,16 @@ void Wanderer::MoveForward()
   // undo the move on the original tree
   pll_utree_nni(move.node, move.type, nullptr);
 
+  // get an inner node of the cloned tree
+  pll_unode_t* root = GetVirtualRoot(tree);
+
   // do full branch optimization. this function will handle its own
   // traversal updates.
-  partition_.OptimizeAllBranches(tree);
+  partition_.OptimizeAllBranches(root);
 
   // orient CLVs and compute log-likelihood
-  partition_.TraversalUpdate(tree, pll::TraversalType::PARTIAL);
-  double lnl = partition_.LogLikelihood(tree);
+  partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
+  double lnl = partition_.LogLikelihood(root);
 
   // report the score to the authority. if it returns true, this is a
   // good tree, and we should push it onto the stack and queue moves
@@ -254,7 +261,8 @@ void Wanderer::MoveBack()
   // move queue for the tree is empty, this is pointless and can be
   // skipped.
   if (!move_queues_.top().empty()) {
-    partition_.TraversalUpdate(trees_.top(), pll::TraversalType::FULL);
+    pll_unode_t* root = GetVirtualRoot(trees_.top());
+    partition_.TraversalUpdate(root, pll::TraversalType::FULL);
   }
 }
 
