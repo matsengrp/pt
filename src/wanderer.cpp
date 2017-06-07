@@ -65,8 +65,7 @@ Wanderer::Wanderer(Authority& authority,
 Wanderer::~Wanderer()
 {
   while (!trees_.empty()) {
-    pll_utree_every(trees_.top(), pll::cb_erase_data);
-    pll_utree_destroy(trees_.top());
+    pll_utree_destroy(trees_.top(), pll::cb_erase_data);
     trees_.pop();
   }
 }
@@ -93,8 +92,7 @@ void Wanderer::Start()
 
   if (!request_accepted) {
     // if the starting tree has already been visited, we're done.
-    pll_utree_every(tree, pll::cb_erase_data);
-    pll_utree_destroy(tree);
+    pll_utree_destroy(tree, pll::cb_erase_data);
     trees_.pop();
 
     return;
@@ -113,8 +111,7 @@ void Wanderer::Start()
   // return
   if (!authority_.ReportTreeScore(newick_str, lnl)) {
     // if the starting tree isn't good, we're done.
-    pll_utree_every(tree, pll::cb_erase_data);
-    pll_utree_destroy(tree);
+    pll_utree_destroy(tree, pll::cb_erase_data);
     trees_.pop();
 
     return;
@@ -230,8 +227,7 @@ void Wanderer::MoveForward()
     QueueMoves();
   } else {
     // otherwise, we're done with this tree, so destroy it
-    pll_utree_every(tree, pll::cb_erase_data);
-    pll_utree_destroy(tree);
+    pll_utree_destroy(tree, pll::cb_erase_data);
   }
 }
 
@@ -246,8 +242,7 @@ void Wanderer::MoveBack()
 
   // restore previous tree by destroying the current tree and popping
   // it off the top of the tree history stack
-  pll_utree_every(trees_.top(), pll::cb_erase_data);
-  pll_utree_destroy(trees_.top());
+  pll_utree_destroy(trees_.top(), pll::cb_erase_data);
   trees_.pop();
 
   // if the tree stack is empty, we're done.
