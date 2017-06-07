@@ -103,7 +103,7 @@ std::string ToNewick(pll_unode_t *tree) {
 /// @brief Returns a the tree as a Newick string with branch lengths.
 /// @return Newick std::string.
 std::string ToFullNewick(pll_unode_t *tree) {
-  char *newick = pll_utree_export_newick(tree);
+  char *newick = pll_utree_export_newick(tree, nullptr);
 
   std::string strnewick;
   if (newick) {
