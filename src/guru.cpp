@@ -18,6 +18,7 @@
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
+#include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
 // TODO: debugging only
@@ -50,8 +51,9 @@ Guru::Guru(double lnl_offset,
   pll_utree_every(default_tree_, pll::cb_copy_clv_traversal);
 
   // use the default tree's log-likelihood as the authority's initial maximum
-  partition_.TraversalUpdate(default_tree_, pll::TraversalType::FULL);
-  SetMaximumScore(partition_.LogLikelihood(default_tree_));
+  pll_unode_t* root = GetVirtualRoot(default_tree_);
+  partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+  SetMaximumScore(partition_.LogLikelihood(root));
 
   // add the starting tree to the queue
   AddStartingTree(starting_tree);
