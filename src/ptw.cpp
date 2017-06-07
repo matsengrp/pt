@@ -15,6 +15,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
 void WriteTreeTable(pt::TreeTable& trees, const std::string& path)
@@ -63,13 +64,11 @@ int main(int argc, const char* argv[])
   // load tree, sequences, and model info
   //
 
-  unsigned int tip_node_count;
-  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str(),
-                                             &tip_node_count);
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::pll::ParseFasta(fasta_path, tip_node_count, labels, sequences);
+  pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
@@ -77,9 +76,12 @@ int main(int argc, const char* argv[])
   // initialize the partition and create a wanderer
   //
 
-  pt::pll::Partition partition(tree, tip_node_count, parameters, labels, sequences);
-  partition.TraversalUpdate(tree, pt::pll::TraversalType::FULL);
-  double ml_lnl = partition.LogLikelihood(tree);
+  pt::pll::Partition partition(tree, parameters, labels, sequences);
+
+  pll_unode_t* root = pt::GetVirtualRoot(tree);
+
+  partition.TraversalUpdate(root, pt::pll::TraversalType::FULL);
+  double ml_lnl = partition.LogLikelihood(root);
 
   pt::Authority authority(ml_lnl, lnl_offset);
   pt::Wanderer wanderer(authority, std::move(partition), tree);
@@ -104,8 +106,7 @@ int main(int argc, const char* argv[])
   // clean up and return
   //
 
-  pll_utree_every(tree, pt::pll::cb_erase_data);
-  pll_utree_destroy(tree);
+  pll_utree_destroy(tree, pt::pll::cb_erase_data);
 
   return 0;
 }
