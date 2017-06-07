@@ -27,7 +27,6 @@ namespace pt {
 class Guru : public Authority {
  private:
   size_t thread_count_;
-  unsigned int tip_node_count_;
   pll::ModelParameters model_parameters_;
   std::vector<std::string> labels_;
   std::vector<std::string> sequences_;
@@ -50,7 +49,6 @@ class Guru : public Authority {
   Guru(double lnl_offset,
        size_t thread_count,
        pll_utree_t* starting_tree,
-       unsigned int tip_node_count,
        const pll::ModelParameters& model_parameters,
        const std::vector<std::string>& labels,
        const std::vector<std::string>& sequences,

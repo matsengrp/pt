@@ -28,19 +28,17 @@ namespace pt {
 Guru::Guru(double lnl_offset,
            size_t thread_count,
            pll_utree_t* starting_tree,
-           unsigned int tip_node_count,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
            bool try_all_moves) :
     Authority(0.0, lnl_offset),
     thread_count_(thread_count),
-    tip_node_count_(tip_node_count),
     model_parameters_(model_parameters),
     labels_(labels),
     sequences_(sequences),
     try_all_moves_(try_all_moves),
-    partition_(starting_tree, tip_node_count, model_parameters, labels, sequences),
+    partition_(starting_tree, model_parameters, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
     wanderer_ready_(thread_count, false)
@@ -107,7 +105,7 @@ void Guru::Start()
   while (wanderers_.size() < thread_count_ && !starting_trees_.empty()) {
     pll_utree_t* tree = starting_trees_.front();
 
-    wanderers_.emplace_back(*this, tree, tip_node_count_,
+    wanderers_.emplace_back(*this, tree,
                             model_parameters_, labels_, sequences_,
                             try_all_moves_);
 
@@ -128,7 +126,7 @@ void Guru::Start()
   // initialize the wanderers that will start idle at the default tree
   for (size_t i = wanderers_.size(); i < thread_count_; ++i)
   {
-    wanderers_.emplace_back(*this, default_tree_, tip_node_count_,
+    wanderers_.emplace_back(*this, default_tree_,
                             model_parameters_, labels_, sequences_,
                             try_all_moves_);
 
