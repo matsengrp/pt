@@ -69,7 +69,7 @@ class Wanderer {
  private:
   void QueueMoves();
 
-  bool TestMove(pll_utree_t* node, MoveType type);
+  bool TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type);
 
   void MoveForward();
   void MoveBack();

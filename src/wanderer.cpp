@@ -137,7 +137,7 @@ void Wanderer::Start()
   }
 }
 
-bool Wanderer::TestMove(pll_utree_t* node, MoveType type)
+bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
   pll_utree_nni(node, type, nullptr);
 
@@ -293,11 +293,11 @@ void Wanderer::QueueMoves()
     // }
 
 
-    if (TestMove(node, MoveType::LEFT)) {
+    if (TestMove(tree, node, MoveType::LEFT)) {
       move_queue.push(TreeMove{node, MoveType::LEFT});
     }
 
-    if (TestMove(node, MoveType::RIGHT)) {
+    if (TestMove(tree, node, MoveType::RIGHT)) {
       move_queue.push(TreeMove{node, MoveType::RIGHT});
     }
   }
