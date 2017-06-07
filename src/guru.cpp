@@ -61,16 +61,14 @@ Guru::Guru(double lnl_offset,
 
 Guru::~Guru()
 {
-  pll_utree_every(default_tree_, pll::cb_erase_data);
-  pll_utree_destroy(default_tree_);
+  pll_utree_destroy(default_tree_, pll::cb_erase_data);
 
   // TODO: if starting_trees_ isn't empty when the guru is destroyed,
   //       something went wrong, but it's not kosher to throw an
   //       exception from a destructor. what should we do?
 
   while (!starting_trees_.empty()) {
-    pll_utree_every(starting_trees_.front(), pll::cb_erase_data);
-    pll_utree_destroy(starting_trees_.front());
+    pll_utree_destroy(starting_trees_.front(), pll::cb_erase_data);
     starting_trees_.pop();
   }
 }
@@ -122,8 +120,7 @@ void Guru::Start()
                                      [&wanderer]() { wanderer.Start(); }));
 
     // the wanderer will clone the tree for itself, so we're done with it
-    pll_utree_every(tree, pll::cb_erase_data);
-    pll_utree_destroy(tree);
+    pll_utree_destroy(tree, pll::cb_erase_data);
 
     starting_trees_.pop();
   }
@@ -230,8 +227,7 @@ void Guru::Wait()
       //std::cerr << "wanderer " << i << " launched on " << GetKey(tree) << "\n";
 
       // the wanderer will clone the tree for itself, so we're done with it
-      pll_utree_every(tree, pll::cb_erase_data);
-      pll_utree_destroy(tree);
+      pll_utree_destroy(tree, pll::cb_erase_data);
 
       starting_trees_.pop();
     }
