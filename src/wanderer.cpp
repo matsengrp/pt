@@ -271,11 +271,13 @@ void Wanderer::QueueMoves()
   // TODO: add an error check to see if the number of nodes
   //       pll_utree_query_innernodes() finds is the same as the size
   //       of the vector
-  std::vector<pll_utree_t*> inner_nodes(partition_.inner_node_count(), nullptr);
-  pll_utree_query_innernodes(trees_.top(), inner_nodes.data());
+  pll_utree_t* tree = trees_.top();
+  pll_unode_t** inner_nodes = tree->nodes + tree->tip_count;
 
   std::queue<TreeMove> move_queue;
-  for (auto node : inner_nodes) {
+  for (size_t i = 0; i < tree->inner_count; ++i) {
+    pll_unode_t* node = inner_nodes[i];
+
     // skip any pendant edges
     if (!node->back->next) {
       continue;
