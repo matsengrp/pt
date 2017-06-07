@@ -40,13 +40,13 @@ Wanderer::Wanderer(Authority& authority,
 }
 
 Wanderer::Wanderer(Authority& authority,
-                   pll_utree_t* starting_tree, unsigned int tip_node_count,
+                   pll_utree_t* starting_tree,
                    const pll::ModelParameters& model_parameters,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
                    bool try_all_moves) :
     authority_(authority),
-    partition_(starting_tree, tip_node_count, model_parameters, labels, sequences),
+    partition_(starting_tree, model_parameters, labels, sequences),
     try_all_moves_(try_all_moves)
 {
   // we don't want to take ownership of starting_tree, so clone it

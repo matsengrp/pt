@@ -55,7 +55,7 @@ class Wanderer {
            pll_utree_t* starting_tree, bool try_all_moves = true);
 
   Wanderer(Authority& authority,
-           pll_utree_t* starting_tree, unsigned int tip_node_count,
+           pll_utree_t* starting_tree,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
