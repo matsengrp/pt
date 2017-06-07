@@ -10,6 +10,9 @@
 #endif
 
 namespace pt {
+
+pll_unode_t* GetVirtualRoot(pll_utree_t* tree);
+
 pll_unode_t *SetNewickRoot(pll_unode_t *tree);
 bool SetLabelRoot(std::string label, pll_unode_t *tree, pll_unode_t **root);
 void RecursiveOrderedNewick(pll_unode_t *tree);

@@ -10,6 +10,11 @@
 
 namespace pt {
 
+pll_unode_t* GetVirtualRoot(pll_utree_t* tree)
+{
+  return tree->nodes[tree->tip_count + tree->inner_count - 1];
+}
+
 /// @brief Recursive function to generate newick string without branch lengths.
 /// @return Newick char* string.
 char *newick_utree_recurse(pll_unode_t *tree) {
