@@ -84,7 +84,9 @@ int main(int argc, const char* argv[])
   double ml_lnl = partition.LogLikelihood(root);
 
   pt::Authority authority(ml_lnl, lnl_offset);
-  pt::Wanderer wanderer(authority, std::move(partition), tree);
+
+  bool try_all_moves = true;
+  pt::Wanderer wanderer(authority, std::move(partition), tree, try_all_moves);
 
   //
   // go!

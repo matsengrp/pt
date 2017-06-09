@@ -124,8 +124,10 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     pt::Authority authority(ml_lnl, lnl_offset);
 
+    bool try_all_moves = true;
+
     SECTION("using partition move constructor") {
-      pt::Wanderer wanderer(authority, std::move(partition), tree);
+      pt::Wanderer wanderer(authority, std::move(partition), tree, try_all_moves);
 
       wanderer.Start();
 
@@ -159,8 +161,8 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
 
     SECTION("using in-place partition constructor") {
-      pt::Wanderer wanderer(authority, tree, parameters,
-                            labels, sequences);
+      pt::Wanderer wanderer(authority, tree, parameters, labels, sequences,
+                            try_all_moves);
 
       wanderer.Start();
 
@@ -215,11 +217,13 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   // at least -3820 (ML is -3737.47).
   double lnl_offset = -82.53;
 
+  bool try_all_moves = true;
+
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences);
+                  labels, sequences, try_all_moves);
 
     guru.Start();
     guru.Wait();
@@ -241,7 +245,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
     size_t thread_count = 2;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences);
+                  labels, sequences, try_all_moves);
 
     // Add the starting tree again. Since we've requested multiple
     // threads, the guru will create wanderers which will go idle
@@ -285,11 +289,13 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   double lnl_offset = -2.0;
 
+  bool try_all_moves = true;
+
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences);
+                  labels, sequences, try_all_moves);
 
     guru.Start();
     guru.Wait();
@@ -305,7 +311,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     size_t thread_count = 4;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences);
+                  labels, sequences, try_all_moves);
 
     guru.Start();
     guru.Wait();

@@ -52,14 +52,14 @@ class Wanderer {
 
  public:
   Wanderer(Authority& authority, pll::Partition&& partition,
-           pll_utree_t* starting_tree, bool try_all_moves = true);
+           pll_utree_t* starting_tree, bool try_all_moves);
 
   Wanderer(Authority& authority,
            pll_utree_t* starting_tree,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
-           bool try_all_moves = true);
+           bool try_all_moves);
 
   ~Wanderer();
 

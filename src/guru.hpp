@@ -52,7 +52,7 @@ class Guru : public Authority {
        const pll::ModelParameters& model_parameters,
        const std::vector<std::string>& labels,
        const std::vector<std::string>& sequences,
-       bool try_all_moves = true);
+       bool try_all_moves);
 
   ~Guru() override;
 
