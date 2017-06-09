@@ -3,11 +3,7 @@
 
 #include <string>
 
-// pll.h is missing a header guard
-#ifndef LIBPLL_PLL_H_
-#define LIBPLL_PLL_H_
 #include <libpll/pll.h>
-#endif
 
 namespace pt {
 

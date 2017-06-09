@@ -6,12 +6,7 @@
 #include <utility>
 #include <vector>
 
-// pll.h is missing a header guard
-#ifndef LIBPLL_PLL_H_
-#define LIBPLL_PLL_H_
 #include <libpll/pll.h>
-#endif
-
 #include <model_parameters.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
