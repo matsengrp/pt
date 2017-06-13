@@ -1,6 +1,7 @@
 set(PT_SRC
   authority.cpp
   guru.cpp
+  options.cpp
   ordered_tree.cpp
   wanderer.cpp)
 

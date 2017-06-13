@@ -20,5 +20,7 @@ include_directories(lib/libcuckoo/src)
 add_subdirectory(lib/libptpll)
 include_directories(lib/libptpll/src)
 
+include_directories(lib/tclap/include)
+
 add_subdirectory(src)
 add_subdirectory(test)

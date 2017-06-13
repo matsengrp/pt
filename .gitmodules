@@ -4,3 +4,6 @@
 [submodule "lib/libptpll"]
 	path = lib/libptpll
 	url = https://github.com/matsengrp/libptpll.git
+[submodule "lib/tclap"]
+	path = lib/tclap
+	url = https://github.com/mirror/tclap.git
