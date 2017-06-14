@@ -21,6 +21,12 @@ void ValidateOptions(const Options& options)
         "threads");
   }
 
+  if (options.optimization_radius > 0) {
+    throw TCLAP::CmdLineParseException(
+        "branch length optimization radius greater than 0 not implemented",
+        "optimization-radius");
+  }
+
   // TODO: add checks for input file existence etc?
 }
 
@@ -87,6 +93,19 @@ Options ParseArguments(int argc, const char* argv[])
         "file");
     cmd.add(visited_trees_path);
 
+    TCLAP::ValueArg<int> optimization_radius(
+        "",
+        "optimization-radius",
+        "Branch length optimization radius. If this argument is not "
+          "set, all branches are optimized to determine if a move "
+          "should be accepted. At present the only radius implemented "
+          "is 0, meaning only the branch across which the move is made "
+          "is optimized.",
+        false,
+        -1,
+        "value");
+    cmd.add(optimization_radius);
+
     //
     // positional arguments
     //
@@ -131,6 +150,17 @@ Options ParseArguments(int argc, const char* argv[])
 
     options.lnl_offset = lnl_offset.getValue();
     options.thread_count = thread_count.getValue();
+
+    // TODO: this is inelegant, but eventually the try_all_moves
+    //       option should be removed when the move testing strategy
+    //       is factored out of the wanderer class and the
+    //       optimization radius is fully implemented with pll-modules
+    options.optimization_radius = optimization_radius.getValue();
+    if (options.optimization_radius < 0) {
+      options.try_all_moves = true;
+    } else {
+      options.try_all_moves = false;
+    }
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();

@@ -43,9 +43,8 @@ int main(int argc, const char* argv[])
   // initialize the guru
   //
 
-  bool try_all_moves = true;
   pt::Guru guru(options.lnl_offset, options.thread_count, tree, parameters,
-                labels, sequences, try_all_moves);
+                labels, sequences, options.try_all_moves);
 
   //
   // go!

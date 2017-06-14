@@ -13,6 +13,9 @@ struct Options {
   double lnl_offset;
   size_t thread_count;
 
+  int optimization_radius;
+  bool try_all_moves;
+
   std::string good_trees_path;
   std::string visited_trees_path;
 };
