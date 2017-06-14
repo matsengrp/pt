@@ -16,6 +16,8 @@ struct Options {
   int optimization_radius;
   bool try_all_moves;
 
+  bool skip_filtering;
+
   std::string good_trees_path;
   std::string visited_trees_path;
 };

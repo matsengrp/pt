@@ -57,8 +57,10 @@ int main(int argc, const char* argv[])
   // write output
   //
 
-  // ensure that the good tree table is filtered based on the final threshold
-  guru.FilterGoodTreeTable();
+  if (!options.skip_filtering) {
+    // ensure that the good tree table is filtered based on the final threshold
+    guru.FilterGoodTreeTable();
+  }
 
   WriteTreeTable(guru.GetGoodTreeTable(), options.good_trees_path);
 

@@ -107,6 +107,24 @@ Options ParseArguments(int argc, const char* argv[])
     cmd.add(optimization_radius);
 
     //
+    // optional switch arguments
+    //
+
+    TCLAP::SwitchArg skip_filtering(
+        "",
+        "skip-filtering",
+        "Skip filtering of good trees by the final log-likelihood "
+          "threshold once the search is complete. During the search, "
+          "if a tree with a higher log-likelihood than the previous "
+          "best tree is found, the threshold for good trees is raised. "
+          "Normally, the final set of good trees is filtered to "
+          "include only trees with log-likelihoods passing the final "
+          "threshold. Setting this flag skips that filtering, so that "
+          "any tree that passed the threshold at the time it was "
+          "evaluated will be included in the results.");
+    cmd.add(skip_filtering);
+
+    //
     // positional arguments
     //
 
@@ -161,6 +179,8 @@ Options ParseArguments(int argc, const char* argv[])
     } else {
       options.try_all_moves = false;
     }
+
+    options.skip_filtering = skip_filtering.getValue();
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();
