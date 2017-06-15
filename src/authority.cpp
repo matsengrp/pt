@@ -142,7 +142,7 @@ bool Authority::ReportTreeScore(const std::string& newick_str, double lnl)
   }
 
   if (lnl > ml_lnl_) {
-    ml_lnl_ = lnl;
+    SetMaximumScore(lnl);
   }
 
   return true;
