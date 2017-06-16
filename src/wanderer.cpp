@@ -97,6 +97,9 @@ void Wanderer::Start()
   // get an inner node of the tree
   pll_unode_t* root = GetVirtualRoot(tree);
 
+  // synchronize partition and tree with a full traversal
+  partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+
   // do full branch optimization. this function will handle its own
   // traversal updates.
   partition_.OptimizeAllBranches(root);
