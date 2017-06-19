@@ -111,12 +111,40 @@ void Authority::FilterGoodTreeTable()
   FilterGoodTreeTable(GetThresholdScore());
 }
 
-std::pair<bool, std::string> Authority::RequestTree(pll_utree_t* tree,
-                                                    bool /* first_tree */)
+bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, int type)
+{
+  // apply the move
+  pll_utree_nni(node, type, nullptr);
+
+  // check to see if the proposed tree has already been visited
+  std::string newick_str = GetKey(tree);
+  bool proposal_accepted = !visited_trees_.contains(newick_str);
+
+  // undo the move
+  pll_utree_nni(node, type, nullptr);
+
+  return proposal_accepted;
+}
+
+bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, int type)
+{
+  // apply the move
+  pll_utree_nni(node, type, nullptr);
+
+  // check to see if the requested tree has already been visited
+  std::string newick_str = GetKey(tree);
+  bool request_accepted = visited_trees_.insert(newick_str, 0.0);
+
+  // undo the move
+  pll_utree_nni(node, type, nullptr);
+
+  return request_accepted;
+}
+
+bool Authority::RequestTree(pll_utree_t* tree)
 {
   std::string newick_str = GetKey(tree);
-
-  return std::make_pair(visited_trees_.insert(newick_str, 0.0), newick_str);
+  return visited_trees_.insert(newick_str, 0.0);
 }
 
 bool Authority::ReportTreeScore(pll_utree_t* tree, double lnl)

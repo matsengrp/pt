@@ -78,23 +78,28 @@ void Guru::AddStartingTree(pll_utree_t* starting_tree)
   starting_trees_.push(tree);
 }
 
-std::pair<bool, std::string> Guru::RequestTree(pll_utree_t* tree, bool first_tree)
+bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, int type)
 {
+  // apply the move
+  pll_utree_nni(node, type, nullptr);
+
   std::string newick_str = GetKey(tree);
+  bool request_accepted;
 
-  if (GetVisitedTreeTable().contains(newick_str)) {
-    return std::make_pair(false, newick_str);
-  }
-
-  // if this is the wanderer's first tree, don't steal it
-  if (!first_tree && idle_wanderer_count_ > 0) {
+  if (idle_wanderer_count_ > 0) {
     std::lock_guard<std::mutex> lock(mutex_);
-    AddStartingTree(tree);
 
-    return std::make_pair(false, newick_str);
+    // steal the tree
+    AddStartingTree(tree);
+    request_accepted = false;
+  } else {
+    request_accepted = GetVisitedTreeTable().insert(newick_str, 0.0);
   }
 
-  return std::make_pair(GetVisitedTreeTable().insert(newick_str, 0.0), newick_str);
+  // undo the move
+  pll_utree_nni(node, type, nullptr);
+
+  return request_accepted;
 }
 
 void Guru::Start()

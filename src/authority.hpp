@@ -41,9 +41,9 @@ class Authority {
   void FilterGoodTreeTable(double lnl_threshold);
   void FilterGoodTreeTable();
 
-  // returns (request_accepted, newick_str)
-  virtual std::pair<bool, std::string> RequestTree(pll_utree_t* tree,
-                                                   bool first_tree);
+  bool ProposeMove(pll_utree_t* tree, pll_unode_t* node, int type);
+  virtual bool RequestMove(pll_utree_t* tree, pll_unode_t* node, int type);
+  bool RequestTree(pll_utree_t* tree);
 
   // returns true if the tree is good, false otherwise
   bool ReportTreeScore(pll_utree_t* tree, double lnl);

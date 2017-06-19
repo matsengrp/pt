@@ -79,14 +79,7 @@ void Wanderer::Start()
 
   pll_utree_t* tree = trees_.top();
 
-  // RequestTree() will also return the ordered Newick string used as
-  // the table key that we can use below if the request is accepted.
-  // we also inform the authority that this is our first tree.
-  bool request_accepted;
-  std::string newick_str;
-  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree, true);
-
-  if (!request_accepted) {
+  if (!authority_.RequestTree(tree)) {
     // if the starting tree has already been visited, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
     trees_.pop();
@@ -111,7 +104,7 @@ void Wanderer::Start()
   // report the score to the authority. if it returns false, this
   // isn't a good tree and we're done with it, so destroy it and
   // return
-  if (!authority_.ReportTreeScore(newick_str, lnl)) {
+  if (!authority_.ReportTreeScore(tree, lnl)) {
     // if the starting tree isn't good, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
     trees_.pop();
@@ -137,23 +130,6 @@ void Wanderer::Start()
 
 bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
-  pll_utree_nni(node, type, nullptr);
-
-  // request permission to proceed from the authority. if successful,
-  // this Wanderer owns the tree and we can proceed. RequestTree()
-  // will also return the ordered Newick string used as the table key
-  // that we can use below if the request is accepted. we also inform
-  // the authority that this is not our first tree.
-  bool request_accepted;
-  std::string newick_str;
-  std::tie(request_accepted, newick_str) = authority_.RequestTree(tree, false);
-
-  if (!request_accepted) {
-    // undo the move and reject
-    pll_utree_nni(node, type, nullptr);
-    return false;
-  }
-
   //
   // If try_all_moves_ is true, TestMove() will always return true if
   // this tree hasn't been visited before. Otherwise, TestMove() will
@@ -162,10 +138,11 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   //
 
   if (try_all_moves_) {
-    // undo the move and accept
-    pll_utree_nni(node, type, nullptr);
     return true;
   } else {
+    // apply the move
+    pll_utree_nni(node, type, nullptr);
+
     const double original_length = node->length;
 
     // update so that CLVs are pointing at node and optimize branch
@@ -216,6 +193,9 @@ void Wanderer::MoveForward()
 
   // get an inner node of the cloned tree
   pll_unode_t* root = GetVirtualRoot(tree);
+
+  // TODO: do we need a full traversal here? what's the effect of an
+  //       NNI move on the CLVs?
 
   // do full branch optimization. this function will handle its own
   // traversal updates.
@@ -292,12 +272,26 @@ void Wanderer::QueueMoves()
     //   continue;
     // }
 
+    // TODO: the wanderer doesn't know this, but the way the
+    //       authority's ProposeMove() method is written, multiple
+    //       wanderers can be granted permission to test moves to the
+    //       same tree. ProposeMove() only checks to see if the
+    //       proposed tree has already been visited, in which case
+    //       testing the move isn't necessary. this is safe because
+    //       the authority will still only grant permission to accept
+    //       the move to a single wanderer, but it's inefficient as
+    //       moves resulting in the same tree may be tested
+    //       simultaneously by different wanderers.
 
-    if (TestMove(tree, node, MoveType::LEFT)) {
+    if (authority_.ProposeMove(tree, node, MoveType::LEFT)
+        && TestMove(tree, node, MoveType::LEFT)
+        && authority_.RequestMove(tree, node, MoveType::LEFT)) {
       move_queue.push(TreeMove{node, MoveType::LEFT});
     }
 
-    if (TestMove(tree, node, MoveType::RIGHT)) {
+    if (authority_.ProposeMove(tree, node, MoveType::RIGHT)
+        && TestMove(tree, node, MoveType::RIGHT)
+        && authority_.RequestMove(tree, node, MoveType::RIGHT)) {
       move_queue.push(TreeMove{node, MoveType::RIGHT});
     }
   }
