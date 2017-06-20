@@ -209,8 +209,15 @@ void Wanderer::MoveForward()
   // get an inner node of the cloned tree
   pll_unode_t* root = GetVirtualRoot(tree);
 
-  // TODO: do we need a full traversal here? what's the effect of an
-  //       NNI move on the CLVs?
+  // TODO: the above NNI move invalidated CLVs on either end of the
+  //       edge, but the CLV validity flags associated with those
+  //       nodes are unchanged. the only thing that's saving us from
+  //       potentially nonsense results is that OptimizeAllBranches()
+  //       does a full traversal before it begins. this problem is
+  //       related to why single branch optimization in TestMove() has
+  //       to do a full traversal before optimizing the branch. it
+  //       might be useful to have an InvalidateEdge() method to mark
+  //       those CLVs invalid so that partial traversals would work.
 
   // do full branch optimization. this function will handle its own
   // traversal updates.
