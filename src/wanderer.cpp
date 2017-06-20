@@ -145,8 +145,15 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 
     const double original_length = node->length;
 
-    // update so that CLVs are pointing at node and optimize branch
-    partition_.TraversalUpdate(node, pll::TraversalType::PARTIAL);
+    // the NNI move invalidated the CLVs at either end of this edge,
+    // but the CLV validity flags associated with those nodes are
+    // unchanged. perform a full traversal to recompute those CLVs and
+    // reach a predictable state.
+    //
+    // TODO: a full traversal is overkill -- perhaps we could use an
+    //       InvalidateEdge() method so that we could still use a
+    //       partial traversal?
+    partition_.TraversalUpdate(node, pll::TraversalType::FULL);
     partition_.OptimizeBranch(node);
 
     // no need for another traversal, since the CLVs are already
@@ -165,6 +172,14 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
     // to orient the CLVs as appropriate
     partition_.UpdateBranchLength(node, original_length);
     pll_utree_nni(node, type, nullptr);
+
+    // TODO: note that undoing the NNI move again invalidates the CLVs
+    //       at either end of this edge, so future partial traversals
+    //       will give a bad result. this is another place where an
+    //       InvalidateEdge() method would be helpful. an alternative
+    //       would be to clone the input tree before applying the NNI
+    //       move and testing the single-branch optimization, so that
+    //       we wouldn't have to restore the input tree's state.
 
     return accept_move;
   }
