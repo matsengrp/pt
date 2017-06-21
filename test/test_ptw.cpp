@@ -269,6 +269,29 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   pll_utree_destroy(tree, nullptr);
 }
 
+void RunGuruTest(double lnl_offset,
+                 size_t thread_count,
+                 pll_utree_t* tree,
+                 const pt::pll::ModelParameters& parameters,
+                 const std::vector<std::string>& labels,
+                 const std::vector<std::string>& sequences,
+                 bool try_all_moves,
+                 size_t good_tree_count,
+                 size_t visited_tree_count)
+{
+  pt::Guru guru(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                try_all_moves);
+
+  guru.Start();
+  guru.Wait();
+
+  pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+  pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+  CHECK(good_trees.size() == good_tree_count);
+  CHECK(visited_trees.size() == visited_tree_count);
+}
+
 TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   std::string newick_path("test-data/hohna_datasets_fasta/RAxML_bestTree.DS1");
   std::string fasta_path("test-data/hohna_datasets_fasta/DS1.fasta");
@@ -289,33 +312,15 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences, try_all_moves);
-
-    guru.Start();
-    guru.Wait();
-
-    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
-    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
-
-    CHECK(good_trees.size() == 15);
-    CHECK(visited_trees.size() == 659);
+    RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                try_all_moves, 15, 659);
   }
 
   SECTION("multi-threaded operation is correct") {
     size_t thread_count = 4;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences, try_all_moves);
-
-    guru.Start();
-    guru.Wait();
-
-    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
-    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
-
-    CHECK(good_trees.size() == 15);
-    CHECK(visited_trees.size() == 659);
+    RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                try_all_moves, 15, 659);
   }
 
   pll_utree_destroy(tree, nullptr);
