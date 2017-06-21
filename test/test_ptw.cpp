@@ -305,22 +305,26 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
-  double lnl_offset = -2.0;
+  SECTION("when try_all_moves is true") {
+    double lnl_offset = -2.0;
+    bool try_all_moves = true;
 
-  bool try_all_moves = true;
+    size_t good_tree_count = 15;
+    size_t visited_tree_count = 659;
 
-  SECTION("single-threaded operation is correct") {
-    size_t thread_count = 1;
+    SECTION("single-threaded operation is correct") {
+      size_t thread_count = 1;
 
-    RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                try_all_moves, 15, 659);
-  }
+      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                  try_all_moves, good_tree_count, visited_tree_count);
+    }
 
-  SECTION("multi-threaded operation is correct") {
-    size_t thread_count = 4;
+    SECTION("multi-threaded operation is correct") {
+      size_t thread_count = 4;
 
-    RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                try_all_moves, 15, 659);
+      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                  try_all_moves, good_tree_count, visited_tree_count);
+    }
   }
 
   pll_utree_destroy(tree, nullptr);
