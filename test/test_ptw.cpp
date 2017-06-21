@@ -327,5 +327,27 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     }
   }
 
+  SECTION("when try_all_moves is false") {
+    double lnl_offset = -2.0;
+    bool try_all_moves = false;
+
+    size_t good_tree_count = 9;
+    size_t visited_tree_count = 9;
+
+    SECTION("single-threaded operation is correct") {
+      size_t thread_count = 1;
+
+      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                  try_all_moves, good_tree_count, visited_tree_count);
+    }
+
+    SECTION("multi-threaded operation is correct") {
+      size_t thread_count = 4;
+
+      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                  try_all_moves, good_tree_count, visited_tree_count);
+    }
+  }
+
   pll_utree_destroy(tree, nullptr);
 }
