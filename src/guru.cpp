@@ -46,6 +46,9 @@ Guru::Guru(double lnl_offset,
   pll_utree_every(default_tree_, pll::cb_copy_clv_traversal);
 
   // use the default tree's log-likelihood as the authority's initial maximum
+  //
+  // TODO: the partition is only ever used here -- it doesn't actually
+  //       need to be a member variable if that's the case
   pll_unode_t* root = GetVirtualRoot(default_tree_);
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
   SetMaximumScore(partition_.LogLikelihood(root));
