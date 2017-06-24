@@ -1,6 +1,9 @@
 set(PT_SRC
   authority.cpp
   guru.cpp
+  move_tester.cpp
+  move_tester/always.cpp
+  move_tester/single_branch_optimizer.cpp
   options.cpp
   ordered_tree.cpp
   wanderer.cpp)

@@ -12,6 +12,8 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "move_tester/always.hpp"
+#include "move_tester/single_branch_optimizer.hpp"
 #include "ordered_tree.hpp"
 
 namespace pt {
@@ -137,52 +139,27 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   // to determine if this move should be accepted.
   //
 
+  bool accept_move;
+  double move_score;
+
   if (try_all_moves_) {
-    return true;
+    std::tie(accept_move, move_score) =
+        move_tester::Always().EvaluateMove(
+            partition_, tree, node, type, authority_.GetThresholdScore());
+
   } else {
-    // apply the move
-    pll_utree_nni(node, type, nullptr);
-
-    const double original_length = node->length;
-
-    // the NNI move invalidated the CLVs at either end of this edge,
-    // but the CLV validity flags associated with those nodes are
-    // unchanged. perform a full traversal to recompute those CLVs and
-    // reach a predictable state.
-    //
-    // TODO: a full traversal is overkill -- perhaps we could use an
-    //       InvalidateEdge() method so that we could still use a
-    //       partial traversal?
-    partition_.TraversalUpdate(node, pll::TraversalType::FULL);
-    partition_.OptimizeBranch(node);
-
-    // no need for another traversal, since the CLVs are already
-    // pointing at node
-    const double test_lnl = partition_.LogLikelihood(node);
-
-    // we're just testing whether or not to try the move, so we don't
-    // report the score to the authority yet
-    bool accept_move = false;
-    if (test_lnl >= authority_.GetThresholdScore()) {
-      accept_move = true;
-    }
-
-    // restore the branch length and undo the move. CLVs will remain
-    // pointed toward node, so future operations on this tree will need
-    // to orient the CLVs as appropriate
-    partition_.UpdateBranchLength(node, original_length);
-    pll_utree_nni(node, type, nullptr);
-
-    // TODO: note that undoing the NNI move again invalidates the CLVs
-    //       at either end of this edge, so future partial traversals
-    //       will give a bad result. this is another place where an
-    //       InvalidateEdge() method would be helpful. an alternative
-    //       would be to clone the input tree before applying the NNI
-    //       move and testing the single-branch optimization, so that
-    //       we wouldn't have to restore the input tree's state.
-
-    return accept_move;
+    std::tie(accept_move, move_score) =
+        move_tester::SingleBranchOptimizer().EvaluateMove(
+            partition_, tree, node, type, authority_.GetThresholdScore());
   }
+
+  // TODO: do whatever's necessary to return the tree and partition to
+  //       a known state, or should EvaluateMove() be in charge of that?
+
+  // TODO: for use when the concept of tested and visited trees is reworked
+  //authority_.ReportTestScore(tree, node, type, move_score);
+
+  return accept_move;
 }
 
 void Wanderer::MoveForward()
