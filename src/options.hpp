@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace pt{
+namespace pt {
 
 struct Options {
   std::string newick_path;
