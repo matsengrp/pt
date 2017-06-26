@@ -6,6 +6,7 @@
 #include <libpll/pll.h>
 #include <pll_partition.hpp>
 
+#include "../authority.hpp"
 #include "../move_tester.hpp"
 #include "../wanderer.hpp" // TODO: for MoveType, which should be in another file
 
@@ -19,7 +20,7 @@ class SingleBranchOptimizer : public MoveTester
   std::pair<bool, double> EvaluateMove(pll::Partition& partition,
                                        pll_utree_t* tree,
                                        pll_unode_t* node, MoveType type,
-                                       double threshold) const override;
+                                       const Authority& authority) const override;
 };
 
 } } // namespace pt::move_tester

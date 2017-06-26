@@ -145,12 +145,12 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   if (try_all_moves_) {
     std::tie(accept_move, move_score) =
         move_tester::Always().EvaluateMove(
-            partition_, tree, node, type, authority_.GetThresholdScore());
+            partition_, tree, node, type, authority_);
 
   } else {
     std::tie(accept_move, move_score) =
         move_tester::SingleBranchOptimizer().EvaluateMove(
-            partition_, tree, node, type, authority_.GetThresholdScore());
+            partition_, tree, node, type, authority_);
   }
 
   // TODO: do whatever's necessary to return the tree and partition to

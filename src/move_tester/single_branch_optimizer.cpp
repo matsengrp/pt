@@ -5,6 +5,7 @@
 #include <libpll/pll.h>
 #include <pll_partition.hpp>
 
+#include "../authority.hpp"
 #include "../wanderer.hpp" // TODO: for MoveType, which should be in another file
 
 namespace pt { namespace move_tester {
@@ -15,7 +16,7 @@ SingleBranchOptimizer::~SingleBranchOptimizer()
 std::pair<bool, double>
 SingleBranchOptimizer::EvaluateMove(pll::Partition& partition, pll_utree_t* tree,
                                    pll_unode_t* node, MoveType type,
-                                   double threshold) const
+                                   const Authority& authority) const
 {
     // apply the move
     pll_utree_nni(node, type, nullptr);
@@ -40,7 +41,7 @@ SingleBranchOptimizer::EvaluateMove(pll::Partition& partition, pll_utree_t* tree
     // we're just testing whether or not to try the move, so we don't
     // report the score to the authority yet
     bool accept_move = false;
-    if (test_lnl >= threshold) {
+    if (test_lnl >= authority.GetThresholdScore()) {
       accept_move = true;
     }
 
