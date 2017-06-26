@@ -1,7 +1,10 @@
 #ifndef PT_OPTIONS_HPP_
 #define PT_OPTIONS_HPP_
 
+#include <memory>
 #include <string>
+
+#include "move_tester.hpp"
 
 namespace pt {
 
@@ -14,7 +17,7 @@ struct Options {
   size_t thread_count;
 
   int optimization_radius;
-  bool try_all_moves;
+  std::shared_ptr<const MoveTester> move_tester;
 
   bool skip_filtering;
 

@@ -1,5 +1,6 @@
 #include "wanderer.hpp"
 
+#include <memory>
 #include <queue>
 #include <stdexcept>
 #include <string>
@@ -13,8 +14,7 @@
 
 #include "authority.hpp"
 #include "common.hpp"
-#include "move_tester/always.hpp"
-#include "move_tester/single_branch_optimizer.hpp"
+#include "move_tester.hpp"
 #include "ordered_tree.hpp"
 
 namespace pt {
@@ -24,11 +24,12 @@ namespace pt {
 //
 
 Wanderer::Wanderer(Authority& authority,
-                   pll::Partition&& partition, pll_utree_t* starting_tree,
-                   bool try_all_moves) :
+                   pll::Partition&& partition,
+                   pll_utree_t* starting_tree,
+                   std::shared_ptr<const MoveTester> move_tester) :
     authority_(authority),
     partition_(std::move(partition)),
-    try_all_moves_(try_all_moves)
+    move_tester_(move_tester)
 {
   // we don't want to take ownership of starting_tree, so clone it
   // first and push the clone onto the stack
@@ -43,10 +44,10 @@ Wanderer::Wanderer(Authority& authority,
                    const pll::ModelParameters& model_parameters,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
-                   bool try_all_moves) :
+                   std::shared_ptr<const MoveTester> move_tester) :
     authority_(authority),
     partition_(starting_tree, model_parameters, labels, sequences),
-    try_all_moves_(try_all_moves)
+    move_tester_(move_tester)
 {
   // we don't want to take ownership of starting_tree, so clone it
   // first and push the clone onto the stack
@@ -133,26 +134,11 @@ void Wanderer::Start()
 
 bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
-  //
-  // If try_all_moves_ is true, TestMove() will always return true if
-  // this tree hasn't been visited before. Otherwise, TestMove() will
-  // optimize the branch length and use the resulting log-likelihood
-  // to determine if this move should be accepted.
-  //
-
   bool accept_move;
   double move_score;
 
-  if (try_all_moves_) {
-    std::tie(accept_move, move_score) =
-        move_tester::Always().EvaluateMove(
-            partition_, tree, node, type, authority_);
-
-  } else {
-    std::tie(accept_move, move_score) =
-        move_tester::SingleBranchOptimizer().EvaluateMove(
-            partition_, tree, node, type, authority_);
-  }
+  std::tie(accept_move, move_score) =
+      move_tester_->EvaluateMove(partition_, tree, node, type, authority_);
 
   // TODO: do whatever's necessary to return the tree and partition to
   //       a known state, or should EvaluateMove() be in charge of that?

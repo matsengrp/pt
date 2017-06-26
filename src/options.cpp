@@ -1,9 +1,13 @@
 #include "options.hpp"
 
 #include <cstdlib>
+#include <memory>
 #include <string>
 
 #include <tclap/CmdLine.h>
+
+#include "move_tester/always.hpp"
+#include "move_tester/single_branch_optimizer.hpp"
 
 namespace pt {
 
@@ -169,15 +173,17 @@ Options ParseArguments(int argc, const char* argv[])
     options.lnl_offset = lnl_offset.getValue();
     options.thread_count = thread_count.getValue();
 
-    // TODO: this is inelegant, but eventually the try_all_moves
-    //       option should be removed when the move testing strategy
-    //       is factored out of the wanderer class and the
-    //       optimization radius is fully implemented with pll-modules
     options.optimization_radius = optimization_radius.getValue();
+
     if (options.optimization_radius < 0) {
-      options.try_all_moves = true;
+      options.move_tester = std::make_shared<move_tester::Always>();
     } else {
-      options.try_all_moves = false;
+      // TODO: eventually this will be replaced with a
+      //       BranchNeighborhoodOptimizer that takes the optimization
+      //       radius as a constructor argument, but this is what we
+      //       have for now. ValidateOptions() will throw if the
+      //       optimization radius is greater than zero.
+      options.move_tester = std::make_shared<move_tester::SingleBranchOptimizer>();
     }
 
     options.skip_filtering = skip_filtering.getValue();

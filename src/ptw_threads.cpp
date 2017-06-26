@@ -44,7 +44,7 @@ int main(int argc, const char* argv[])
   //
 
   pt::Guru guru(options.lnl_offset, options.thread_count, tree, parameters,
-                labels, sequences, options.try_all_moves);
+                labels, sequences, options.move_tester);
 
   //
   // go!

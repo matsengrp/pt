@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
@@ -15,6 +16,8 @@
 
 #include "authority.hpp"
 #include "guru.hpp"
+#include "move_tester/always.hpp"
+#include "move_tester/single_branch_optimizer.hpp"
 #include "wanderer.hpp"
 
 //
@@ -119,10 +122,10 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     pt::Authority authority(ml_lnl, lnl_offset);
 
-    bool try_all_moves = true;
+    auto move_tester = std::make_shared<pt::move_tester::Always>();
 
     SECTION("using partition move constructor") {
-      pt::Wanderer wanderer(authority, std::move(partition), tree, try_all_moves);
+      pt::Wanderer wanderer(authority, std::move(partition), tree, move_tester);
 
       wanderer.Start();
 
@@ -157,7 +160,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     SECTION("using in-place partition constructor") {
       pt::Wanderer wanderer(authority, tree, parameters, labels, sequences,
-                            try_all_moves);
+                            move_tester);
 
       wanderer.Start();
 
@@ -212,13 +215,13 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   // at least -3820 (ML is -3737.47).
   double lnl_offset = -82.53;
 
-  bool try_all_moves = true;
+  auto move_tester = std::make_shared<pt::move_tester::Always>();
 
   SECTION("single-threaded operation is correct") {
     size_t thread_count = 1;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences, try_all_moves);
+                  labels, sequences, move_tester);
 
     guru.Start();
     guru.Wait();
@@ -240,7 +243,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
     size_t thread_count = 2;
 
     pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences, try_all_moves);
+                  labels, sequences, move_tester);
 
     // Add the starting tree again. Since we've requested multiple
     // threads, the guru will create wanderers which will go idle
@@ -275,12 +278,12 @@ void RunGuruTest(double lnl_offset,
                  const pt::pll::ModelParameters& parameters,
                  const std::vector<std::string>& labels,
                  const std::vector<std::string>& sequences,
-                 bool try_all_moves,
+                 std::shared_ptr<const pt::MoveTester> move_tester,
                  size_t good_tree_count,
                  size_t visited_tree_count)
 {
   pt::Guru guru(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                try_all_moves);
+                move_tester);
 
   guru.Start();
   guru.Wait();
@@ -305,9 +308,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
-  SECTION("when try_all_moves is true") {
+  SECTION("using move_tester::Always") {
     double lnl_offset = -2.0;
-    bool try_all_moves = true;
+    auto move_tester = std::make_shared<pt::move_tester::Always>();
 
     size_t good_tree_count = 15;
     size_t visited_tree_count = 659;
@@ -316,20 +319,20 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       size_t thread_count = 1;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  try_all_moves, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       size_t thread_count = 4;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  try_all_moves, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count);
     }
   }
 
-  SECTION("when try_all_moves is false") {
+  SECTION("using move_tester::SingleBranchOptimizer") {
     double lnl_offset = -2.0;
-    bool try_all_moves = false;
+    auto move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
 
     size_t good_tree_count = 9;
     size_t visited_tree_count = 9;
@@ -338,14 +341,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       size_t thread_count = 1;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  try_all_moves, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       size_t thread_count = 4;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  try_all_moves, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count);
     }
   }
 

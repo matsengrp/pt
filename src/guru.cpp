@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -14,6 +15,7 @@
 #include <pll_util.hpp>
 
 #include "common.hpp"
+#include "move_tester.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
@@ -28,13 +30,13 @@ Guru::Guru(double lnl_offset,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
-           bool try_all_moves) :
+           std::shared_ptr<const MoveTester> move_tester) :
     Authority(0.0, lnl_offset),
     thread_count_(thread_count),
     model_parameters_(model_parameters),
     labels_(labels),
     sequences_(sequences),
-    try_all_moves_(try_all_moves),
+    move_tester_(move_tester),
     partition_(starting_tree, model_parameters, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
@@ -113,7 +115,7 @@ void Guru::Start()
 
     wanderers_.emplace_back(*this, tree,
                             model_parameters_, labels_, sequences_,
-                            try_all_moves_);
+                            move_tester_);
 
     // if an earlier wanderer happens to move to this wanderer's
     // starting tree before this wanderer is started, the wanderer's
@@ -134,7 +136,7 @@ void Guru::Start()
   {
     wanderers_.emplace_back(*this, default_tree_,
                             model_parameters_, labels_, sequences_,
-                            try_all_moves_);
+                            move_tester_);
 
     // we "start" the wanderer here only to create its future. Start()
     // will immediately return when it sees that its starting tree has

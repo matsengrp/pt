@@ -4,6 +4,7 @@
 #include <atomic>
 #include <deque>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <queue>
 #include <string>
@@ -16,6 +17,7 @@
 
 #include "authority.hpp"
 #include "common.hpp"
+#include "move_tester.hpp"
 #include "wanderer.hpp"
 
 namespace pt {
@@ -26,7 +28,7 @@ class Guru : public Authority {
   pll::ModelParameters model_parameters_;
   std::vector<std::string> labels_;
   std::vector<std::string> sequences_;
-  bool try_all_moves_;
+  std::shared_ptr<const MoveTester> move_tester_;
 
   pll::Partition partition_;
   pll_utree_t* default_tree_;
@@ -48,7 +50,7 @@ class Guru : public Authority {
        const pll::ModelParameters& model_parameters,
        const std::vector<std::string>& labels,
        const std::vector<std::string>& sequences,
-       bool try_all_moves);
+       std::shared_ptr<const MoveTester> move_tester);
 
   ~Guru() override;
 

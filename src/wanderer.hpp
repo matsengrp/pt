@@ -1,6 +1,7 @@
 #ifndef PT_WANDERER_HPP_
 #define PT_WANDERER_HPP_
 
+#include <memory>
 #include <queue>
 #include <stack>
 #include <string>
@@ -12,6 +13,7 @@
 
 #include "authority.hpp"
 #include "common.hpp"
+#include "move_tester.hpp"
 
 namespace pt {
 
@@ -20,7 +22,7 @@ class Wanderer {
   Authority& authority_;
   pll::Partition partition_;
 
-  const bool try_all_moves_;
+  std::shared_ptr<const MoveTester> move_tester_;
 
   // a data structure that makes more sense for this might be a stack
   // of pairs like {tree, move_queue}. MoveBack() could pop the top of
@@ -39,15 +41,17 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(Authority& authority, pll::Partition&& partition,
-           pll_utree_t* starting_tree, bool try_all_moves);
+  Wanderer(Authority& authority,
+           pll::Partition&& partition,
+           pll_utree_t* starting_tree,
+           std::shared_ptr<const MoveTester> move_tester);
 
   Wanderer(Authority& authority,
            pll_utree_t* starting_tree,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
-           bool try_all_moves);
+           std::shared_ptr<const MoveTester> move_tester);
 
   ~Wanderer();
 

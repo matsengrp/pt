@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "move_tester/always.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
@@ -79,9 +81,9 @@ int main(int argc, const char* argv[])
   double ml_lnl = partition.LogLikelihood(root);
 
   pt::Authority authority(ml_lnl, lnl_offset);
+  auto move_tester = std::make_shared<pt::move_tester::Always>();
 
-  bool try_all_moves = true;
-  pt::Wanderer wanderer(authority, std::move(partition), tree, try_all_moves);
+  pt::Wanderer wanderer(authority, std::move(partition), tree, move_tester);
 
   //
   // go!
