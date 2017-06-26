@@ -12,6 +12,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "common.hpp"
 #include "move_tester/always.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
 #include "ordered_tree.hpp"

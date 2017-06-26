@@ -7,8 +7,8 @@
 #include <pll_partition.hpp>
 
 #include "../authority.hpp"
+#include "../common.hpp"
 #include "../move_tester.hpp"
-#include "../wanderer.hpp" // TODO: for MoveType, which should be in another file
 
 namespace pt { namespace move_tester {
 

@@ -6,6 +6,7 @@
 
 #include <libpll/pll.h>
 
+#include "common.hpp"
 #include "ordered_tree.hpp"
 
 namespace pt {
@@ -111,7 +112,7 @@ void Authority::FilterGoodTreeTable()
   FilterGoodTreeTable(GetThresholdScore());
 }
 
-bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, int type)
+bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
   // apply the move
   pll_utree_nni(node, type, nullptr);
@@ -126,7 +127,7 @@ bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, int type)
   return proposal_accepted;
 }
 
-bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, int type)
+bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
   // apply the move
   pll_utree_nni(node, type, nullptr);

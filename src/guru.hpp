@@ -15,6 +15,7 @@
 #include <pll_partition.hpp>
 
 #include "authority.hpp"
+#include "common.hpp"
 #include "wanderer.hpp"
 
 namespace pt {
@@ -53,7 +54,7 @@ class Guru : public Authority {
 
   void AddStartingTree(pll_utree_t* starting_tree);
 
-  bool RequestMove(pll_utree_t* tree, pll_unode_t* node, int type) override;
+  bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type) override;
 
   void Start();
   void Wait();

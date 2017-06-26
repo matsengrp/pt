@@ -7,7 +7,7 @@
 #include <pll_partition.hpp>
 
 #include "authority.hpp"
-#include "wanderer.hpp" // TODO: for MoveType, which should be in another file
+#include "common.hpp"
 
 namespace pt {
 

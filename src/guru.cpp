@@ -13,6 +13,7 @@
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
+#include "common.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
@@ -81,7 +82,7 @@ void Guru::AddStartingTree(pll_utree_t* starting_tree)
   starting_trees_.push(tree);
 }
 
-bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, int type)
+bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 {
   // apply the move
   pll_utree_nni(node, type, nullptr);

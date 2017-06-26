@@ -8,6 +8,8 @@
 #include <cuckoohash_map.hh>
 #include <libpll/pll.h>
 
+#include "common.hpp"
+
 namespace pt {
 
 using TreeTable = cuckoohash_map<std::string, double>;
@@ -41,8 +43,8 @@ class Authority {
   void FilterGoodTreeTable(double lnl_threshold);
   void FilterGoodTreeTable();
 
-  bool ProposeMove(pll_utree_t* tree, pll_unode_t* node, int type);
-  virtual bool RequestMove(pll_utree_t* tree, pll_unode_t* node, int type);
+  bool ProposeMove(pll_utree_t* tree, pll_unode_t* node, MoveType type);
+  virtual bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type);
   bool RequestTree(pll_utree_t* tree);
 
   // returns true if the tree is good, false otherwise
