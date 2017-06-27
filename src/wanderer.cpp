@@ -156,32 +156,31 @@ void Wanderer::MoveForward()
   // points at that tree and not the clone. so we apply the move,
   // clone the tree, and then reverse the move on the original tree.
 
-  // apply move. the move we're applying should be
-  // move_queues_.top().front(), I think
+  // apply move and invalidate the CLVs on that edge
   TreeMove move = move_queues_.top().front();
   move_queues_.top().pop();
 
   pll_utree_nni(move.node, move.type, nullptr);
+  pll::InvalidateEdgeClvs(move.node);
 
-  // clone the tree with move applied
+  // clone the tree with move applied (and with properly invalidated CLVs)
   pll_utree_t* tree = pll_utree_clone(trees_.top());
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
-  // undo the move on the original tree
+  // undo the move on the original tree. the CLVs on that edge of this tree will
+  // remain invalid until the next time it's traversed, which will be either:
+  //
+  //   * during OptimizeAllBranches() in the next call to
+  //     MoveForward(), if this move doesn't result in a good tree and
+  //     there are moves left in the queue; or
+  //
+  //   * when a call to MoveBack() returns to this tree, at which
+  //     point a full traversal is performed if there are moves left
+  //     in the queue
   pll_utree_nni(move.node, move.type, nullptr);
 
   // get an inner node of the cloned tree
   pll_unode_t* root = GetVirtualRoot(tree);
-
-  // TODO: the above NNI move invalidated CLVs on either end of the
-  //       edge, but the CLV validity flags associated with those
-  //       nodes are unchanged. the only thing that's saving us from
-  //       potentially nonsense results is that OptimizeAllBranches()
-  //       does a full traversal before it begins. this problem is
-  //       related to why single branch optimization in TestMove() has
-  //       to do a full traversal before optimizing the branch. it
-  //       might be useful to have an InvalidateEdge() method to mark
-  //       those CLVs invalid so that partial traversals would work.
 
   // do full branch optimization. this function will handle its own
   // traversal updates.
