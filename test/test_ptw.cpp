@@ -131,10 +131,12 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
       pt::TreeTable& good_trees = authority.GetGoodTreeTable();
       pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
+      pt::TreeTable& tested_trees = authority.GetTestedTreeTable();
 
       SECTION("wanderers agree with old pt") {
         CHECK(good_trees.size() == 13);
         CHECK(visited_trees.size() == 15);
+        CHECK(tested_trees.size() == 14);
 
         CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
                                   "((Ref.A1.RW.92.92RW008.AB253421,"
@@ -166,10 +168,12 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
       pt::TreeTable& good_trees = authority.GetGoodTreeTable();
       pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
+      pt::TreeTable& tested_trees = authority.GetTestedTreeTable();
 
       SECTION("wanderers agree with old pt") {
         CHECK(good_trees.size() == 13);
         CHECK(visited_trees.size() == 15);
+        CHECK(tested_trees.size() == 14);
 
         CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
                                   "((Ref.A1.RW.92.92RW008.AB253421,"
@@ -228,9 +232,11 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
     pt::TreeTable& good_trees = guru.GetGoodTreeTable();
     pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+    pt::TreeTable& tested_trees = guru.GetTestedTreeTable();
 
     CHECK(good_trees.size() == 13);
     CHECK(visited_trees.size() == 15);
+    CHECK(tested_trees.size() == 14);
 
     CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
                               "((Ref.A1.RW.92.92RW008.AB253421,"
@@ -256,9 +262,11 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
     pt::TreeTable& good_trees = guru.GetGoodTreeTable();
     pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+    pt::TreeTable& tested_trees = guru.GetTestedTreeTable();
 
     CHECK(good_trees.size() == 13);
     CHECK(visited_trees.size() == 15);
+    CHECK(tested_trees.size() == 14);
 
     CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
                               "((Ref.A1.RW.92.92RW008.AB253421,"
@@ -280,7 +288,8 @@ void RunGuruTest(double lnl_offset,
                  const std::vector<std::string>& sequences,
                  std::shared_ptr<const pt::MoveTester> move_tester,
                  size_t good_tree_count,
-                 size_t visited_tree_count)
+                 size_t visited_tree_count,
+                 size_t tested_tree_count)
 {
   pt::Guru guru(lnl_offset, thread_count, tree, parameters, labels, sequences,
                 move_tester);
@@ -290,9 +299,11 @@ void RunGuruTest(double lnl_offset,
 
   pt::TreeTable& good_trees = guru.GetGoodTreeTable();
   pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+  pt::TreeTable& tested_trees = guru.GetTestedTreeTable();
 
   CHECK(good_trees.size() == good_tree_count);
   CHECK(visited_trees.size() == visited_tree_count);
+  CHECK(tested_trees.size() == tested_tree_count);
 }
 
 TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
@@ -314,19 +325,22 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
     size_t good_tree_count = 15;
     size_t visited_tree_count = 659;
+    size_t tested_tree_count = 658;
 
     SECTION("single-threaded operation is correct") {
       size_t thread_count = 1;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count,
+                  tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       size_t thread_count = 4;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count,
+                  tested_tree_count);
     }
   }
 
@@ -336,19 +350,22 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
     size_t good_tree_count = 9;
     size_t visited_tree_count = 9;
+    size_t tested_tree_count = 404;
 
     SECTION("single-threaded operation is correct") {
       size_t thread_count = 1;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count,
+                  tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       size_t thread_count = 4;
 
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count);
+                  move_tester, good_tree_count, visited_tree_count,
+                  tested_tree_count);
     }
   }
 

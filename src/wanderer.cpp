@@ -108,7 +108,7 @@ void Wanderer::Start()
   // report the score to the authority. if it returns false, this
   // isn't a good tree and we're done with it, so destroy it and
   // return
-  if (!authority_.ReportTreeScore(tree, lnl)) {
+  if (!authority_.ReportVisitScore(tree, lnl)) {
     // if the starting tree isn't good, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
     trees_.pop();
@@ -143,8 +143,8 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   // TODO: do whatever's necessary to return the tree and partition to
   //       a known state, or should EvaluateMove() be in charge of that?
 
-  // TODO: for use when the concept of tested and visited trees is reworked
-  //authority_.ReportTestScore(tree, node, type, move_score);
+  // report the test score to the authority
+  authority_.ReportTestScore(tree, node, type, move_score);
 
   return accept_move;
 }
@@ -192,7 +192,7 @@ void Wanderer::MoveForward()
 
   // report the score to the authority. if it returns true, this is a
   // good tree, and we should push it onto the stack and queue moves
-  if (authority_.ReportTreeScore(tree, lnl)) {
+  if (authority_.ReportVisitScore(tree, lnl)) {
     trees_.push(tree);
     QueueMoves();
   } else {

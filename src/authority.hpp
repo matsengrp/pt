@@ -20,6 +20,7 @@ using TreeTable = cuckoohash_map<std::string, double>;
 
 class Authority {
  private:
+  TreeTable tested_trees_;
   TreeTable visited_trees_;
   TreeTable good_trees_;
 
@@ -37,6 +38,7 @@ class Authority {
   std::string GetKey(pll_utree_t* tree) const;
 
   // TODO: these break encapsulation
+  TreeTable& GetTestedTreeTable();
   TreeTable& GetVisitedTreeTable();
   TreeTable& GetGoodTreeTable();
 
@@ -47,9 +49,12 @@ class Authority {
   virtual bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type);
   bool RequestTree(pll_utree_t* tree);
 
+  void ReportTestScore(pll_utree_t* tree, pll_unode_t* node, MoveType type,
+                       double score);
+
   // returns true if the tree is good, false otherwise
-  bool ReportTreeScore(pll_utree_t* tree, double lnl);
-  bool ReportTreeScore(const std::string& newick_str, double lnl);
+  bool ReportVisitScore(pll_utree_t* tree, double lnl);
+  bool ReportVisitScore(const std::string& newick_str, double lnl);
 };
 
 } // namespace pt

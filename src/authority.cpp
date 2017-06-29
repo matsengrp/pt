@@ -69,6 +69,11 @@ std::string Authority::GetKey(pll_utree_t* tree) const
   return OrderedNewickString(tree);
 }
 
+TreeTable& Authority::GetTestedTreeTable()
+{
+  return tested_trees_;
+}
+
 TreeTable& Authority::GetVisitedTreeTable()
 {
   return visited_trees_;
@@ -148,12 +153,34 @@ bool Authority::RequestTree(pll_utree_t* tree)
   return visited_trees_.insert(newick_str, 0.0);
 }
 
-bool Authority::ReportTreeScore(pll_utree_t* tree, double lnl)
+void Authority::ReportTestScore(pll_utree_t* tree, pll_unode_t* node,
+                                MoveType type, double score)
 {
-  return ReportTreeScore(GetKey(tree), lnl);
+  // apply the move
+  pll_utree_nni(node, type, nullptr);
+
+  // try and insert the tree into the tested trees table. if it's
+  // already there, update it if this score is better.
+
+  // the lambda returns false to indicate this element should not be erased
+  auto updater = [score](double& value) {
+    if (score > value) { value = score; }
+    return false;
+  };
+
+  std::string newick_str = GetKey(tree);
+  tested_trees_.upsert(newick_str, updater, score);
+
+  // undo the move
+  pll_utree_nni(node, type, nullptr);
 }
 
-bool Authority::ReportTreeScore(const std::string& newick_str, double lnl)
+bool Authority::ReportVisitScore(pll_utree_t* tree, double lnl)
+{
+  return ReportVisitScore(GetKey(tree), lnl);
+}
+
+bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
 {
   // TODO: add locks here where appropriate, such as between getting
   //       and setting the maximum
