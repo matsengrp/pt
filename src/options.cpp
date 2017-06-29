@@ -97,6 +97,18 @@ Options ParseArguments(int argc, const char* argv[])
         "file");
     cmd.add(visited_trees_path);
 
+    TCLAP::ValueArg<std::string> tested_trees_path(
+        "",
+        "tested-trees",
+        "Output file for all tested trees. Note that starting trees "
+        "are always visited but never tested (since there is no move "
+        "to a starting tree to test), so starting trees will not "
+        "appear in this output.",
+        false,
+        "",
+        "file");
+    cmd.add(tested_trees_path);
+
     TCLAP::ValueArg<int> optimization_radius(
         "",
         "optimization-radius",
@@ -190,6 +202,7 @@ Options ParseArguments(int argc, const char* argv[])
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();
+    options.tested_trees_path = tested_trees_path.getValue();
 
     //
     // validate options

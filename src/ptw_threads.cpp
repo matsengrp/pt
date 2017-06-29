@@ -68,6 +68,10 @@ int main(int argc, const char* argv[])
     WriteTreeTable(guru.GetVisitedTreeTable(), options.visited_trees_path);
   }
 
+  if (!options.tested_trees_path.empty()) {
+    WriteTreeTable(guru.GetTestedTreeTable(), options.tested_trees_path);
+  }
+
   //
   // clean up and return
   //

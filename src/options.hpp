@@ -23,6 +23,7 @@ struct Options {
 
   std::string good_trees_path;
   std::string visited_trees_path;
+  std::string tested_trees_path;
 };
 
 Options ParseArguments(int argc, const char* argv[]);
