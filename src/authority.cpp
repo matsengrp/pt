@@ -185,7 +185,7 @@ bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
   // TODO: add locks here where appropriate, such as between getting
   //       and setting the maximum
 
-  if (!visited_trees_.contains(newick_str)) {
+  if (!visited_trees_.update(newick_str, lnl)) {
     throw std::logic_error("tree is not in the visited table");
   }
 
