@@ -62,6 +62,8 @@ class Guru : public Authority {
   void Wait();
 
  private:
+  void AddSafeStartingTree(pll_utree_t* starting_tree);
+
   void UpdateWandererStatus(size_t index);
 };
 

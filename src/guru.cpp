@@ -56,8 +56,11 @@ Guru::Guru(double lnl_offset,
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
   SetMaximumScore(partition_.LogLikelihood(root));
 
-  // add the starting tree to the queue
-  AddStartingTree(starting_tree);
+  // add the starting tree to the queue. default_tree_ will be the
+  // tree to which all tip node/partition data indices are
+  // synchronized in the public AddStartingTree(). see comments in
+  // AddStartingTree().
+  AddSafeStartingTree(default_tree_);
 }
 
 Guru::~Guru()
@@ -74,12 +77,35 @@ Guru::~Guru()
   }
 }
 
-void Guru::AddStartingTree(pll_utree_t* starting_tree)
+void Guru::AddSafeStartingTree(pll_utree_t* starting_tree)
 {
   // we don't want to take ownership of starting_tree, so clone it
   // first and push the clone onto the queue
   pll_utree_t* tree = pll_utree_clone(starting_tree);
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
+
+  starting_trees_.push(tree);
+}
+
+void Guru::AddStartingTree(pll_utree_t* starting_tree)
+{
+  //
+  // we don't know where this tree came from; for example, if it was
+  // parsed by libpll from a Newick string, there's no guarantee that
+  // its tips have the same node/partition data indices as the default
+  // tree the guru was constructed with. wanderer partitions maintain
+  // state related to the tips, which means we need to synchronize
+  // this tree's tips to those of the default tree based on the tip
+  // labels before it can be considered safe for a wanderer to use.
+  //
+
+  // we don't want to take ownership of starting_tree, so clone it
+  // first, synchronize the tips with the default tree, and push the
+  // clone onto the queue
+  pll_utree_t* tree = pll_utree_clone(starting_tree);
+  pll_utree_every(tree, pll::cb_copy_clv_traversal);
+
+  pll::SynchronizeTipIndices(default_tree_, tree);
 
   starting_trees_.push(tree);
 }
@@ -95,8 +121,11 @@ bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   if (idle_wanderer_count_ > 0) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // steal the tree
-    AddStartingTree(tree);
+    // steal the tree. we know this tree is safe (i.e. its tip
+    // node/partition data indices are synchronized with the default
+    // tree and thus the wanderer partitions) because the wanderer
+    // must have arrived at this tree along a path of safe trees.
+    AddSafeStartingTree(tree);
     request_accepted = false;
   } else {
     request_accepted = GetVisitedTreeTable().insert(newick_str, 0.0);

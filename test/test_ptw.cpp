@@ -425,11 +425,6 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   }
 
   SECTION("on both peaks") {
-    // so I think the problem here might be that when the trees are
-    // read in, the node, CLV, scaler, and pmatrix indexes aren't
-    // assigned in the same way, so reusing the wanderer's partition
-    // (which has state related to these indexes) results in nonsense.
-
     double lnl_offset = -2.0;
 
     pt::Guru guru(lnl_offset, thread_count, first_tree, parameters,
