@@ -371,3 +371,82 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   pll_utree_destroy(tree, nullptr);
 }
+
+TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_DS1_two_trees]") {
+  std::string first_newick_path("test-data/hohna_datasets_fasta/two-peaks/RAxML_bestTree.DS1_first");
+  std::string second_newick_path("test-data/hohna_datasets_fasta/two-peaks/RAxML_bestTree.DS1_second");
+
+  std::string fasta_path("test-data/hohna_datasets_fasta/DS1.fasta");
+  std::string raxml_path("test-data/hohna_datasets_fasta/RAxML_info.DS1");
+
+  pll_utree_t* first_tree = pll_utree_parse_newick(first_newick_path.c_str());
+  pll_utree_t* second_tree = pll_utree_parse_newick(second_newick_path.c_str());
+
+  std::vector<std::string> labels;
+  std::vector<std::string> sequences;
+  pt::pll::ParseFasta(fasta_path, first_tree->tip_count, labels, sequences);
+
+  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+
+  auto move_tester = std::make_shared<pt::move_tester::Always>();
+
+  size_t thread_count = 1;
+
+  SECTION("on the first peak") {
+    double lnl_offset = -2.0;
+
+    pt::Guru guru(lnl_offset, thread_count, first_tree, parameters,
+                  labels, sequences, move_tester);
+
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 8);
+    CHECK(visited_trees.size() == 353);
+  }
+
+  SECTION("on the second peak") {
+    double lnl_offset = -1.05;
+
+    pt::Guru guru(lnl_offset, thread_count, second_tree, parameters,
+                  labels, sequences, move_tester);
+
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 4);
+    CHECK(visited_trees.size() == 185);
+  }
+
+  SECTION("on both peaks") {
+    // so I think the problem here might be that when the trees are
+    // read in, the node, CLV, scaler, and pmatrix indexes aren't
+    // assigned in the same way, so reusing the wanderer's partition
+    // (which has state related to these indexes) results in nonsense.
+
+    double lnl_offset = -2.0;
+
+    pt::Guru guru(lnl_offset, thread_count, first_tree, parameters,
+                  labels, sequences, move_tester);
+
+    guru.AddStartingTree(second_tree);
+
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 12);
+    CHECK(visited_trees.size() == 538);
+  }
+
+  pll_utree_destroy(first_tree, nullptr);
+  pll_utree_destroy(second_tree, nullptr);
+}
