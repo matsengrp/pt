@@ -373,14 +373,20 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 }
 
 TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_DS1_two_trees]") {
-  std::string first_newick_path("test-data/hohna_datasets_fasta/two-peaks/RAxML_bestTree.DS1_first");
-  std::string second_newick_path("test-data/hohna_datasets_fasta/two-peaks/RAxML_bestTree.DS1_second");
+  std::string newick_path("test-data/hohna_datasets_fasta/two-peaks/two_peaks.nw");
 
   std::string fasta_path("test-data/hohna_datasets_fasta/DS1.fasta");
   std::string raxml_path("test-data/hohna_datasets_fasta/RAxML_info.DS1");
 
-  pll_utree_t* first_tree = pll_utree_parse_newick(first_newick_path.c_str());
-  pll_utree_t* second_tree = pll_utree_parse_newick(second_newick_path.c_str());
+  std::vector<pll_utree_t*> trees = pt::pll::ParseMultiNewick(newick_path);
+
+  REQUIRE(trees.size() == 2);
+
+  pll_utree_t* first_tree = trees[0];
+  pll_utree_t* second_tree = trees[1];
+
+  REQUIRE(first_tree);
+  REQUIRE(second_tree);
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
@@ -442,6 +448,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
     CHECK(visited_trees.size() == 538);
   }
 
-  pll_utree_destroy(first_tree, nullptr);
-  pll_utree_destroy(second_tree, nullptr);
+  for (auto tree : trees) {
+    pll_utree_destroy(tree, nullptr);
+  }
 }
