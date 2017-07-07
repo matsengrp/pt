@@ -432,13 +432,29 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
     CHECK(visited_trees.size() == 185);
   }
 
-  SECTION("on both peaks") {
+  SECTION("on both peaks, given the higher peak first") {
     double lnl_offset = -2.0;
 
-    pt::Guru guru(lnl_offset, thread_count, first_tree, parameters,
+    pt::Guru guru(lnl_offset, thread_count, trees, parameters,
                   labels, sequences, move_tester);
 
-    guru.AddStartingTree(second_tree);
+    guru.Start();
+    guru.Wait();
+
+    pt::TreeTable& good_trees = guru.GetGoodTreeTable();
+    pt::TreeTable& visited_trees = guru.GetVisitedTreeTable();
+
+    CHECK(good_trees.size() == 12);
+    CHECK(visited_trees.size() == 538);
+  }
+
+  SECTION("on both peaks, given the lower peak first") {
+    double lnl_offset = -2.0;
+
+    std::vector<pll_utree_t*> reordered_trees{trees[1], trees[0]};
+
+    pt::Guru guru(lnl_offset, thread_count, reordered_trees, parameters,
+                  labels, sequences, move_tester);
 
     guru.Start();
     guru.Wait();

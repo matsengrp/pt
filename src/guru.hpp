@@ -52,8 +52,15 @@ class Guru : public Authority {
        const std::vector<std::string>& sequences,
        std::shared_ptr<const MoveTester> move_tester);
 
-  ~Guru() override;
+  Guru(double lnl_offset,
+       size_t thread_count,
+       const std::vector<pll_utree_t*>& starting_trees,
+       const pll::ModelParameters& model_parameters,
+       const std::vector<std::string>& labels,
+       const std::vector<std::string>& sequences,
+       std::shared_ptr<const MoveTester> move_tester);
 
+  ~Guru() override;
 
   bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type) override;
 

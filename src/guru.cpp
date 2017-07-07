@@ -63,6 +63,44 @@ Guru::Guru(double lnl_offset,
   AddSafeStartingTree(default_tree_);
 }
 
+Guru::Guru(double lnl_offset,
+           size_t thread_count,
+           const std::vector<pll_utree_t*>& starting_trees,
+           const pll::ModelParameters& model_parameters,
+           const std::vector<std::string>& labels,
+           const std::vector<std::string>& sequences,
+           std::shared_ptr<const MoveTester> move_tester) :
+    Guru(lnl_offset, thread_count, starting_trees.at(0), model_parameters,
+         labels, sequences, move_tester)
+{
+  //
+  // the delegated constructor has initialized the default tree, used
+  // it to set the authority's initial maximum, and added it as the
+  // first starting tree. we now loop over the remaining starting
+  // trees, synchronize and add them to the queue, and evaluate them
+  // in order to update the maximum score, if necessary.
+  //
+
+  // TODO: in order to make things more predictable, what about
+  //       sorting the starting trees in descending order by
+  //       log-likelihood so we're always starting at the highest
+  //       peak?
+
+  for (size_t i = 1; i < starting_trees.size(); ++i) {
+    // synchronize the tree with the default tree and push it onto the queue
+    AddUnsafeStartingTree(starting_trees[i]);
+
+    pll_utree_t* tree = starting_trees_.back();
+    pll_unode_t* root = GetVirtualRoot(tree);
+    partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+
+    double lnl = partition_.LogLikelihood(root);
+    if (lnl > GetMaximumScore()) {
+      SetMaximumScore(lnl);
+    }
+  }
+}
+
 Guru::~Guru()
 {
   pll_utree_destroy(default_tree_, pll::cb_erase_data);
