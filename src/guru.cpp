@@ -58,8 +58,8 @@ Guru::Guru(double lnl_offset,
 
   // add the starting tree to the queue. default_tree_ will be the
   // tree to which all tip node/partition data indices are
-  // synchronized in the public AddStartingTree(). see comments in
-  // AddStartingTree().
+  // synchronized in AddUnsafeStartingTree(). see comments in
+  // AddUnsafeStartingTree().
   AddSafeStartingTree(default_tree_);
 }
 
@@ -87,7 +87,7 @@ void Guru::AddSafeStartingTree(pll_utree_t* starting_tree)
   starting_trees_.push(tree);
 }
 
-void Guru::AddStartingTree(pll_utree_t* starting_tree)
+void Guru::AddUnsafeStartingTree(pll_utree_t* starting_tree)
 {
   //
   // we don't know where this tree came from; for example, if it was

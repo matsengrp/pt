@@ -248,14 +248,16 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   SECTION("duplicate starting trees don't affect results") {
     size_t thread_count = 2;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
+    // Populate a vector with duplicate starting trees.
+    std::vector<pll_utree_t*> trees(2, tree);
+
+    pt::Guru guru(lnl_offset, thread_count, trees, parameters,
                   labels, sequences, move_tester);
 
-    // Add the starting tree again. Since we've requested multiple
-    // threads, the guru will create wanderers which will go idle
-    // immediately upon seeing that their starting tree has already
-    // been visited. This shouldn't affect the results.
-    guru.AddStartingTree(tree);
+    // Since we've requested multiple threads, the guru will create
+    // wanderers which will go idle immediately upon seeing that their
+    // starting tree has already been visited. This shouldn't affect
+    // the results.
 
     guru.Start();
     guru.Wait();

@@ -54,7 +54,6 @@ class Guru : public Authority {
 
   ~Guru() override;
 
-  void AddStartingTree(pll_utree_t* starting_tree);
 
   bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type) override;
 
@@ -63,6 +62,7 @@ class Guru : public Authority {
 
  private:
   void AddSafeStartingTree(pll_utree_t* starting_tree);
+  void AddUnsafeStartingTree(pll_utree_t* starting_tree);
 
   void UpdateWandererStatus(size_t index);
 };
