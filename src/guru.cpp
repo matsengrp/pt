@@ -148,7 +148,11 @@ void Guru::AddSafeStartingTree(pll_utree_t* starting_tree)
   pll_utree_t* tree = pll_utree_clone(starting_tree);
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
-  starting_trees_.push(tree);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    starting_trees_.push(tree);
+  }
 }
 
 void Guru::AddUnsafeStartingTree(pll_utree_t* starting_tree)
@@ -171,7 +175,11 @@ void Guru::AddUnsafeStartingTree(pll_utree_t* starting_tree)
 
   pll::SynchronizeTipIndices(default_tree_, tree);
 
-  starting_trees_.push(tree);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    starting_trees_.push(tree);
+  }
 }
 
 std::vector<pll_utree_t*> Guru::SortStartingTrees(
@@ -210,8 +218,6 @@ bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   bool request_accepted;
 
   if (idle_wanderer_count_ > 0) {
-    std::lock_guard<std::mutex> lock(mutex_);
-
     // steal the tree. we know this tree is safe (i.e. its tip
     // node/partition data indices are synchronized with the default
     // tree and thus the wanderer partitions) because the wanderer
@@ -230,8 +236,13 @@ bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 
 void Guru::Start()
 {
+  // prevent launched wanderers from entering any other critical
+  // section in the guru until we're done launching all of them
+  std::lock_guard<std::mutex> lock(mutex_);
+
   while (wanderers_.size() < thread_count_ && !starting_trees_.empty()) {
     pll_utree_t* tree = starting_trees_.front();
+    starting_trees_.pop();
 
     wanderers_.emplace_back(*this, tree,
                             model_parameters_, labels_, sequences_,
@@ -247,8 +258,6 @@ void Guru::Start()
 
     // the wanderer will clone the tree for itself, so we're done with it
     pll_utree_destroy(tree, pll::cb_erase_data);
-
-    starting_trees_.pop();
   }
 
   // initialize the wanderers that will start idle at the default tree
@@ -328,19 +337,22 @@ void Guru::Wait()
         continue;
       }
 
-      // TODO: this lock could probably be scoped more efficiently by
-      //       moving the other calls to starting_trees_ methods up
-      std::lock_guard<std::mutex> lock(mutex_);
+      pll_utree_t* tree = nullptr;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
 
-      if (starting_trees_.empty()) {
-        continue;
+        if (starting_trees_.empty()) {
+          continue;
+        }
+
+        tree = starting_trees_.front();
+        starting_trees_.pop();
       }
 
       //
       // we have a tree for the idle wanderer to work on
       //
 
-      pll_utree_t* tree = starting_trees_.front();
       auto& wanderer = wanderers_[i];
 
       wanderer.Teleport(tree);
@@ -354,8 +366,6 @@ void Guru::Wait()
 
       // the wanderer will clone the tree for itself, so we're done with it
       pll_utree_destroy(tree, pll::cb_erase_data);
-
-      starting_trees_.pop();
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
