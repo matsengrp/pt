@@ -182,9 +182,6 @@ bool Authority::ReportVisitScore(pll_utree_t* tree, double lnl)
 
 bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
 {
-  // TODO: add locks here where appropriate, such as between getting
-  //       and setting the maximum
-
   if (!visited_trees_.update(newick_str, lnl)) {
     throw std::logic_error("tree is not in the visited table");
   }
@@ -197,8 +194,12 @@ bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
     throw std::logic_error("tree is already in the good table");
   }
 
-  if (lnl > ml_lnl_) {
-    SetMaximumScore(lnl);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    if (lnl > ml_lnl_) {
+      SetMaximumScore(lnl);
+    }
   }
 
   return true;

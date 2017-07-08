@@ -26,6 +26,7 @@ class Authority {
 
   std::atomic<double> ml_lnl_;
   const double lnl_offset_;
+  std::mutex mutex_;
 
  public:
   Authority(double ml_lnl, double lnl_offset);
