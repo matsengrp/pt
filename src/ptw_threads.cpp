@@ -31,11 +31,17 @@ int main(int argc, const char* argv[])
   // load tree, sequences, and model info
   //
 
-  pll_utree_t* tree = pll_utree_parse_newick(options.newick_path.c_str());
+  std::vector<pll_utree_t*> trees =
+      pt::pll::ParseMultiNewick(options.newick_path.c_str());
+
+  if (trees.empty()) {
+    throw std::invalid_argument("No valid trees found in " +
+                                options.newick_path);
+  }
 
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
-  pt::pll::ParseFasta(options.fasta_path, tree->tip_count, labels, sequences);
+  pt::pll::ParseFasta(options.fasta_path, trees[0]->tip_count, labels, sequences);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(options.raxml_path);
 
@@ -43,7 +49,7 @@ int main(int argc, const char* argv[])
   // initialize the guru
   //
 
-  pt::Guru guru(options.lnl_offset, options.thread_count, tree, parameters,
+  pt::Guru guru(options.lnl_offset, options.thread_count, trees, parameters,
                 labels, sequences, options.move_tester);
 
   //
@@ -76,7 +82,9 @@ int main(int argc, const char* argv[])
   // clean up and return
   //
 
-  pll_utree_destroy(tree, pt::pll::cb_erase_data);
+  for (auto tree : trees) {
+    pll_utree_destroy(tree, pt::pll::cb_erase_data);
+  }
 
   return 0;
 }

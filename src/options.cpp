@@ -137,11 +137,12 @@ Options ParseArguments(int argc, const char* argv[])
     //
 
     TCLAP::UnlabeledValueArg<std::string> newick_path(
-        "tree-file",
-        "Input file containing starting tree (in Newick format).",
+        "trees-file",
+        "Input file containing starting trees (in Newick format, one tree "
+          "per line).",
         true,
         "",
-        "tree_file");
+        "trees_file");
     cmd.add(newick_path);
 
     TCLAP::UnlabeledValueArg<std::string> fasta_path(
