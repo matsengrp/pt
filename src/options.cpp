@@ -38,14 +38,6 @@ Options ParseArguments(int argc, const char* argv[])
 {
   Options options;
 
-  // usage: ptw --lnl-offset <N>
-  //            --raxml-info <FILE>
-  //            [--threads <N>]
-  //            [--visited-trees <FILE>]
-  //            <TREE_FILE>
-  //            <ALIGNMENT_FILE>
-  //            <GOOD_TREES_FILE>
-
   try {
     TCLAP::CmdLine cmd("pt: the phylogenetic topographer", ' ', "0.1");
 
