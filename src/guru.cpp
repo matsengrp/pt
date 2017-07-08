@@ -91,18 +91,34 @@ Guru::Guru(double lnl_offset,
   // the tips of the tree it was constructed with.
   //
 
-  // sort the starting trees by descending log-likelihood
-  std::vector<pll_utree_t*> sorted_trees = SortStartingTrees(starting_trees);
+  // clone the starting trees, because SortStartingTrees() performs a
+  // traversal on each tree that will allocate node data for each node
+  // if it's not already allocated, and we don't want to change the
+  // trees we were given. we'll just add the clones directly to the
+  // starting tree queue instead of using AddSafeStartingTree(), so
+  // there's no additional cost to doing it this way.
+  std::vector<pll_utree_t*> starting_clones;
+  for (auto tree : starting_trees) {
+    pll_utree_t* clone = pll_utree_clone(tree);
+    pll_utree_every(clone, pll::cb_copy_clv_traversal);
+
+    starting_clones.push_back(clone);
+  }
+
+  // sort the starting tree clones by descending log-likelihood
+  std::vector<pll_utree_t*> sorted_clones = SortStartingTrees(starting_clones);
 
   // when the guru starts, if we don't have enough starting trees to
   // create as many wanderers as requested, we'll need a default tree
   // to initialize them with
-  default_tree_ = pll_utree_clone(sorted_trees[0]);
+  default_tree_ = pll_utree_clone(sorted_clones[0]);
   pll_utree_every(default_tree_, pll::cb_copy_clv_traversal);
 
   // add the starting trees to the queue
-  for (auto tree : sorted_trees) {
-    AddSafeStartingTree(tree);
+  for (auto clone : sorted_clones) {
+    // since we own these clones, we can just add them to the queue
+    // directly instead of using AddSafeStartingTree()
+    starting_trees_.push(clone);
   }
 
   // use the default tree's log-likelihood as the authority's initial maximum
