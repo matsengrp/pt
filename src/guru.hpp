@@ -71,6 +71,9 @@ class Guru : public Authority {
   void AddSafeStartingTree(pll_utree_t* starting_tree);
   void AddUnsafeStartingTree(pll_utree_t* starting_tree);
 
+  std::vector<pll_utree_t*> SortStartingTrees(
+      const std::vector<pll_utree_t*>& starting_trees);
+
   void UpdateWandererStatus(size_t index);
 };
 

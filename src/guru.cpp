@@ -1,5 +1,6 @@
 #include "guru.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <future>
 #include <memory>
@@ -70,35 +71,44 @@ Guru::Guru(double lnl_offset,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
            std::shared_ptr<const MoveTester> move_tester) :
-    Guru(lnl_offset, thread_count, starting_trees.at(0), model_parameters,
-         labels, sequences, move_tester)
+    Authority(0.0, lnl_offset),
+    thread_count_(thread_count),
+    model_parameters_(model_parameters),
+    labels_(labels),
+    sequences_(sequences),
+    move_tester_(move_tester),
+    partition_(starting_trees.at(0), model_parameters, labels, sequences),
+    default_tree_(nullptr),
+    idle_wanderer_count_(0),
+    wanderer_ready_(thread_count, false)
 {
   //
-  // the delegated constructor has initialized the default tree, used
-  // it to set the authority's initial maximum, and added it as the
-  // first starting tree. we now loop over the remaining starting
-  // trees, synchronize and add them to the queue, and evaluate them
-  // in order to update the maximum score, if necessary.
+  // it is imperative that the tip node partition data indices of the
+  // starting trees are synchronized to the first tree in the vector
+  // before they are passed to the guru constructor. otherwise, the
+  // behavior of the partition when operating on trees other than the
+  // first is undefined, since the partition maintains state based on
+  // the tips of the tree it was constructed with.
   //
 
-  // TODO: in order to make things more predictable, what about
-  //       sorting the starting trees in descending order by
-  //       log-likelihood so we're always starting at the highest
-  //       peak?
+  // sort the starting trees by descending log-likelihood
+  std::vector<pll_utree_t*> sorted_trees = SortStartingTrees(starting_trees);
 
-  for (size_t i = 1; i < starting_trees.size(); ++i) {
-    // synchronize the tree with the default tree and push it onto the queue
-    AddUnsafeStartingTree(starting_trees[i]);
+  // when the guru starts, if we don't have enough starting trees to
+  // create as many wanderers as requested, we'll need a default tree
+  // to initialize them with
+  default_tree_ = pll_utree_clone(sorted_trees[0]);
+  pll_utree_every(default_tree_, pll::cb_copy_clv_traversal);
 
-    pll_utree_t* tree = starting_trees_.back();
-    pll_unode_t* root = GetVirtualRoot(tree);
-    partition_.TraversalUpdate(root, pll::TraversalType::FULL);
-
-    double lnl = partition_.LogLikelihood(root);
-    if (lnl > GetMaximumScore()) {
-      SetMaximumScore(lnl);
-    }
+  // add the starting trees to the queue
+  for (auto tree : sorted_trees) {
+    AddSafeStartingTree(tree);
   }
+
+  // use the default tree's log-likelihood as the authority's initial maximum
+  pll_unode_t* root = GetVirtualRoot(default_tree_);
+  partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+  SetMaximumScore(partition_.LogLikelihood(root));
 }
 
 Guru::~Guru()
@@ -146,6 +156,33 @@ void Guru::AddUnsafeStartingTree(pll_utree_t* starting_tree)
   pll::SynchronizeTipIndices(default_tree_, tree);
 
   starting_trees_.push(tree);
+}
+
+std::vector<pll_utree_t*> Guru::SortStartingTrees(
+    const std::vector<pll_utree_t*>& starting_trees)
+{
+  using ValueType = std::pair<pll_utree_t*, double>;
+  std::vector<ValueType> tree_lnls;
+
+  for (auto tree : starting_trees) {
+    pll_unode_t* root = GetVirtualRoot(tree);
+    partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+    double lnl = partition_.LogLikelihood(root);
+
+    tree_lnls.emplace_back(tree, lnl);
+  }
+
+  std::sort(tree_lnls.begin(), tree_lnls.end(),
+            [](const ValueType& lhs, const ValueType& rhs) {
+              return lhs.second > rhs.second;
+            });
+
+  std::vector<pll_utree_t*> sorted_trees;
+  for (auto value : tree_lnls) {
+    sorted_trees.emplace_back(value.first);
+  }
+
+  return sorted_trees;
 }
 
 bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
