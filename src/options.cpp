@@ -139,7 +139,8 @@ Options ParseArguments(int argc, const char* argv[])
     TCLAP::UnlabeledValueArg<std::string> newick_path(
         "trees-file",
         "Input file containing starting trees (in Newick format, one tree "
-          "per line).",
+          "per line). If multiple trees are specified, searches are "
+          "started from the trees in order of descending log-likelihood.",
         true,
         "",
         "trees_file");
