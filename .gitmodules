@@ -1,3 +1,9 @@
 [submodule "src/libcuckoo"]
 	path = lib/libcuckoo
 	url = https://github.com/efficient/libcuckoo
+[submodule "lib/libptpll"]
+	path = lib/libptpll
+	url = https://github.com/matsengrp/libptpll.git
+[submodule "lib/tclap"]
+	path = lib/tclap
+	url = https://github.com/mirror/tclap.git

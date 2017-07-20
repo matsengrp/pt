@@ -1,14 +1,19 @@
-#include "ordered-tree.hpp"
+#include "ordered_tree.hpp"
 
 #include <string>
 
-#include "pll-utils.hpp"
+#include <libpll/pll.h>
 
 namespace pt {
 
+pll_unode_t* GetVirtualRoot(pll_utree_t* tree)
+{
+  return tree->nodes[tree->tip_count + tree->inner_count - 1];
+}
+
 /// @brief Recursive function to generate newick string without branch lengths.
 /// @return Newick char* string.
-char *newick_utree_recurse(pll_utree_t *tree) {
+char *newick_utree_recurse(pll_unode_t *tree) {
   char *newick;
   int size_alloced;
   assert(tree != NULL);
@@ -39,7 +44,7 @@ char *newick_utree_recurse(pll_utree_t *tree) {
 
 /// @brief Build newick string without branch lengths.
 /// @return Newick char* string without branch lengths.
-char *utree_short_newick(pll_utree_t *tree) {
+char *utree_short_newick(pll_unode_t *tree) {
   char *newick;
   int size_alloced;
 
@@ -79,7 +84,7 @@ char *utree_short_newick(pll_utree_t *tree) {
 
 /// @brief Returns a the tree as a Newick string.
 /// @return Newick string.
-std::string ToNewick(pll_utree_t *tree) {
+std::string ToNewick(pll_unode_t *tree) {
   char *newick = utree_short_newick(tree);
 
   std::string strnewick;
@@ -93,8 +98,8 @@ std::string ToNewick(pll_utree_t *tree) {
 
 /// @brief Returns a the tree as a Newick string with branch lengths.
 /// @return Newick std::string.
-std::string ToFullNewick(pll_utree_t *tree) {
-  char *newick = pll_utree_export_newick(tree);
+std::string ToFullNewick(pll_unode_t *tree) {
+  char *newick = pll_utree_export_newick(tree, nullptr);
 
   std::string strnewick;
   if (newick) {
@@ -110,7 +115,7 @@ std::string ToFullNewick(pll_utree_t *tree) {
 /// @param[in,out] tree
 /// Tree.
 /// @return Smallest label.
-std::string FindRootNode(pll_utree_t *tree) {
+std::string FindRootNode(pll_unode_t *tree) {
   std::string minlabel;
   if (!tree->next)
     return tree->label;
@@ -120,7 +125,7 @@ std::string FindRootNode(pll_utree_t *tree) {
     minlabel = rlabel1;
   else {
     minlabel = rlabel2;
-    pll_utree_t *temp = tree->next;
+    pll_unode_t *temp = tree->next;
     tree->next = tree->next->next;
     tree->next->next = temp;
     tree->next->next->next = tree;
@@ -139,7 +144,7 @@ std::string FindRootNode(pll_utree_t *tree) {
 /// @param[out] root
 /// Buffer for storing root node.
 /// @return Were we successful in finding the label?
-bool SetLabelRoot(std::string label, pll_utree_t *tree, pll_utree_t **root) {
+bool SetLabelRoot(std::string label, pll_unode_t *tree, pll_unode_t **root) {
   if (!tree->next) {
     if (tree->label == label) {
       *root = tree->back;
@@ -156,7 +161,7 @@ bool SetLabelRoot(std::string label, pll_utree_t *tree, pll_utree_t **root) {
 /// @param[in] tree
 /// Tree.
 /// @return Parent of the alphabetically smallest leaf.
-pll_utree_t *SetNewickRoot(pll_utree_t *tree) {
+pll_unode_t *SetNewickRoot(pll_unode_t *tree) {
   std::string minlabel;
   std::string rlabel1 = FindRootNode(tree);
   std::string rlabel2 = FindRootNode(tree->back);
@@ -164,7 +169,7 @@ pll_utree_t *SetNewickRoot(pll_utree_t *tree) {
     minlabel = rlabel1;
   else
     minlabel = rlabel2;
-  pll_utree_t *root;
+  pll_unode_t *root;
   SetLabelRoot(minlabel, tree, &root);
   SetLabelRoot(minlabel, tree->back, &root);
   return root;
@@ -174,7 +179,7 @@ pll_utree_t *SetNewickRoot(pll_utree_t *tree) {
 /// for the two non-root subtrees.
 /// @return Completely ordered newick string.
 /// @todo Update.
-pll_utree_t *ToOrderedNewick(pll_utree_t *tree) {
+pll_unode_t *ToOrderedNewick(pll_unode_t *tree) {
   tree = SetNewickRoot(tree);
   FindRootNode(tree);
   return tree;

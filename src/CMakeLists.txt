@@ -1,7 +1,20 @@
 set(PT_SRC
-  ordered-tree.cpp
-  partition.cpp
-  pll-utils.cpp)
+  authority.cpp
+  guru.cpp
+  move_tester.cpp
+  move_tester/always.cpp
+  move_tester/single_branch_optimizer.cpp
+  options.cpp
+  ordered_tree.cpp
+  wanderer.cpp)
 
-add_library(pt ${PT_SRC})
-add_library(pt-static STATIC ${PT_SRC})
+add_library(pt_static STATIC ${PT_SRC})
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+add_executable(ptw ptw.cpp)
+target_link_libraries(ptw pt_static ptpll_static pll Threads::Threads)
+
+add_executable(ptw_threads ptw_threads.cpp)
+target_link_libraries(ptw_threads pt_static ptpll_static pll Threads::Threads)

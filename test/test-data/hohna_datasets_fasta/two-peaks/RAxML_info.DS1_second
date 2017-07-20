@@ -1,0 +1,91 @@
+IMPORTANT WARNING: Alignment column 313 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 326 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 331 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 333 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 339 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 344 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 345 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 346 contains only undetermined values which will be treated as missing data
+IMPORTANT WARNING: Alignment column 347 contains only undetermined values which will be treated as missing data
+
+IMPORTANT WARNING
+Found 9 columns that contain only undetermined values which will be treated as missing data.
+Normally these columns should be excluded from the analysis.
+
+An alignment file with undetermined columns removed has already
+been printed to file ../DS1.fasta.reduced
+
+
+Using BFGS method to optimize GTR rate parameters, to disable this specify "--no-bfgs" 
+
+
+Alignment has 9 completely undetermined sites that will be automatically removed from the input data
+
+
+
+This is RAxML version 8.2.9 released by Alexandros Stamatakis on July 20 2016.
+
+With greatly appreciated code contributions by:
+Andre Aberer      (HITS)
+Simon Berger      (HITS)
+Alexey Kozlov     (HITS)
+Kassian Kobert    (HITS)
+David Dao         (KIT and HITS)
+Sarah Lutteropp   (KIT and HITS)
+Nick Pattengale   (Sandia)
+Wayne Pfeiffer    (SDSC)
+Akifumi S. Tanabe (NRIFS)
+Charlie Taylor    (UF)
+
+
+Alignment has 933 distinct alignment patterns
+
+Proportion of gaps and completely undetermined characters in this alignment: 20.42%
+
+RAxML rapid hill-climbing mode
+
+Using 1 distinct models/data partitions with joint branch length optimization
+
+
+Executing 1 inferences on the original alignment using 1 user-specified trees
+
+All free model parameters will be estimated by RAxML
+GAMMA model of rate heteorgeneity, ML estimate of alpha-parameter
+
+GAMMA Model parameters will be estimated up to an accuracy of 0.1000000000 Log Likelihood units
+
+Partition: 0
+Alignment Patterns: 933
+Name: No Name Provided
+DataType: DNA
+Substitution Matrix: GTR
+
+
+
+
+RAxML was called as follows:
+
+raxmlHPC-PTHREADS -m GTRGAMMA -s ../DS1.fasta -n DS1_second -p 1 -t second_peak.nw 
+
+
+Partition: 0 with name: No Name Provided
+Base frequencies: 0.234 0.257 0.280 0.229 
+
+Inference[0]: Time 6.635584 GAMMA-based likelihood -6483.475636, best rearrangement setting 5
+alpha[0]: 0.141213 rates[0] ac ag at cg ct gt: 0.636577 1.034818 0.675309 1.821047 3.361700 1.000000 
+
+
+Conducting final model optimizations on all 1 trees under GAMMA-based models ....
+
+Inference[0] final GAMMA-based Likelihood: -6483.474022 tree written to file /Users/bclaywel/workspace/pt/test/test-data/hohna_datasets_fasta/two-peaks/RAxML_result.DS1_second
+
+
+Starting final GAMMA-based thorough Optimization on tree 0 likelihood -6483.474022 .... 
+
+Final GAMMA-based Score of best tree -6483.474022
+
+Program execution info written to /Users/bclaywel/workspace/pt/test/test-data/hohna_datasets_fasta/two-peaks/RAxML_info.DS1_second
+Best-scoring ML tree written to: /Users/bclaywel/workspace/pt/test/test-data/hohna_datasets_fasta/two-peaks/RAxML_bestTree.DS1_second
+
+Overall execution time: 9.346209 secs or 0.002596 hours or 0.000108 days
+
