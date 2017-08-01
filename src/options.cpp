@@ -7,6 +7,7 @@
 #include <tclap/CmdLine.h>
 
 #include "move_tester/always.hpp"
+#include "move_tester/branch_neighborhood_optimizer.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
 
 namespace pt {
@@ -23,12 +24,6 @@ void ValidateOptions(const Options& options)
     throw TCLAP::CmdLineParseException(
         "number of threads must be at least 1",
         "threads");
-  }
-
-  if (options.optimization_radius > 0) {
-    throw TCLAP::CmdLineParseException(
-        "branch length optimization radius greater than 0 not implemented",
-        "optimization-radius");
   }
 
   // TODO: add checks for input file existence etc?
@@ -106,9 +101,12 @@ Options ParseArguments(int argc, const char* argv[])
         "optimization-radius",
         "Branch length optimization radius. If this argument is not "
           "set, all branches are optimized to determine if a move "
-          "should be accepted. At present the only radius implemented "
-          "is 0, meaning only the branch across which the move is made "
-          "is optimized.",
+          "should be accepted. A radius of 0 means that only the "
+          "branch across which the move is made is optimized. For "
+          "values greater than 0, note that the radius is around one of "
+          "the nodes at either end of that branch, so a radius of 2 or "
+          "greater is required to ensure the other four branches "
+          "connected to that branch are optimized.",
         false,
         -1,
         "value");
@@ -183,13 +181,24 @@ Options ParseArguments(int argc, const char* argv[])
 
     if (options.optimization_radius < 0) {
       options.move_tester = std::make_shared<move_tester::Always>();
-    } else {
-      // TODO: eventually this will be replaced with a
-      //       BranchNeighborhoodOptimizer that takes the optimization
-      //       radius as a constructor argument, but this is what we
-      //       have for now. ValidateOptions() will throw if the
-      //       optimization radius is greater than zero.
+    } else if (options.optimization_radius == 0) {
+      // TODO: eventually we might be able to replace
+      //       SingleBranchOptimizer with BranchNeighborhoodOptimizer
+      //       and a radius of 0, but currently the pll-modules
+      //       function neighborhood optimization uses doesn't
+      //       properly handle a radius of 0. see
+      //       https://github.com/ddarriba/pll-modules/issues/15
+      //
+      //       Regardless, as currently written, SingleBranchOptimizer
+      //       is more efficient than BranchNeighborhoodOptimizer
+      //       would be, as it can test the move in-place rather than
+      //       requiring that the tree be cloned, and only requires a
+      //       partial traversal afterward instead of a full
+      //       traversal.
       options.move_tester = std::make_shared<move_tester::SingleBranchOptimizer>();
+    } else {
+      options.move_tester =
+          std::make_shared<move_tester::BranchNeighborhoodOptimizer>(options.optimization_radius);
     }
 
     options.skip_filtering = skip_filtering.getValue();

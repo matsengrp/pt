@@ -3,6 +3,7 @@ set(PT_SRC
   guru.cpp
   move_tester.cpp
   move_tester/always.cpp
+  move_tester/branch_neighborhood_optimizer.cpp
   move_tester/single_branch_optimizer.cpp
   options.cpp
   ordered_tree.cpp

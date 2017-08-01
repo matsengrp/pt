@@ -17,6 +17,7 @@
 #include "authority.hpp"
 #include "guru.hpp"
 #include "move_tester/always.hpp"
+#include "move_tester/branch_neighborhood_optimizer.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
 #include "wanderer.hpp"
 
@@ -368,6 +369,69 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
                   move_tester, good_tree_count, visited_tree_count,
                   tested_tree_count);
+    }
+  }
+
+  SECTION("using move_tester::BranchNeighborhoodOptimizer") {
+    double lnl_offset = -2.0;
+
+    SECTION("a non-positive radius is not accepted") {
+      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(-1),
+                      std::invalid_argument);
+      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(0),
+                      std::invalid_argument);
+    }
+
+    SECTION("with an optimization radius of 1") {
+      int optimization_radius = 1;
+      auto move_tester =
+          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
+
+      size_t good_tree_count = 14;
+      size_t visited_tree_count = 14;
+      size_t tested_tree_count = 617;
+
+      SECTION("single-threaded operation is correct") {
+        size_t thread_count = 1;
+
+        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                    move_tester, good_tree_count, visited_tree_count,
+                    tested_tree_count);
+      }
+
+      SECTION("multi-threaded operation is correct") {
+        size_t thread_count = 4;
+
+        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                    move_tester, good_tree_count, visited_tree_count,
+                    tested_tree_count);
+      }
+    }
+
+    SECTION("with an optimization radius of 2") {
+      int optimization_radius = 2;
+      auto move_tester =
+          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
+
+      size_t good_tree_count = 15;
+      size_t visited_tree_count = 15;
+      size_t tested_tree_count = 658;
+
+      SECTION("single-threaded operation is correct") {
+        size_t thread_count = 1;
+
+        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                    move_tester, good_tree_count, visited_tree_count,
+                    tested_tree_count);
+      }
+
+      SECTION("multi-threaded operation is correct") {
+        size_t thread_count = 4;
+
+        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
+                    move_tester, good_tree_count, visited_tree_count,
+                    tested_tree_count);
+      }
     }
   }
 
