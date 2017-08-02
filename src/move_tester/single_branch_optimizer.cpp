@@ -4,6 +4,7 @@
 
 #include <libpll/pll.h>
 #include <pll_partition.hpp>
+#include <pll_util.hpp>
 
 #include "../authority.hpp"
 #include "../common.hpp"
@@ -14,9 +15,11 @@ SingleBranchOptimizer::~SingleBranchOptimizer()
 { }
 
 std::pair<bool, double>
-SingleBranchOptimizer::EvaluateMove(pll::Partition& partition, pll_utree_t* tree,
-                                   pll_unode_t* node, MoveType type,
-                                   const Authority& authority) const
+SingleBranchOptimizer::EvaluateMove(pll::Partition& partition,
+                                    pll_utree_t* /* tree */,
+                                    pll_unode_t* node,
+                                    MoveType type,
+                                    const Authority& authority) const
 {
   // apply move and invalidate the CLVs on that edge
   //
