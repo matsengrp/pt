@@ -17,7 +17,6 @@ pll_unode_t *ToOrderedNewick(pll_unode_t *tree);
 std::string ToNewick(pll_unode_t *tree);
 std::string ToFullNewick(pll_unode_t *tree);
 char *utree_short_newick(pll_unode_t *tree);
-static char *newick_utree_recurse(pll_unode_t *tree);
 }
 
 #endif // ORDERED_TREE_HPP_INCLUDED
