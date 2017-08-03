@@ -15,10 +15,12 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "compressed_tree.hpp"
 #include "guru.hpp"
 #include "move_tester/always.hpp"
 #include "move_tester/branch_neighborhood_optimizer.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
+#include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
 //
@@ -533,4 +535,106 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   for (auto tree : trees) {
     pll_utree_destroy(tree, nullptr);
   }
+}
+
+// TODO: this is duplicated in authority.cpp
+std::string OrderedNewickString(pll_utree_t* tree)
+{
+  // clone the tree, because ToOrderedNewick() reorders the tree in
+  // place and we don't want to modify the tree we were given. note
+  // that we aren't modifying any of the node user data (via the
+  // node->data pointers) so we don't have to copy or free those.
+  pll_utree_t* clone = pll_utree_clone(tree);
+
+  // ToOrderedNewick() only reorders the tree, despite its name. its
+  // return value is the rerooted and reordered tree, which we assign
+  // to our pointer before continuing.
+  pll_unode_t* root = pt::ToOrderedNewick(pt::GetVirtualRoot(clone));
+  std::string newick_str = pt::ToNewick(root);
+
+  pll_utree_destroy(clone, nullptr);
+  return newick_str;
+}
+
+TEST_CASE("tree compression works correctly", "[compressed_tree]") {
+  std::string newick_path("test-data/five/RAxML_bestTree.five");
+  pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
+
+  SECTION("given a null tree pointer") {
+    CHECK_THROWS_AS(pt::CompressedTree tmp(nullptr),
+                    std::invalid_argument);
+  }
+
+  SECTION("encoding and decoding works correctly") {
+    pt::CompressedTree ct(tree);
+
+    //std::cerr << ct.ToDebugString();
+
+    std::string expected_newick_str = OrderedNewickString(tree);
+    std::string actual_newick_str = ct.Decode();
+
+    CHECK(actual_newick_str == expected_newick_str);
+  }
+
+  SECTION("different trees are encoded differently") {
+    pll_unode_t* root = pt::GetVirtualRoot(tree);
+
+    // get to a non-pendant branch
+    root = root->next->back;
+
+    // verify that root and root->back are internal nodes
+    REQUIRE(root->next);
+    REQUIRE(root->back->next);
+
+    //
+    // encode the tree
+    //
+
+    pt::CompressedTree ct1(tree);
+
+    std::cerr << "original tree ("
+              << ct1.Hash() << ")\n\n"
+              << ct1.ToDebugString() << "\n";
+    pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
+    std::cerr << "\n\n";
+
+    //
+    // apply an NNI move and verify that the encodings differ
+    //
+
+    pll_utree_nni(root, pt::MoveType::LEFT, nullptr);
+
+    pt::CompressedTree ct2(tree);
+
+    std::cerr << "modified tree ("
+              << ct2.Hash() << ")\n\n"
+              << ct2.ToDebugString() << "\n";
+    pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
+    std::cerr << "\n\n";
+
+    CHECK(ct1 != ct2);
+    CHECK(ct1.Hash() != ct2.Hash());
+
+    //
+    // undo the NNI move and verify that we get the original encoding
+    //
+
+    pll_utree_nni(root, pt::MoveType::LEFT, nullptr);
+
+    pt::CompressedTree ct3(tree);
+
+    std::cerr << "undo tree ("
+              << ct3.Hash() << ")\n\n"
+              << ct3.ToDebugString() << "\n";
+    pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
+    std::cerr << "\n\n";
+
+    CHECK(ct3 == ct1);
+    CHECK(ct3.Hash() == ct1.Hash());
+
+    CHECK(ct3 != ct2);
+    CHECK(ct3.Hash() != ct2.Hash());
+  }
+
+  pll_utree_destroy(tree, nullptr);
 }

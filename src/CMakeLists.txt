@@ -1,5 +1,6 @@
 set(PT_SRC
   authority.cpp
+  compressed_tree.cpp
   guru.cpp
   move_tester.cpp
   move_tester/always.cpp
