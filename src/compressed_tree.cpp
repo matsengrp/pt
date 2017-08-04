@@ -21,8 +21,7 @@ namespace pt {
 // free functions
 //
 
-pll_unode_t* CreateInnerNode(pll_unode_t* root,
-                             const std::string& label)
+pll_unode_t* CreateInnerNode(pll_unode_t* root)
 {
   //
   // done using mallocs so pll_utree_graph_destroy() can be used
@@ -35,12 +34,7 @@ pll_unode_t* CreateInnerNode(pll_unode_t* root,
   node->next->next = static_cast<pll_unode_t*>(malloc(sizeof(pll_unode_t)));
   node->next->next->next = node;
 
-  if (label.empty()) {
-    node->label = nullptr;
-  } else {
-    node->label = static_cast<char*>(malloc(strlen(label.c_str()) + 1));
-    strcpy(node->label, label.c_str());
-  }
+  node->label = nullptr;
 
   node->next->label = node->label;
   node->next->next->label = node->label;
@@ -51,17 +45,17 @@ pll_unode_t* CreateInnerNode(pll_unode_t* root,
 pll_unode_t* CreateTipNode(pll_unode_t* root,
                            const std::string& label)
 {
+  if (label.empty()) {
+    throw std::invalid_argument("empty tip node label");
+  }
+
   pll_unode_t* node = static_cast<pll_unode_t*>(malloc(sizeof(pll_unode_t)));
 
   node->back = root;
   node->next = nullptr;
 
-  if (label.empty()) {
-    node->label = nullptr;
-  } else {
-    node->label = static_cast<char*>(malloc(strlen(label.c_str()) + 1));
-    strcpy(node->label, label.c_str());
-  }
+  node->label = static_cast<char*>(malloc(strlen(label.c_str()) + 1));
+  strcpy(node->label, label.c_str());
 
   return node;
 }
@@ -122,14 +116,9 @@ void CompressedTree::Encode(const pll_utree_t* original_tree)
   bits_.clear();
   labels_.clear();
 
-  // true indicates an internal node, false indicates a tip
+  // true indicates an internal node, false indicates a tip. we only
+  // store labels for tip nodes.
   bits_.push_back(true);
-
-  if (root->label) {
-    labels_.emplace_back(root->label);
-  } else {
-    labels_.emplace_back("");
-  }
 
   EncodeSubtree(root->back);
   EncodeSubtree(root->next->back);
@@ -144,18 +133,13 @@ void CompressedTree::EncodeSubtree(const pll_unode_t* root)
     throw std::invalid_argument("root is null");
   }
 
-  if (root->label) {
-    labels_.emplace_back(root->label);
-  } else {
-    labels_.emplace_back("");
-  }
-
   if (root->next) {
     bits_.push_back(true);
     EncodeSubtree(root->next->back);
     EncodeSubtree(root->next->next->back);
   } else {
     bits_.push_back(false);
+    labels_.emplace_back(root->label);
   }
 }
 
@@ -218,10 +202,7 @@ pll_unode_t* CompressedTree::Decode(std::list<bool>& bits,
     throw std::invalid_argument("first bit is not set");
   }
 
-  std::string label = labels.front();
-  labels.pop_front();
-
-  pll_unode_t* root = CreateInnerNode(nullptr, label);
+  pll_unode_t* root = CreateInnerNode(nullptr);
 
   root->back = DecodeSubtree(root, bits, labels);
   root->next->back = DecodeSubtree(root->next, bits, labels);
@@ -242,19 +223,19 @@ pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
   bool b = bits.front();
   bits.pop_front();
 
-  std::string label = labels.front();
-  labels.pop_front();
-
   pll_unode_t* node = nullptr;
 
   if (b) {
     // inner node
-    node = CreateInnerNode(root, label);
+    node = CreateInnerNode(root);
 
     node->next->back = DecodeSubtree(node->next, bits, labels);
     node->next->next->back = DecodeSubtree(node->next->next, bits, labels);
   } else {
     // tip node
+    std::string label = labels.front();
+    labels.pop_front();
+
     node = CreateTipNode(root, label);
   }
 
