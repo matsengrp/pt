@@ -598,6 +598,17 @@ TEST_CASE("tree compression works correctly", "[compressed_tree]") {
   std::string newick_path("test-data/five/RAxML_bestTree.five");
   pll_utree_t* tree = pll_utree_parse_newick(newick_path.c_str());
 
+  // build the dictionary
+  std::vector<std::string> labels;
+  for (size_t i = 0; i < tree->tip_count; ++i) {
+    pll_unode_t* node = tree->nodes[i];
+
+    REQUIRE(node->label);
+    labels.emplace_back(node->label);
+  }
+
+  pt::CompressedTree::BuildDictionary(labels);
+
   SECTION("given a null tree pointer") {
     CHECK_THROWS_AS(pt::CompressedTree tmp(nullptr),
                     std::invalid_argument);

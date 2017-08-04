@@ -13,10 +13,12 @@ namespace pt {
 
 class CompressedTree {
  private:
+  using index_type = LabelDictionary::index_type;
+
   static LabelDictionary label_dictionary_;
 
   std::vector<bool> bits_;
-  std::list<std::string> labels_;
+  std::list<index_type> label_indices_;
 
  public:
   static void BuildDictionary(const std::vector<std::string>& labels);
@@ -37,15 +39,15 @@ class CompressedTree {
   void EncodeSubtree(const pll_unode_t* root);
 
   static pll_unode_t* Decode(std::list<bool>& bits,
-                             std::list<std::string>& labels);
+                             std::list<index_type>& label_indices);
   static pll_unode_t* DecodeSubtree(pll_unode_t* root,
                                     std::list<bool>& bits,
-                                    std::list<std::string>& labels);
+                                    std::list<index_type>& label_indices);
 };
 
 inline bool CompressedTree::operator==(const CompressedTree& rhs) const
 {
-  return bits_ == rhs.bits_ && labels_ == rhs.labels_;
+  return bits_ == rhs.bits_ && label_indices_ == rhs.label_indices_;
 }
 
 inline bool CompressedTree::operator!=(const CompressedTree& rhs) const

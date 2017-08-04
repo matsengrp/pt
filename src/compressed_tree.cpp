@@ -114,7 +114,7 @@ void CompressedTree::Encode(const pll_utree_t* original_tree)
   }
 
   bits_.clear();
-  labels_.clear();
+  label_indices_.clear();
 
   // true indicates an internal node, false indicates a tip. we only
   // store labels for tip nodes.
@@ -138,8 +138,10 @@ void CompressedTree::EncodeSubtree(const pll_unode_t* root)
     EncodeSubtree(root->next->back);
     EncodeSubtree(root->next->next->back);
   } else {
+    index_type label_index = label_dictionary_.GetIndex(root->label);
+
     bits_.push_back(false);
-    labels_.emplace_back(root->label);
+    label_indices_.push_back(label_index);
   }
 }
 
@@ -156,8 +158,8 @@ std::string CompressedTree::ToDebugString() const
   std::string delim = "";
 
   ss << "[";
-  for (auto label : labels_) {
-    ss << delim << "\"" << label << "\"";
+  for (auto label_index : label_indices_) {
+    ss << delim << label_index;
     delim = ", ";
   }
   ss << "]\n";
@@ -172,9 +174,9 @@ std::string CompressedTree::Decode() const
   // the work. we also can't pop things off the front of a vector, so
   // we copy the bits into a list instead.
   std::list<bool> bits(bits_.begin(), bits_.end());
-  std::list<std::string> labels = labels_;
+  std::list<index_type> label_indices = label_indices_;
 
-  pll_unode_t* root = Decode(bits, labels);
+  pll_unode_t* root = Decode(bits, label_indices);
 
 #ifdef PRINT_TREES
   std::cerr << "decoded tree\n\n";
@@ -189,7 +191,7 @@ std::string CompressedTree::Decode() const
 }
 
 pll_unode_t* CompressedTree::Decode(std::list<bool>& bits,
-                                    std::list<std::string>& labels)
+                                    std::list<index_type>& label_indices)
 {
   if (bits.empty()) {
     throw std::invalid_argument("bits is empty");
@@ -204,16 +206,16 @@ pll_unode_t* CompressedTree::Decode(std::list<bool>& bits,
 
   pll_unode_t* root = CreateInnerNode(nullptr);
 
-  root->back = DecodeSubtree(root, bits, labels);
-  root->next->back = DecodeSubtree(root->next, bits, labels);
-  root->next->next->back = DecodeSubtree(root->next->next, bits, labels);
+  root->back = DecodeSubtree(root, bits, label_indices);
+  root->next->back = DecodeSubtree(root->next, bits, label_indices);
+  root->next->next->back = DecodeSubtree(root->next->next, bits, label_indices);
 
   return root;
 }
 
 pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
                                            std::list<bool>& bits,
-                                           std::list<std::string>& labels)
+                                           std::list<index_type>& label_indices)
 {
   if (bits.empty()) {
     // TODO: can this happen? is it a normal part of the algorithm?
@@ -229,12 +231,12 @@ pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
     // inner node
     node = CreateInnerNode(root);
 
-    node->next->back = DecodeSubtree(node->next, bits, labels);
-    node->next->next->back = DecodeSubtree(node->next->next, bits, labels);
+    node->next->back = DecodeSubtree(node->next, bits, label_indices);
+    node->next->next->back = DecodeSubtree(node->next->next, bits, label_indices);
   } else {
     // tip node
-    std::string label = labels.front();
-    labels.pop_front();
+    std::string label = label_dictionary_.GetLabel(label_indices.front());
+    label_indices.pop_front();
 
     node = CreateTipNode(root, label);
   }
@@ -246,10 +248,10 @@ size_t CompressedTree::Hash() const
 {
   size_t seed = std::hash<std::vector<bool>>()(bits_);
 
-  for (auto label : labels_) {
+  for (auto label_index : label_indices_) {
     // from Boost's hash_combine()
     // https://stackoverflow.com/a/20511429
-    seed ^= std::hash<std::string>()(label) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    seed ^= std::hash<index_type>()(label_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
   }
 
   return seed;
