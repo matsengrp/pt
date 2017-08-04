@@ -2,6 +2,7 @@ set(PT_SRC
   authority.cpp
   compressed_tree.cpp
   guru.cpp
+  label_dictionary.cpp
   move_tester.cpp
   move_tester/always.cpp
   move_tester/branch_neighborhood_optimizer.cpp

@@ -17,6 +17,7 @@
 #include "authority.hpp"
 #include "compressed_tree.hpp"
 #include "guru.hpp"
+#include "label_dictionary.hpp"
 #include "move_tester/always.hpp"
 #include "move_tester/branch_neighborhood_optimizer.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
@@ -554,6 +555,43 @@ std::string OrderedNewickString(pll_utree_t* tree)
 
   pll_utree_destroy(clone, nullptr);
   return newick_str;
+}
+
+TEST_CASE("label dictionaries work correctly", "[label_dictionary]") {
+  SECTION("in normal cases") {
+    std::vector<std::string> labels{"a", "b", "c"};
+    pt::LabelDictionary dict(labels);
+
+    CHECK(dict.GetIndex("a") == 0);
+    CHECK(dict.GetIndex("b") == 1);
+    CHECK(dict.GetIndex("c") == 2);
+
+    CHECK(dict.GetLabel(0) == "a");
+    CHECK(dict.GetLabel(1) == "b");
+    CHECK(dict.GetLabel(2) == "c");
+
+    CHECK_THROWS_AS(dict.GetIndex("bad"), std::invalid_argument);
+    CHECK_THROWS_AS(dict.GetLabel(3), std::invalid_argument);
+  }
+
+  SECTION("given duplicate labels") {
+    std::vector<std::string> labels{"a", "b", "a"};
+    CHECK_THROWS_AS(pt::LabelDictionary dict(labels), std::invalid_argument);
+  }
+
+  SECTION("given no labels") {
+    std::vector<std::string> labels;
+    CHECK_THROWS_AS(pt::LabelDictionary dict(labels), std::invalid_argument);
+  }
+
+  SECTION("given too many labels") {
+    using index_type = pt::LabelDictionary::index_type;
+
+    // this check is made before duplicates are detected, so we're
+    // okay initializing the vector with empty strings
+    std::vector<std::string> labels(std::numeric_limits<index_type>::max());
+    CHECK_THROWS_AS(pt::LabelDictionary dict(labels), std::length_error);
+  }
 }
 
 TEST_CASE("tree compression works correctly", "[compressed_tree]") {

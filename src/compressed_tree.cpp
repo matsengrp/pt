@@ -70,6 +70,13 @@ pll_unode_t* CreateTipNode(pll_unode_t* root,
 // CompressedTree
 //
 
+LabelDictionary CompressedTree::label_dictionary_ = LabelDictionary();
+
+void CompressedTree::BuildDictionary(const std::vector<std::string>& labels)
+{
+  label_dictionary_ = LabelDictionary(labels);
+}
+
 CompressedTree::CompressedTree(const pll_utree_t* tree)
 {
   Encode(tree);

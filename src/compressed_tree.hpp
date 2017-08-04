@@ -7,14 +7,20 @@
 
 #include <libpll/pll.h>
 
+#include "label_dictionary.hpp"
+
 namespace pt {
 
 class CompressedTree {
  private:
+  static LabelDictionary label_dictionary_;
+
   std::vector<bool> bits_;
   std::list<std::string> labels_;
 
  public:
+  static void BuildDictionary(const std::vector<std::string>& labels);
+
   CompressedTree(const pll_utree_t* original_tree);
 
   std::string Decode() const;
