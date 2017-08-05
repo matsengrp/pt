@@ -246,6 +246,8 @@ pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
 
 size_t CompressedTree::Hash() const
 {
+  // TODO: we could also just Decode() and hash the string
+
   size_t seed = std::hash<std::vector<bool>>()(bits_);
 
   for (auto label_index : label_indices_) {

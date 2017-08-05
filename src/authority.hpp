@@ -9,10 +9,11 @@
 #include <libpll/pll.h>
 
 #include "common.hpp"
+#include "compressed_tree.hpp"
 
 namespace pt {
 
-using TreeTable = cuckoohash_map<std::string, double>;
+using TreeTable = cuckoohash_map<CompressedTree, double>;
 
 //
 // Authority
@@ -36,7 +37,7 @@ class Authority {
   double GetMaximumScore() const;
   void SetMaximumScore(double lnl);
   double GetThresholdScore() const;
-  std::string GetKey(pll_utree_t* tree) const;
+  CompressedTree GetKey(pll_utree_t* tree) const;
 
   // TODO: these break encapsulation
   TreeTable& GetTestedTreeTable();
@@ -55,7 +56,7 @@ class Authority {
 
   // returns true if the tree is good, false otherwise
   bool ReportVisitScore(pll_utree_t* tree, double lnl);
-  bool ReportVisitScore(const std::string& newick_str, double lnl);
+  bool ReportVisitScore(const CompressedTree& key, double lnl);
 };
 
 } // namespace pt

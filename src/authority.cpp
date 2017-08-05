@@ -7,6 +7,7 @@
 #include <libpll/pll.h>
 
 #include "common.hpp"
+#include "compressed_tree.hpp"
 #include "ordered_tree.hpp"
 
 namespace pt {
@@ -64,9 +65,9 @@ double Authority::GetThresholdScore() const
   return ml_lnl_ + lnl_offset_;
 }
 
-std::string Authority::GetKey(pll_utree_t* tree) const
+CompressedTree Authority::GetKey(pll_utree_t* tree) const
 {
-  return OrderedNewickString(tree);
+  return CompressedTree(tree);
 }
 
 TreeTable& Authority::GetTestedTreeTable()
@@ -90,7 +91,7 @@ void Authority::FilterGoodTreeTable(double lnl_threshold)
   // libcuckoo map invalidates other iterators, so to be safe, we do
   // this in two passes.
 
-  std::vector<std::string> keys_to_erase;
+  std::vector<CompressedTree> keys_to_erase;
 
   // lock scope
   {
@@ -123,8 +124,8 @@ bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   pll_utree_nni(node, type, nullptr);
 
   // check to see if the proposed tree has already been visited
-  std::string newick_str = GetKey(tree);
-  bool proposal_accepted = !visited_trees_.contains(newick_str);
+  CompressedTree key = GetKey(tree);
+  bool proposal_accepted = !visited_trees_.contains(key);
 
   // undo the move
   pll_utree_nni(node, type, nullptr);
@@ -138,8 +139,8 @@ bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   pll_utree_nni(node, type, nullptr);
 
   // check to see if the requested tree has already been visited
-  std::string newick_str = GetKey(tree);
-  bool request_accepted = visited_trees_.insert(newick_str, 0.0);
+  CompressedTree key = GetKey(tree);
+  bool request_accepted = visited_trees_.insert(key, 0.0);
 
   // undo the move
   pll_utree_nni(node, type, nullptr);
@@ -149,8 +150,8 @@ bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
 
 bool Authority::RequestTree(pll_utree_t* tree)
 {
-  std::string newick_str = GetKey(tree);
-  return visited_trees_.insert(newick_str, 0.0);
+  CompressedTree key = GetKey(tree);
+  return visited_trees_.insert(key, 0.0);
 }
 
 void Authority::ReportTestScore(pll_utree_t* tree, pll_unode_t* node,
@@ -168,8 +169,8 @@ void Authority::ReportTestScore(pll_utree_t* tree, pll_unode_t* node,
     return false;
   };
 
-  std::string newick_str = GetKey(tree);
-  tested_trees_.upsert(newick_str, updater, score);
+  CompressedTree key = GetKey(tree);
+  tested_trees_.upsert(key, updater, score);
 
   // undo the move
   pll_utree_nni(node, type, nullptr);
@@ -180,9 +181,9 @@ bool Authority::ReportVisitScore(pll_utree_t* tree, double lnl)
   return ReportVisitScore(GetKey(tree), lnl);
 }
 
-bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
+bool Authority::ReportVisitScore(const CompressedTree& key, double lnl)
 {
-  if (!visited_trees_.update(newick_str, lnl)) {
+  if (!visited_trees_.update(key, lnl)) {
     throw std::logic_error("tree is not in the visited table");
   }
 
@@ -190,7 +191,7 @@ bool Authority::ReportVisitScore(const std::string& newick_str, double lnl)
     return false;
   }
 
-  if (!good_trees_.insert(newick_str, lnl)) {
+  if (!good_trees_.insert(key, lnl)) {
     throw std::logic_error("tree is already in the good table");
   }
 

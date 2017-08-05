@@ -9,6 +9,7 @@
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
+#include "compressed_tree.hpp"
 #include "guru.hpp"
 #include "options.hpp"
 #include "wanderer.hpp"
@@ -42,6 +43,8 @@ int main(int argc, const char* argv[])
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(options.fasta_path, trees[0]->tip_count, labels, sequences);
+
+  pt::CompressedTree::BuildDictionary(labels);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(options.raxml_path);
 

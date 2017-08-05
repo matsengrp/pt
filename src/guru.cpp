@@ -16,6 +16,7 @@
 #include <pll_util.hpp>
 
 #include "common.hpp"
+#include "compressed_tree.hpp"
 #include "move_tester.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
@@ -214,7 +215,6 @@ bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   // apply the move
   pll_utree_nni(node, type, nullptr);
 
-  std::string newick_str = GetKey(tree);
   bool request_accepted;
 
   if (idle_wanderer_count_ > 0) {
@@ -225,7 +225,8 @@ bool Guru::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
     AddSafeStartingTree(tree);
     request_accepted = false;
   } else {
-    request_accepted = GetVisitedTreeTable().insert(newick_str, 0.0);
+    CompressedTree key = GetKey(tree);
+    request_accepted = GetVisitedTreeTable().insert(key, 0.0);
   }
 
   // undo the move

@@ -1,6 +1,7 @@
 #ifndef PT_COMPRESSED_TREE_HPP_
 #define PT_COMPRESSED_TREE_HPP_
 
+#include <iostream>
 #include <list>
 #include <string>
 #include <vector>
@@ -55,7 +56,25 @@ inline bool CompressedTree::operator!=(const CompressedTree& rhs) const
   return !(*this == rhs);
 }
 
+inline std::ostream& operator<<(std::ostream& os, const CompressedTree& ct)
+{
+  os << ct.Decode();
+  return os;
+}
+
 } // namespace pt
 
+namespace std {
+
+// specialization of std::hash for compressed trees
+template <>
+struct hash<pt::CompressedTree> {
+  inline size_t operator()(const pt::CompressedTree& ct) const
+  {
+    return ct.Hash();
+  }
+};
+
+} // namespace std
 
 #endif /* PT_COMPRESSED_TREE_HPP_ */

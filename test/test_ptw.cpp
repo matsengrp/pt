@@ -53,6 +53,30 @@ std::map<std::string, double> ReadRaxmlTestData(const std::string& filename)
   return tree_lnls;
 }
 
+double FindByString(pt::TreeTable& trees, const std::string& tree_str)
+{
+  auto table = trees.lock_table();
+  for (auto& item : table) {
+    if (item.first.Decode() == tree_str) {
+      return item.second;
+    }
+  }
+
+  throw std::invalid_argument("tree string not found in table");
+}
+
+double ContainsByString(pt::TreeTable& trees, const std::string& tree_str)
+{
+  auto table = trees.lock_table();
+  for (auto& item : table) {
+    if (item.first.Decode() == tree_str) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void RunRaxmlTest(const std::string& raxml_data_filename, pt::TreeTable& good_trees)
 {
   std::map<std::string, double> raxml_lnls = ReadRaxmlTestData(raxml_data_filename);
@@ -65,7 +89,7 @@ void RunRaxmlTest(const std::string& raxml_data_filename, pt::TreeTable& good_tr
   for (auto iter = raxml_lnls.begin(); iter != raxml_lnls.end(); ++iter) {
     std::string tree_str = iter->first;
     double raxml_lnl = iter->second;
-    double pt_lnl = good_trees.find(tree_str);
+    double pt_lnl = FindByString(good_trees, tree_str);
 
     // Test that pt's log-likelihoods are close to RAxML's.
     CHECK(pt_lnl == Approx(raxml_lnl).epsilon(5e-4));
@@ -105,6 +129,8 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
+  pt::CompressedTree::BuildDictionary(labels);
+
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
   pt::pll::Partition partition(tree, parameters, labels, sequences);
@@ -142,11 +168,12 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
         CHECK(visited_trees.size() == 15);
         CHECK(tested_trees.size() == 14);
 
-        CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                                  "((Ref.A1.RW.92.92RW008.AB253421,"
-                                  "Ref.A1.UG.92.92UG037.AB253429),"
-                                  "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                                  "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+        CHECK(ContainsByString(good_trees,
+                               "(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                               "((Ref.A1.RW.92.92RW008.AB253421,"
+                               "Ref.A1.UG.92.92UG037.AB253429),"
+                               "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                               "Ref.A2.CD.97.97CDKTB48.AF286238);"));
       }
 
       SECTION("wanderers agree with RAxML") {
@@ -179,11 +206,12 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
         CHECK(visited_trees.size() == 15);
         CHECK(tested_trees.size() == 14);
 
-        CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                                  "((Ref.A1.RW.92.92RW008.AB253421,"
-                                  "Ref.A1.UG.92.92UG037.AB253429),"
-                                  "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                                  "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+        CHECK(ContainsByString(good_trees,
+                               "(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                               "((Ref.A1.RW.92.92RW008.AB253421,"
+                               "Ref.A1.UG.92.92UG037.AB253429),"
+                               "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                               "Ref.A2.CD.97.97CDKTB48.AF286238);"));
       }
 
       SECTION("wanderers agree with RAxML") {
@@ -217,6 +245,8 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
 
+  pt::CompressedTree::BuildDictionary(labels);
+
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
   // from test_pt.cpp: good trees are those with a log-likelihood of
@@ -242,11 +272,12 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
     CHECK(visited_trees.size() == 15);
     CHECK(tested_trees.size() == 14);
 
-    CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                              "((Ref.A1.RW.92.92RW008.AB253421,"
-                              "Ref.A1.UG.92.92UG037.AB253429),"
-                              "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                              "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+    CHECK(ContainsByString(good_trees,
+                           "(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                           "((Ref.A1.RW.92.92RW008.AB253421,"
+                           "Ref.A1.UG.92.92UG037.AB253429),"
+                           "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                           "Ref.A2.CD.97.97CDKTB48.AF286238);"));
   }
 
   SECTION("duplicate starting trees don't affect results") {
@@ -274,11 +305,12 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
     CHECK(visited_trees.size() == 15);
     CHECK(tested_trees.size() == 14);
 
-    CHECK(good_trees.contains("(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                              "((Ref.A1.RW.92.92RW008.AB253421,"
-                              "Ref.A1.UG.92.92UG037.AB253429),"
-                              "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                              "Ref.A2.CD.97.97CDKTB48.AF286238);"));
+    CHECK(ContainsByString(good_trees,
+                           "(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
+                           "((Ref.A1.RW.92.92RW008.AB253421,"
+                           "Ref.A1.UG.92.92UG037.AB253429),"
+                           "Ref.A2.CM.01.01CM_1445MV.GU201516),"
+                           "Ref.A2.CD.97.97CDKTB48.AF286238);"));
   }
 
   // Unlike in earlier tests, TraversalUpdate() is never called on
@@ -322,6 +354,8 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
+
+  pt::CompressedTree::BuildDictionary(labels);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
@@ -460,6 +494,8 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(fasta_path, first_tree->tip_count, labels, sequences);
+
+  pt::CompressedTree::BuildDictionary(labels);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 

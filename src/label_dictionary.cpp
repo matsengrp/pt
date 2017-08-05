@@ -35,7 +35,7 @@ std::string LabelDictionary::GetLabel(index_type index) const
 {
   auto iter = index_to_label_.find(index);
   if (iter == index_to_label_.end()) {
-    throw std::invalid_argument("index not found in cache");
+    throw std::invalid_argument("index not found in dictionary");
   }
 
   return iter->second;
@@ -46,7 +46,7 @@ LabelDictionary::GetIndex(const std::string& label) const
 {
   auto iter = label_to_index_.find(label);
   if (iter == label_to_index_.end()) {
-    throw std::invalid_argument("label not found in cache");
+    throw std::invalid_argument("label not found in dictionary");
   }
 
   return iter->second;

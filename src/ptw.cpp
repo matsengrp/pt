@@ -11,6 +11,7 @@
 #include <pll_util.hpp>
 
 #include "authority.hpp"
+#include "compressed_tree.hpp"
 #include "move_tester/always.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
@@ -66,6 +67,8 @@ int main(int argc, const char* argv[])
   std::vector<std::string> labels;
   std::vector<std::string> sequences;
   pt::pll::ParseFasta(fasta_path, tree->tip_count, labels, sequences);
+
+  pt::CompressedTree::BuildDictionary(labels);
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
