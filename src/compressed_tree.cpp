@@ -171,10 +171,10 @@ std::string CompressedTree::Decode() const
 {
   // the decoding algorithm is destructive, so we make copies of the
   // data members and pass them to static functions that actually do
-  // the work. we also can't pop things off the front of a vector, so
-  // we copy the bits into a list instead.
+  // the work. we also can't pop things off the front of vectors,
+  // so we copy things into lists instead.
   std::list<bool> bits(bits_.begin(), bits_.end());
-  std::list<index_type> label_indices = label_indices_;
+  std::list<index_type> label_indices(label_indices_.begin(), label_indices_.end());
 
   pll_unode_t* root = Decode(bits, label_indices);
 

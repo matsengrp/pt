@@ -19,7 +19,7 @@ class CompressedTree {
   static LabelDictionary label_dictionary_;
 
   std::vector<bool> bits_;
-  std::list<index_type> label_indices_;
+  std::vector<index_type> label_indices_;
 
  public:
   static void BuildDictionary(const std::vector<std::string>& labels);
