@@ -177,11 +177,10 @@ Options ParseArguments(int argc, const char* argv[])
     options.lnl_offset = lnl_offset.getValue();
     options.thread_count = thread_count.getValue();
 
-    options.optimization_radius = optimization_radius.getValue();
-
-    if (options.optimization_radius < 0) {
+    int radius = optimization_radius.getValue();
+    if (radius < 0) {
       options.move_tester = std::make_shared<move_tester::Always>();
-    } else if (options.optimization_radius == 0) {
+    } else if (radius == 0) {
       // TODO: eventually we might be able to replace
       //       SingleBranchOptimizer with BranchNeighborhoodOptimizer
       //       and a radius of 0, but currently the pll-modules
@@ -198,7 +197,7 @@ Options ParseArguments(int argc, const char* argv[])
       options.move_tester = std::make_shared<move_tester::SingleBranchOptimizer>();
     } else {
       options.move_tester =
-          std::make_shared<move_tester::BranchNeighborhoodOptimizer>(options.optimization_radius);
+          std::make_shared<move_tester::BranchNeighborhoodOptimizer>(radius);
     }
 
     options.skip_filtering = skip_filtering.getValue();

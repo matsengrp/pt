@@ -16,7 +16,6 @@ struct Options {
   double lnl_offset = 0.0;
   size_t thread_count = 1;
 
-  int optimization_radius = -1;
   std::shared_ptr<const MoveTester> move_tester;
 
   bool skip_filtering = false;
