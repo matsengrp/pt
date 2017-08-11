@@ -622,10 +622,20 @@ TEST_CASE("label dictionaries work correctly", "[label_dictionary]") {
 
   SECTION("given too many labels") {
     using index_type = pt::LabelDictionary::index_type;
+    size_t max_size = static_cast<size_t>(std::numeric_limits<index_type>::max()) + 1;
+    std::vector<std::string> labels(max_size);
 
-    // this check is made before duplicates are detected, so we're
-    // okay initializing the vector with empty strings
-    std::vector<std::string> labels(std::numeric_limits<index_type>::max());
+    // generate as many unique labels as we need
+    size_t i = 0;
+    std::generate(labels.begin(), labels.end(), [&i]() {
+            std::stringstream ss;
+            ss << i++;
+            return ss.str();
+        });
+
+    CHECK_NOTHROW(pt::LabelDictionary dict(labels));
+
+    labels.push_back("one too many");
     CHECK_THROWS_AS(pt::LabelDictionary dict(labels), std::length_error);
   }
 }

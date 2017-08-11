@@ -15,7 +15,8 @@ LabelDictionary::LabelDictionary(const std::vector<std::string>& labels)
     throw std::invalid_argument("labels is empty");
   }
 
-  if (labels.size() >= std::numeric_limits<index_type>::max()) {
+  size_t max_size = static_cast<size_t>(std::numeric_limits<index_type>::max()) + 1;
+  if (labels.size() > max_size) {
     throw std::length_error("index type is not large enough");
   }
 
