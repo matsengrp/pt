@@ -2,6 +2,7 @@
 #define PT_AUTHORITY_HPP_
 
 #include <atomic>
+#include <mutex>
 #include <string>
 #include <utility>
 
