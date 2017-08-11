@@ -18,10 +18,6 @@ target_link_libraries(pt_static ptpll_static pll)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
-add_executable(ptw ptw.cpp)
-add_dependencies(ptw pt_static ptpll_static)
-target_link_libraries(ptw pt_static ptpll_static pll Threads::Threads)
-
 add_executable(ptw_threads ptw_threads.cpp)
 add_dependencies(ptw_threads pt_static ptpll_static)
 target_link_libraries(ptw_threads pt_static ptpll_static pll Threads::Threads)
