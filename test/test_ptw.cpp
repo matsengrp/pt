@@ -321,22 +321,15 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   pll_utree_destroy(tree, nullptr);
 }
 
-void RunGuruTest(double lnl_offset,
-                 size_t thread_count,
+void RunGuruTest(const pt::Options& options,
                  pll_utree_t* tree,
                  const pt::pll::ModelParameters& parameters,
                  const std::vector<std::string>& labels,
                  const std::vector<std::string>& sequences,
-                 std::shared_ptr<const pt::MoveTester> move_tester,
                  size_t good_tree_count,
                  size_t visited_tree_count,
                  size_t tested_tree_count)
 {
-  pt::Options options;
-  options.lnl_offset = lnl_offset;
-  options.thread_count = thread_count;
-  options.move_tester = move_tester;
-
   pt::Guru guru(options, tree, parameters, labels, sequences);
 
   guru.Start();
@@ -366,58 +359,56 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
+  pt::Options options;
+
   SECTION("using move_tester::Always") {
-    double lnl_offset = -2.0;
-    auto move_tester = std::make_shared<pt::move_tester::Always>();
+    options.lnl_offset = -2.0;
+    options.move_tester = std::make_shared<pt::move_tester::Always>();
 
     size_t good_tree_count = 15;
     size_t visited_tree_count = 659;
     size_t tested_tree_count = 658;
 
     SECTION("single-threaded operation is correct") {
-      size_t thread_count = 1;
+      options.thread_count = 1;
 
-      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count,
-                  tested_tree_count);
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
-      size_t thread_count = 4;
+      options.thread_count = 4;
 
-      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count,
-                  tested_tree_count);
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
     }
   }
 
   SECTION("using move_tester::SingleBranchOptimizer") {
-    double lnl_offset = -2.0;
-    auto move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
+    options.lnl_offset = -2.0;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
 
     size_t good_tree_count = 9;
     size_t visited_tree_count = 9;
     size_t tested_tree_count = 404;
 
     SECTION("single-threaded operation is correct") {
-      size_t thread_count = 1;
+      options.thread_count = 1;
 
-      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count,
-                  tested_tree_count);
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
-      size_t thread_count = 4;
+      options.thread_count = 4;
 
-      RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                  move_tester, good_tree_count, visited_tree_count,
-                  tested_tree_count);
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
     }
   }
 
   SECTION("using move_tester::BranchNeighborhoodOptimizer") {
-    double lnl_offset = -2.0;
+    options.lnl_offset = -2.0;
 
     SECTION("a non-positive radius is not accepted") {
       CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(-1),
@@ -428,7 +419,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
     SECTION("with an optimization radius of 1") {
       int optimization_radius = 1;
-      auto move_tester =
+      options.move_tester =
           std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
 
       size_t good_tree_count = 14;
@@ -436,25 +427,23 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       size_t tested_tree_count = 617;
 
       SECTION("single-threaded operation is correct") {
-        size_t thread_count = 1;
+        options.thread_count = 1;
 
-        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                    move_tester, good_tree_count, visited_tree_count,
-                    tested_tree_count);
+        RunGuruTest(options, tree, parameters, labels, sequences,
+                    good_tree_count, visited_tree_count, tested_tree_count);
       }
 
       SECTION("multi-threaded operation is correct") {
-        size_t thread_count = 4;
+        options.thread_count = 4;
 
-        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                    move_tester, good_tree_count, visited_tree_count,
-                    tested_tree_count);
+        RunGuruTest(options, tree, parameters, labels, sequences,
+                    good_tree_count, visited_tree_count, tested_tree_count);
       }
     }
 
     SECTION("with an optimization radius of 2") {
       int optimization_radius = 2;
-      auto move_tester =
+      options.move_tester =
           std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
 
       size_t good_tree_count = 15;
@@ -462,19 +451,17 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       size_t tested_tree_count = 658;
 
       SECTION("single-threaded operation is correct") {
-        size_t thread_count = 1;
+        options.thread_count = 1;
 
-        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                    move_tester, good_tree_count, visited_tree_count,
-                    tested_tree_count);
+        RunGuruTest(options, tree, parameters, labels, sequences,
+                    good_tree_count, visited_tree_count, tested_tree_count);
       }
 
       SECTION("multi-threaded operation is correct") {
-        size_t thread_count = 4;
+        options.thread_count = 4;
 
-        RunGuruTest(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                    move_tester, good_tree_count, visited_tree_count,
-                    tested_tree_count);
+        RunGuruTest(options, tree, parameters, labels, sequences,
+                    good_tree_count, visited_tree_count, tested_tree_count);
       }
     }
   }
