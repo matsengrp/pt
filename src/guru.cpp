@@ -18,6 +18,7 @@
 #include "common.hpp"
 #include "compressed_tree.hpp"
 #include "move_tester.hpp"
+#include "options.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
@@ -26,23 +27,21 @@
 
 namespace pt {
 
-Guru::Guru(double lnl_offset,
-           size_t thread_count,
+Guru::Guru(const Options& options,
            pll_utree_t* starting_tree,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
-           const std::vector<std::string>& sequences,
-           std::shared_ptr<const MoveTester> move_tester) :
-    Authority(0.0, lnl_offset),
-    thread_count_(thread_count),
+           const std::vector<std::string>& sequences) :
+    Authority(options, 0.0),
+    thread_count_(options.thread_count),
     model_parameters_(model_parameters),
     labels_(labels),
     sequences_(sequences),
-    move_tester_(move_tester),
+    move_tester_(options.move_tester),
     partition_(starting_tree, model_parameters, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
-    wanderer_ready_(thread_count, false)
+    wanderer_ready_(options.thread_count, false)
 {
   // when the guru starts, if we don't have enough starting trees to
   // create as many wanderers as requested, we'll need a default tree
@@ -65,23 +64,21 @@ Guru::Guru(double lnl_offset,
   AddSafeStartingTree(default_tree_);
 }
 
-Guru::Guru(double lnl_offset,
-           size_t thread_count,
+Guru::Guru(const Options& options,
            const std::vector<pll_utree_t*>& starting_trees,
            const pll::ModelParameters& model_parameters,
            const std::vector<std::string>& labels,
-           const std::vector<std::string>& sequences,
-           std::shared_ptr<const MoveTester> move_tester) :
-    Authority(0.0, lnl_offset),
-    thread_count_(thread_count),
+           const std::vector<std::string>& sequences) :
+    Authority(options, 0.0),
+    thread_count_(options.thread_count),
     model_parameters_(model_parameters),
     labels_(labels),
     sequences_(sequences),
-    move_tester_(move_tester),
+    move_tester_(options.move_tester),
     partition_(starting_trees.at(0), model_parameters, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
-    wanderer_ready_(thread_count, false)
+    wanderer_ready_(options.thread_count, false)
 {
   //
   // it is imperative that the tip node partition data indices of the

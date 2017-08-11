@@ -13,13 +13,13 @@ struct Options {
   std::string fasta_path;
   std::string raxml_path;
 
-  double lnl_offset;
-  size_t thread_count;
+  double lnl_offset = 0.0;
+  size_t thread_count = 1;
 
-  int optimization_radius;
+  int optimization_radius = -1;
   std::shared_ptr<const MoveTester> move_tester;
 
-  bool skip_filtering;
+  bool skip_filtering = false;
 
   std::string good_trees_path;
   std::string visited_trees_path;

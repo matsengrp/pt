@@ -8,6 +8,7 @@
 
 #include "common.hpp"
 #include "compressed_tree.hpp"
+#include "options.hpp"
 #include "ordered_tree.hpp"
 
 namespace pt {
@@ -38,12 +39,12 @@ std::string OrderedNewickString(pll_utree_t* tree)
 // Authority
 //
 
-Authority::Authority(double ml_lnl, double lnl_offset) :
+Authority::Authority(const Options& options, double ml_lnl) :
     ml_lnl_(ml_lnl),
-    lnl_offset_(lnl_offset)
+    lnl_offset_(options.lnl_offset)
 {
-  if (lnl_offset_ > 0.0) {
-    throw std::invalid_argument("lnl_offset is greater than zero");
+  if (lnl_offset_ >= 0.0) {
+    throw std::invalid_argument("lnl_offset must be less than 0");
   }
 }
 

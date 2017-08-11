@@ -10,6 +10,7 @@
 
 #include "common.hpp"
 #include "compressed_tree.hpp"
+#include "options.hpp"
 
 namespace pt {
 
@@ -30,7 +31,7 @@ class Authority {
   std::mutex mutex_;
 
  public:
-  Authority(double ml_lnl, double lnl_offset);
+  Authority(const Options& options, double ml_lnl);
 
   virtual ~Authority();
 

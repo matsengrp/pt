@@ -6,10 +6,12 @@
 #include <libpll/pll.h>
 #include <pll_partition.hpp>
 
-#include "authority.hpp"
 #include "common.hpp"
 
 namespace pt {
+
+// forward declaration to resolve circular dependency
+class Authority;
 
 class MoveTester {
  public:

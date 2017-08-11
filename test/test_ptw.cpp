@@ -21,6 +21,7 @@
 #include "move_tester/always.hpp"
 #include "move_tester/branch_neighborhood_optimizer.hpp"
 #include "move_tester/single_branch_optimizer.hpp"
+#include "options.hpp"
 #include "ordered_tree.hpp"
 #include "wanderer.hpp"
 
@@ -150,12 +151,14 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     double lnl_threshold = -3820.0;
     double lnl_offset = lnl_threshold - ml_lnl;  // -82.53
 
-    pt::Authority authority(ml_lnl, lnl_offset);
+    pt::Options options;
+    options.lnl_offset = lnl_offset;
+    options.move_tester = std::make_shared<pt::move_tester::Always>();
 
-    auto move_tester = std::make_shared<pt::move_tester::Always>();
+    pt::Authority authority(options, ml_lnl);
 
     SECTION("using partition move constructor") {
-      pt::Wanderer wanderer(authority, std::move(partition), tree, move_tester);
+      pt::Wanderer wanderer(authority, std::move(partition), tree, options.move_tester);
 
       wanderer.Start();
 
@@ -193,7 +196,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     SECTION("using in-place partition constructor") {
       pt::Wanderer wanderer(authority, tree, parameters, labels, sequences,
-                            move_tester);
+                            options.move_tester);
 
       wanderer.Start();
 
@@ -253,13 +256,14 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   // at least -3820 (ML is -3737.47).
   double lnl_offset = -82.53;
 
-  auto move_tester = std::make_shared<pt::move_tester::Always>();
+  pt::Options options;
+  options.lnl_offset = lnl_offset;
+  options.move_tester = std::make_shared<pt::move_tester::Always>();
 
   SECTION("single-threaded operation is correct") {
-    size_t thread_count = 1;
+    options.thread_count = 1;
 
-    pt::Guru guru(lnl_offset, thread_count, tree, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, tree, parameters, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -281,13 +285,12 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   }
 
   SECTION("duplicate starting trees don't affect results") {
-    size_t thread_count = 2;
+    options.thread_count = 2;
 
     // Populate a vector with duplicate starting trees.
     std::vector<pll_utree_t*> trees(2, tree);
 
-    pt::Guru guru(lnl_offset, thread_count, trees, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, trees, parameters, labels, sequences);
 
     // Since we've requested multiple threads, the guru will create
     // wanderers which will go idle immediately upon seeing that their
@@ -329,8 +332,12 @@ void RunGuruTest(double lnl_offset,
                  size_t visited_tree_count,
                  size_t tested_tree_count)
 {
-  pt::Guru guru(lnl_offset, thread_count, tree, parameters, labels, sequences,
-                move_tester);
+  pt::Options options;
+  options.lnl_offset = lnl_offset;
+  options.thread_count = thread_count;
+  options.move_tester = move_tester;
+
+  pt::Guru guru(options, tree, parameters, labels, sequences);
 
   guru.Start();
   guru.Wait();
@@ -499,15 +506,14 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
 
   pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
 
-  auto move_tester = std::make_shared<pt::move_tester::Always>();
-
-  size_t thread_count = 1;
+  pt::Options options;
+  options.thread_count = 1;
+  options.move_tester = std::make_shared<pt::move_tester::Always>();
 
   SECTION("on the first peak") {
-    double lnl_offset = -2.0;
+    options.lnl_offset = -2.0;
 
-    pt::Guru guru(lnl_offset, thread_count, first_tree, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, first_tree, parameters, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -520,10 +526,9 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   }
 
   SECTION("on the second peak") {
-    double lnl_offset = -1.05;
+    options.lnl_offset = -1.05;
 
-    pt::Guru guru(lnl_offset, thread_count, second_tree, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, second_tree, parameters, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -536,10 +541,9 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   }
 
   SECTION("on both peaks, given the higher peak first") {
-    double lnl_offset = -2.0;
+    options.lnl_offset = -2.0;
 
-    pt::Guru guru(lnl_offset, thread_count, trees, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, trees, parameters, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -552,12 +556,11 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   }
 
   SECTION("on both peaks, given the lower peak first") {
-    double lnl_offset = -2.0;
+    options.lnl_offset = -2.0;
 
     std::vector<pll_utree_t*> reordered_trees{trees[1], trees[0]};
 
-    pt::Guru guru(lnl_offset, thread_count, reordered_trees, parameters,
-                  labels, sequences, move_tester);
+    pt::Guru guru(options, reordered_trees, parameters, labels, sequences);
 
     guru.Start();
     guru.Wait();

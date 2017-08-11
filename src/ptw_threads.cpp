@@ -52,8 +52,7 @@ int main(int argc, const char* argv[])
   // initialize the guru
   //
 
-  pt::Guru guru(options.lnl_offset, options.thread_count, trees, parameters,
-                labels, sequences, options.move_tester);
+  pt::Guru guru(options, trees, parameters, labels, sequences);
 
   //
   // go!

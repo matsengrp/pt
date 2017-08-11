@@ -18,6 +18,7 @@
 #include "authority.hpp"
 #include "common.hpp"
 #include "move_tester.hpp"
+#include "options.hpp"
 #include "wanderer.hpp"
 
 namespace pt {
@@ -44,21 +45,17 @@ class Guru : public Authority {
   std::vector<bool> wanderer_ready_;
 
  public:
-  Guru(double lnl_offset,
-       size_t thread_count,
+  Guru(const Options& options,
        pll_utree_t* starting_tree,
        const pll::ModelParameters& model_parameters,
        const std::vector<std::string>& labels,
-       const std::vector<std::string>& sequences,
-       std::shared_ptr<const MoveTester> move_tester);
+       const std::vector<std::string>& sequences);
 
-  Guru(double lnl_offset,
-       size_t thread_count,
+  Guru(const Options& options,
        const std::vector<pll_utree_t*>& starting_trees,
        const pll::ModelParameters& model_parameters,
        const std::vector<std::string>& labels,
-       const std::vector<std::string>& sequences,
-       std::shared_ptr<const MoveTester> move_tester);
+       const std::vector<std::string>& sequences);
 
   ~Guru() override;
 
