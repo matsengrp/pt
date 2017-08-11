@@ -159,7 +159,7 @@ std::string CompressedTree::ToDebugString() const
 
   ss << "[";
   for (auto label_index : label_indices_) {
-    ss << delim << label_index;
+    ss << delim << static_cast<unsigned int>(label_index);
     delim = ", ";
   }
   ss << "]\n";

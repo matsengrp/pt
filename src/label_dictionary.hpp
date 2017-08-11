@@ -10,7 +10,7 @@ namespace pt {
 
 class LabelDictionary {
  public:
-  using index_type = uint16_t;
+  using index_type = uint8_t;
 
  private:
   std::map<std::string, index_type> label_to_index_;
