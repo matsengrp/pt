@@ -206,6 +206,10 @@ Options ParseArguments(int argc, const char* argv[])
     options.visited_trees_path = visited_trees_path.getValue();
     options.tested_trees_path = tested_trees_path.getValue();
 
+    if (options.tested_trees_path.empty()) {
+      options.track_tested_trees = false;
+    }
+
     //
     // validate options
     //

@@ -466,6 +466,30 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     }
   }
 
+  SECTION("when tested tree tracking is disabled") {
+    options.lnl_offset = -2.0;
+    options.move_tester = std::make_shared<pt::move_tester::Always>();
+    options.track_tested_trees = false;
+
+    size_t good_tree_count = 15;
+    size_t visited_tree_count = 659;
+    size_t tested_tree_count = 0;
+
+    SECTION("single-threaded operation is correct") {
+      options.thread_count = 1;
+
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
+    }
+
+    SECTION("multi-threaded operation is correct") {
+      options.thread_count = 4;
+
+      RunGuruTest(options, tree, parameters, labels, sequences,
+                  good_tree_count, visited_tree_count, tested_tree_count);
+    }
+  }
+
   pll_utree_destroy(tree, nullptr);
 }
 

@@ -41,7 +41,8 @@ std::string OrderedNewickString(pll_utree_t* tree)
 
 Authority::Authority(const Options& options, double ml_lnl) :
     ml_lnl_(ml_lnl),
-    lnl_offset_(options.lnl_offset)
+    lnl_offset_(options.lnl_offset),
+    track_tested_trees_(options.track_tested_trees)
 {
   if (lnl_offset_ >= 0.0) {
     throw std::invalid_argument("lnl_offset must be less than 0");
@@ -158,6 +159,10 @@ bool Authority::RequestTree(pll_utree_t* tree)
 void Authority::ReportTestScore(pll_utree_t* tree, pll_unode_t* node,
                                 MoveType type, double score)
 {
+  if (!track_tested_trees_) {
+    return;
+  }
+
   // apply the move
   pll_utree_nni(node, type, nullptr);
 

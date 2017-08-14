@@ -29,6 +29,7 @@ class Authority {
 
   std::atomic<double> ml_lnl_;
   const double lnl_offset_;
+  const bool track_tested_trees_;
   std::mutex mutex_;
 
  public:
