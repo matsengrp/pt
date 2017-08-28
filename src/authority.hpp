@@ -40,7 +40,7 @@ class Authority {
   double GetMaximumScore() const;
   void SetMaximumScore(double lnl);
   double GetThresholdScore() const;
-  CompressedTree GetKey(pll_utree_t* tree) const;
+  CompressedTree GetKey(const pll_utree_t* tree) const;
 
   // TODO: these break encapsulation
   TreeTable& GetTestedTreeTable();

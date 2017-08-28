@@ -67,7 +67,7 @@ double Authority::GetThresholdScore() const
   return ml_lnl_ + lnl_offset_;
 }
 
-CompressedTree Authority::GetKey(pll_utree_t* tree) const
+CompressedTree Authority::GetKey(const pll_utree_t* tree) const
 {
   return CompressedTree(tree);
 }
