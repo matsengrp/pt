@@ -26,6 +26,12 @@ void ValidateOptions(const Options& options)
         "threads");
   }
 
+  if (options.rate_categories < 1) {
+    throw TCLAP::CmdLineParseException(
+        "number of rate categories must be at least 1",
+        "rate-categories");
+  }
+
   // TODO: add checks for input file existence etc?
 }
 
@@ -74,6 +80,15 @@ Options ParseArguments(int argc, const char* argv[])
         1,
         "value");
     cmd.add(thread_count);
+
+    TCLAP::ValueArg<unsigned int> rate_categories(
+        "",
+        "rate-categories",
+        "Number of discrete Gamma rate categories.",
+        false,
+        4,
+        "value");
+    cmd.add(rate_categories);
 
     TCLAP::ValueArg<std::string> visited_trees_path(
         "",
@@ -176,6 +191,7 @@ Options ParseArguments(int argc, const char* argv[])
 
     options.lnl_offset = lnl_offset.getValue();
     options.thread_count = thread_count.getValue();
+    options.rate_categories = rate_categories.getValue();
 
     int radius = optimization_radius.getValue();
     if (radius < 0) {
