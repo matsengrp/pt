@@ -157,43 +157,6 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     pt::Authority authority(options, ml_lnl);
 
-    SECTION("using partition move constructor") {
-      pt::Wanderer wanderer(authority, std::move(partition), tree, options.move_tester);
-
-      wanderer.Start();
-
-      pt::TreeTable& good_trees = authority.GetGoodTreeTable();
-      pt::TreeTable& visited_trees = authority.GetVisitedTreeTable();
-      pt::TreeTable& tested_trees = authority.GetTestedTreeTable();
-
-      SECTION("wanderers agree with old pt") {
-        CHECK(good_trees.size() == 13);
-        CHECK(visited_trees.size() == 15);
-        CHECK(tested_trees.size() == 14);
-
-        CHECK(ContainsByString(good_trees,
-                               "(Ref.A1.AU.03.PS1044_Day0.DQ676872,"
-                               "((Ref.A1.RW.92.92RW008.AB253421,"
-                               "Ref.A1.UG.92.92UG037.AB253429),"
-                               "Ref.A2.CM.01.01CM_1445MV.GU201516),"
-                               "Ref.A2.CD.97.97CDKTB48.AF286238);"));
-      }
-
-      SECTION("wanderers agree with RAxML") {
-        RunRaxmlTest("test-data/five/good_trees.five.raxml", good_trees);
-      }
-
-      SECTION("good tree tables are filtered correctly") {
-        double new_lnl_threshold = -3800.0;
-
-        // There are 3 good trees with a log-likelihood greater than -3800.
-        authority.FilterGoodTreeTable(new_lnl_threshold);
-
-        // We already have a reference to the live table.
-        CHECK(good_trees.size() == 3);
-      }
-    }
-
     SECTION("using in-place partition constructor") {
       pt::Wanderer wanderer(authority, tree, model, labels, sequences,
                             options.move_tester);

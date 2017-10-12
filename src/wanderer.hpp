@@ -42,11 +42,6 @@ class Wanderer {
 
  public:
   Wanderer(Authority& authority,
-           pll::Partition&& partition,
-           pll_utree_t* starting_tree,
-           std::shared_ptr<const MoveTester> move_tester);
-
-  Wanderer(Authority& authority,
            pll_utree_t* starting_tree,
            const pll::Model& model,
            const std::vector<std::string>& labels,

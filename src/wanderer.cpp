@@ -24,22 +24,6 @@ namespace pt {
 //
 
 Wanderer::Wanderer(Authority& authority,
-                   pll::Partition&& partition,
-                   pll_utree_t* starting_tree,
-                   std::shared_ptr<const MoveTester> move_tester) :
-    authority_(authority),
-    partition_(std::move(partition)),
-    move_tester_(move_tester)
-{
-  // we don't want to take ownership of starting_tree, so clone it
-  // first and push the clone onto the stack
-  pll_utree_t* tree = pll_utree_clone(starting_tree);
-  pll_utree_every(tree, pll::cb_copy_clv_traversal);
-
-  trees_.push(tree);
-}
-
-Wanderer::Wanderer(Authority& authority,
                    pll_utree_t* starting_tree,
                    const pll::Model& model,
                    const std::vector<std::string>& labels,
