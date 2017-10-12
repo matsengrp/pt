@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <libpll/pll.h>
-#include <model_parameters.hpp>
+#include <model.hpp>
 #include <pll_partition.hpp>
 
 #include "authority.hpp"
@@ -26,7 +26,7 @@ namespace pt {
 class Guru : public Authority {
  private:
   size_t thread_count_;
-  pll::ModelParameters model_parameters_;
+  pll::Model model_;
   std::vector<std::string> labels_;
   std::vector<std::string> sequences_;
   std::shared_ptr<const MoveTester> move_tester_;
@@ -47,13 +47,13 @@ class Guru : public Authority {
  public:
   Guru(const Options& options,
        pll_utree_t* starting_tree,
-       const pll::ModelParameters& model_parameters,
+       const pll::Model& model,
        const std::vector<std::string>& labels,
        const std::vector<std::string>& sequences);
 
   Guru(const Options& options,
        const std::vector<pll_utree_t*>& starting_trees,
-       const pll::ModelParameters& model_parameters,
+       const pll::Model& model,
        const std::vector<std::string>& labels,
        const std::vector<std::string>& sequences);
 

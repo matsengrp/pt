@@ -11,7 +11,7 @@
 #include <vector>
 
 #include <libpll/pll.h>
-#include <model_parameters.hpp>
+#include <model.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
@@ -29,16 +29,16 @@ namespace pt {
 
 Guru::Guru(const Options& options,
            pll_utree_t* starting_tree,
-           const pll::ModelParameters& model_parameters,
+           const pll::Model& model,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences) :
     Authority(options, 0.0),
     thread_count_(options.thread_count),
-    model_parameters_(model_parameters),
+    model_(model),
     labels_(labels),
     sequences_(sequences),
     move_tester_(options.move_tester),
-    partition_(starting_tree, model_parameters, labels, sequences),
+    partition_(starting_tree, model, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
@@ -66,16 +66,16 @@ Guru::Guru(const Options& options,
 
 Guru::Guru(const Options& options,
            const std::vector<pll_utree_t*>& starting_trees,
-           const pll::ModelParameters& model_parameters,
+           const pll::Model& model,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences) :
     Authority(options, 0.0),
     thread_count_(options.thread_count),
-    model_parameters_(model_parameters),
+    model_(model),
     labels_(labels),
     sequences_(sequences),
     move_tester_(options.move_tester),
-    partition_(starting_trees.at(0), model_parameters, labels, sequences),
+    partition_(starting_trees.at(0), model, labels, sequences),
     default_tree_(nullptr),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
@@ -243,7 +243,7 @@ void Guru::Start()
     starting_trees_.pop();
 
     wanderers_.emplace_back(*this, tree,
-                            model_parameters_, labels_, sequences_,
+                            model_, labels_, sequences_,
                             move_tester_);
 
     // if an earlier wanderer happens to move to this wanderer's
@@ -262,7 +262,7 @@ void Guru::Start()
   for (size_t i = wanderers_.size(); i < thread_count_; ++i)
   {
     wanderers_.emplace_back(*this, default_tree_,
-                            model_parameters_, labels_, sequences_,
+                            model_, labels_, sequences_,
                             move_tester_);
 
     // we "start" the wanderer here only to create its future. Start()

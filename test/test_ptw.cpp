@@ -10,7 +10,7 @@
 #include <vector>
 
 #include <libpll/pll.h>
-#include <model_parameters.hpp>
+#include <model.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
@@ -132,9 +132,9 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(raxml_path);
 
-  pt::pll::Partition partition(tree, parameters, labels, sequences);
+  pt::pll::Partition partition(tree, model, labels, sequences);
 
   pll_unode_t* node = tree->nodes[tree->tip_count + tree->inner_count - 1];
   partition.TraversalUpdate(node, pt::pll::TraversalType::FULL);
@@ -195,7 +195,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     }
 
     SECTION("using in-place partition constructor") {
-      pt::Wanderer wanderer(authority, tree, parameters, labels, sequences,
+      pt::Wanderer wanderer(authority, tree, model, labels, sequences,
                             options.move_tester);
 
       wanderer.Start();
@@ -250,7 +250,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(raxml_path);
 
   // from test_pt.cpp: good trees are those with a log-likelihood of
   // at least -3820 (ML is -3737.47).
@@ -263,7 +263,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
   SECTION("single-threaded operation is correct") {
     options.thread_count = 1;
 
-    pt::Guru guru(options, tree, parameters, labels, sequences);
+    pt::Guru guru(options, tree, model, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -290,7 +290,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
     // Populate a vector with duplicate starting trees.
     std::vector<pll_utree_t*> trees(2, tree);
 
-    pt::Guru guru(options, trees, parameters, labels, sequences);
+    pt::Guru guru(options, trees, model, labels, sequences);
 
     // Since we've requested multiple threads, the guru will create
     // wanderers which will go idle immediately upon seeing that their
@@ -323,14 +323,14 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
 void RunGuruTest(const pt::Options& options,
                  pll_utree_t* tree,
-                 const pt::pll::ModelParameters& parameters,
+                 const pt::pll::Model& model,
                  const std::vector<std::string>& labels,
                  const std::vector<std::string>& sequences,
                  size_t good_tree_count,
                  size_t visited_tree_count,
                  size_t tested_tree_count)
 {
-  pt::Guru guru(options, tree, parameters, labels, sequences);
+  pt::Guru guru(options, tree, model, labels, sequences);
 
   guru.Start();
   guru.Wait();
@@ -357,7 +357,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(raxml_path);
 
   pt::Options options;
 
@@ -372,14 +372,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     SECTION("single-threaded operation is correct") {
       options.thread_count = 1;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       options.thread_count = 4;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
   }
@@ -395,14 +395,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     SECTION("single-threaded operation is correct") {
       options.thread_count = 1;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       options.thread_count = 4;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
   }
@@ -429,14 +429,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       SECTION("single-threaded operation is correct") {
         options.thread_count = 1;
 
-        RunGuruTest(options, tree, parameters, labels, sequences,
+        RunGuruTest(options, tree, model, labels, sequences,
                     good_tree_count, visited_tree_count, tested_tree_count);
       }
 
       SECTION("multi-threaded operation is correct") {
         options.thread_count = 4;
 
-        RunGuruTest(options, tree, parameters, labels, sequences,
+        RunGuruTest(options, tree, model, labels, sequences,
                     good_tree_count, visited_tree_count, tested_tree_count);
       }
     }
@@ -453,14 +453,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
       SECTION("single-threaded operation is correct") {
         options.thread_count = 1;
 
-        RunGuruTest(options, tree, parameters, labels, sequences,
+        RunGuruTest(options, tree, model, labels, sequences,
                     good_tree_count, visited_tree_count, tested_tree_count);
       }
 
       SECTION("multi-threaded operation is correct") {
         options.thread_count = 4;
 
-        RunGuruTest(options, tree, parameters, labels, sequences,
+        RunGuruTest(options, tree, model, labels, sequences,
                     good_tree_count, visited_tree_count, tested_tree_count);
       }
     }
@@ -478,14 +478,14 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     SECTION("single-threaded operation is correct") {
       options.thread_count = 1;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
 
     SECTION("multi-threaded operation is correct") {
       options.thread_count = 4;
 
-      RunGuruTest(options, tree, parameters, labels, sequences,
+      RunGuruTest(options, tree, model, labels, sequences,
                   good_tree_count, visited_tree_count, tested_tree_count);
     }
   }
@@ -515,7 +515,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(raxml_path);
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(raxml_path);
 
   pt::Options options;
   options.thread_count = 1;
@@ -524,7 +524,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   SECTION("on the first peak") {
     options.lnl_offset = -2.0;
 
-    pt::Guru guru(options, first_tree, parameters, labels, sequences);
+    pt::Guru guru(options, first_tree, model, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -539,7 +539,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   SECTION("on the second peak") {
     options.lnl_offset = -1.05;
 
-    pt::Guru guru(options, second_tree, parameters, labels, sequences);
+    pt::Guru guru(options, second_tree, model, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -554,7 +554,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
   SECTION("on both peaks, given the higher peak first") {
     options.lnl_offset = -2.0;
 
-    pt::Guru guru(options, trees, parameters, labels, sequences);
+    pt::Guru guru(options, trees, model, labels, sequences);
 
     guru.Start();
     guru.Wait();
@@ -571,7 +571,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
 
     std::vector<pll_utree_t*> reordered_trees{trees[1], trees[0]};
 
-    pt::Guru guru(options, reordered_trees, parameters, labels, sequences);
+    pt::Guru guru(options, reordered_trees, model, labels, sequences);
 
     guru.Start();
     guru.Wait();

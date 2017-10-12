@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <libpll/pll.h>
-#include <model_parameters.hpp>
+#include <model.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
@@ -46,14 +46,14 @@ int main(int argc, const char* argv[])
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::ModelParameters parameters = pt::pll::ParseRaxmlInfo(options.raxml_path);
-  parameters.rate_categories = options.rate_categories;
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(options.raxml_path);
+  model.rate_categories = options.rate_categories;
 
   //
   // initialize the guru
   //
 
-  pt::Guru guru(options, trees, parameters, labels, sequences);
+  pt::Guru guru(options, trees, model, labels, sequences);
 
   //
   // go!

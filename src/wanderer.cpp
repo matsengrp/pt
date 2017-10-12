@@ -8,7 +8,7 @@
 #include <vector>
 
 #include <libpll/pll.h>
-#include <model_parameters.hpp>
+#include <model.hpp>
 #include <pll_partition.hpp>
 #include <pll_util.hpp>
 
@@ -41,12 +41,12 @@ Wanderer::Wanderer(Authority& authority,
 
 Wanderer::Wanderer(Authority& authority,
                    pll_utree_t* starting_tree,
-                   const pll::ModelParameters& model_parameters,
+                   const pll::Model& model,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
                    std::shared_ptr<const MoveTester> move_tester) :
     authority_(authority),
-    partition_(starting_tree, model_parameters, labels, sequences),
+    partition_(starting_tree, model, labels, sequences),
     move_tester_(move_tester)
 {
   // we don't want to take ownership of starting_tree, so clone it
