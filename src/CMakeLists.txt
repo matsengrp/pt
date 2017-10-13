@@ -9,6 +9,7 @@ set(PT_SRC
   move_tester/single_branch_optimizer.cpp
   options.cpp
   ordered_tree.cpp
+  position.cpp
   wanderer.cpp)
 
 add_library(pt_static STATIC ${PT_SRC})
