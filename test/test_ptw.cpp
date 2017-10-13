@@ -453,6 +453,22 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     }
   }
 
+  SECTION("with only one rate category") {
+    options.lnl_offset = -2.0;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
+    options.thread_count = 1;
+    options.rate_categories = 1;
+
+    model.rate_categories = options.rate_categories;
+
+    size_t good_tree_count = 5;
+    size_t visited_tree_count = 8;
+    size_t tested_tree_count = 230;
+
+    RunGuruTest(options, tree, model, labels, sequences,
+                good_tree_count, visited_tree_count, tested_tree_count);
+  }
+
   pll_utree_destroy(tree, nullptr);
 }
 
