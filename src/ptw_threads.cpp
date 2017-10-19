@@ -46,8 +46,8 @@ int main(int argc, const char* argv[])
 
   pt::CompressedTree::BuildDictionary(labels);
 
-  pt::pll::Model model = pt::pll::ParseRaxmlInfo(options.raxml_path);
-  model.rate_categories = options.rate_categories;
+  pt::pll::Model model = pt::pll::ParseRaxmlInfo(options.raxml_path,
+                                                 options.rate_categories);
 
   //
   // initialize the guru

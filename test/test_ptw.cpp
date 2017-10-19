@@ -459,7 +459,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     options.thread_count = 1;
     options.rate_categories = 1;
 
-    model.rate_categories = options.rate_categories;
+    model = pt::pll::ParseRaxmlInfo(raxml_path, options.rate_categories);
 
     size_t good_tree_count = 5;
     size_t visited_tree_count = 8;
