@@ -6,6 +6,10 @@
 
 namespace pt {
 
+Position::Position() :
+    tree_(nullptr)
+{ }
+
 Position::Position(pll_utree_t* tree, const pll::Model& model) :
     tree_(tree),
     model_(model)

@@ -19,6 +19,7 @@
 #include "common.hpp"
 #include "move_tester.hpp"
 #include "options.hpp"
+#include "position.hpp"
 #include "wanderer.hpp"
 
 namespace pt {
@@ -32,8 +33,8 @@ class Guru : public Authority {
   std::shared_ptr<const MoveTester> move_tester_;
 
   pll::Partition partition_;
-  pll_utree_t* default_tree_;
-  std::queue<pll_utree_t*> starting_trees_;
+  Position default_position_;
+  std::queue<Position> starting_positions_;
   std::mutex mutex_;
 
   // we use a deque here because using a vector would require that
@@ -59,14 +60,13 @@ class Guru : public Authority {
 
   ~Guru() override;
 
-  bool RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type) override;
+  bool RequestMove(const Position& position, pll_unode_t* node, MoveType type) override;
 
   void Start();
   void Wait();
 
  private:
-  void AddSafeStartingTree(pll_utree_t* starting_tree);
-  void AddUnsafeStartingTree(pll_utree_t* starting_tree);
+  void AddStartingPosition(const Position& position);
 
   std::vector<pll_utree_t*> SortStartingTrees(
       const std::vector<pll_utree_t*>& starting_trees);

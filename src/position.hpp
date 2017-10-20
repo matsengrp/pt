@@ -12,6 +12,7 @@ class Position {
   pll::Model model_;
 
  public:
+  Position();
   Position(pll_utree_t* tree, const pll::Model& model);
 
   pll_utree_t* GetTree() const;
