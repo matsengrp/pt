@@ -16,6 +16,7 @@
 #include "common.hpp"
 #include "move_tester.hpp"
 #include "ordered_tree.hpp"
+#include "position.hpp"
 
 namespace pt {
 
@@ -24,18 +25,19 @@ namespace pt {
 //
 
 Wanderer::Wanderer(Authority& authority,
-                   pll_utree_t* starting_tree,
-                   const pll::Model& model,
+                   const Position& starting_position,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
                    std::shared_ptr<const MoveTester> move_tester) :
     authority_(authority),
-    partition_(starting_tree, model, labels, sequences),
+    partition_(starting_position.GetTree(),
+               starting_position.GetModel(),
+               labels, sequences),
     move_tester_(move_tester)
 {
-  // we don't want to take ownership of starting_tree, so clone it
+  // we don't want to take ownership of the starting tree, so clone it
   // first and push the clone onto the stack
-  pll_utree_t* tree = pll_utree_clone(starting_tree);
+  pll_utree_t* tree = pll_utree_clone(starting_position.GetTree());
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
   // TODO: should we do a TraversalUpdate() here? Start() does one so
@@ -43,14 +45,14 @@ Wanderer::Wanderer(Authority& authority,
   //       that the wanderer is ready as soon as the constructor
   //       returns
 
-  trees_.push(tree);
+  path_.emplace(tree, starting_position.GetModel());
 }
 
 Wanderer::~Wanderer()
 {
-  while (!trees_.empty()) {
-    pll_utree_destroy(trees_.top(), pll::cb_erase_data);
-    trees_.pop();
+  while (!path_.empty()) {
+    pll_utree_destroy(path_.top().GetTree(), pll::cb_erase_data);
+    path_.pop();
   }
 }
 
@@ -65,12 +67,15 @@ void Wanderer::Start()
   // differently than exploring ones.
   //
 
-  pll_utree_t* tree = trees_.top();
+  pll_utree_t* tree = path_.top().GetTree();
+
+  // set initial model
+  partition_.SetModel(path_.top().GetModel());
 
   if (!authority_.RequestTree(tree)) {
     // if the starting tree has already been visited, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
-    trees_.pop();
+    path_.pop();
 
     return;
   }
@@ -95,7 +100,7 @@ void Wanderer::Start()
   if (!authority_.ReportVisitScore(tree, lnl)) {
     // if the starting tree isn't good, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
-    trees_.pop();
+    path_.pop();
 
     return;
   }
@@ -148,7 +153,7 @@ void Wanderer::MoveForward()
   pll::InvalidateEdgeClvs(move.node);
 
   // clone the tree with move applied (and with properly invalidated CLVs)
-  pll_utree_t* tree = pll_utree_clone(trees_.top());
+  pll_utree_t* tree = pll_utree_clone(path_.top().GetTree());
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
   // undo the move on the original tree. the CLVs on that edge of this tree will
@@ -177,7 +182,7 @@ void Wanderer::MoveForward()
   // report the score to the authority. if it returns true, this is a
   // good tree, and we should push it onto the stack and queue moves
   if (authority_.ReportVisitScore(tree, lnl)) {
-    trees_.push(tree);
+    path_.emplace(tree, partition_.GetModel());
     QueueMoves();
   } else {
     // otherwise, we're done with this tree, so destroy it
@@ -194,21 +199,23 @@ void Wanderer::MoveBack()
   // pop the current tree's move queue off the top of the stack
   move_queues_.pop();
 
-  // restore previous tree by destroying the current tree and popping
-  // it off the top of the tree history stack
-  pll_utree_destroy(trees_.top(), pll::cb_erase_data);
-  trees_.pop();
+  // restore previous position by destroying the current tree and popping
+  // off the top of the path stack
+  pll_utree_destroy(path_.top().GetTree(), pll::cb_erase_data);
+  path_.pop();
 
-  // if the tree stack is empty, we're done.
-  if (trees_.empty()) {
+  // if the path stack is empty, we're done.
+  if (path_.empty()) {
     return;
   }
 
-  // resynchronize partition and tree with a full traversal. if the
-  // move queue for the tree is empty, this is pointless and can be
-  // skipped.
+  // restore the previous model and resynchronize the partition and
+  // tree with a full traversal. if the move queue for the tree is
+  // empty, this is pointless and can be skipped.
   if (!move_queues_.top().empty()) {
-    pll_unode_t* root = GetVirtualRoot(trees_.top());
+    pll_unode_t* root = GetVirtualRoot(path_.top().GetTree());
+
+    partition_.SetModel(path_.top().GetModel());
     partition_.TraversalUpdate(root, pll::TraversalType::FULL);
   }
 }
@@ -218,7 +225,7 @@ void Wanderer::QueueMoves()
   // TODO: add an error check to see if the number of nodes
   //       pll_utree_query_innernodes() finds is the same as the size
   //       of the vector
-  pll_utree_t* tree = trees_.top();
+  pll_utree_t* tree = path_.top().GetTree();
   pll_unode_t** inner_nodes = tree->nodes + tree->tip_count;
 
   std::queue<TreeMove> move_queue;
@@ -271,23 +278,23 @@ void Wanderer::QueueMoves()
   move_queues_.push(std::move(move_queue));
 }
 
-// this function should only be called when trees_ and move_queues_
+// this function should only be called when path_ and move_queues_
 // are empty, i.e., the Wanderer is idle
-void Wanderer::Teleport(pll_utree_t* starting_tree)
+void Wanderer::Teleport(const Position& position)
 {
-  if (!trees_.empty()) {
-    throw std::logic_error("trees_ is not empty");
+  if (!path_.empty()) {
+    throw std::logic_error("path_ is not empty");
   }
 
   if (!move_queues_.empty()) {
     throw std::logic_error("move_queues_ is not empty");
   }
 
-  // clone the tree and push it onto the stack
-  pll_utree_t* tree = pll_utree_clone(starting_tree);
+  // clone the tree and push it and the model onto the stack
+  pll_utree_t* tree = pll_utree_clone(position.GetTree());
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
-  trees_.push(tree);
+  path_.emplace(tree, position.GetModel());
 }
 
 } // namespace pt

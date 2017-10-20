@@ -14,6 +14,7 @@
 #include "authority.hpp"
 #include "common.hpp"
 #include "move_tester.hpp"
+#include "position.hpp"
 
 namespace pt {
 
@@ -37,20 +38,19 @@ class Wanderer {
   // storing all the branch lengths would use much less memory than
   // storing the whole tree.
 
-  std::stack<pll_utree_t*> trees_;
+  std::stack<Position> path_;
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
   Wanderer(Authority& authority,
-           pll_utree_t* starting_tree,
-           const pll::Model& model,
+           const Position& starting_position,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
            std::shared_ptr<const MoveTester> move_tester);
 
   ~Wanderer();
 
-  void Teleport(pll_utree_t* starting_tree);
+  void Teleport(const Position& position);
   void Start();
 
  private:
