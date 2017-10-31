@@ -15,4 +15,14 @@ Position::Position(pll_utree_t* tree, const pll::Model& model) :
     model_(model)
 { }
 
+pll_utree_t* Position::GetTree() const
+{
+  return tree_;
+}
+
+pll::Model Position::GetModel() const
+{
+  return model_;
+}
+
 } // namespace pt

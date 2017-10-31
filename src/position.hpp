@@ -7,6 +7,9 @@
 namespace pt {
 
 class Position {
+  // TODO: the position class is a very thin wrapper around a tree and
+  //       a model and relies on the user for memory management.
+
  private:
   pll_utree_t* tree_;
   pll::Model model_;
