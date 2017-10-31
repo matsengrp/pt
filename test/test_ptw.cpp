@@ -23,6 +23,7 @@
 #include "move_tester/single_branch_optimizer.hpp"
 #include "options.hpp"
 #include "ordered_tree.hpp"
+#include "position.hpp"
 #include "wanderer.hpp"
 
 //
@@ -158,7 +159,7 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     pt::Authority authority(options, ml_lnl);
 
     SECTION("using in-place partition constructor") {
-      pt::Wanderer wanderer(authority, tree, model, labels, sequences,
+      pt::Wanderer wanderer(authority, pt::Position(tree, model), labels, sequences,
                             options.move_tester);
 
       wanderer.Start();
