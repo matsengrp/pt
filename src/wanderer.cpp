@@ -222,10 +222,12 @@ void Wanderer::MoveBack()
 
 void Wanderer::QueueMoves()
 {
+  Position position = path_.top();
+
   // TODO: add an error check to see if the number of nodes
   //       pll_utree_query_innernodes() finds is the same as the size
   //       of the vector
-  pll_utree_t* tree = path_.top().GetTree();
+  pll_utree_t* tree = position.GetTree();
   pll_unode_t** inner_nodes = tree->nodes + tree->tip_count;
 
   std::queue<TreeMove> move_queue;
@@ -261,13 +263,13 @@ void Wanderer::QueueMoves()
 
     if (authority_.ProposeMove(tree, node, MoveType::LEFT)
         && TestMove(tree, node, MoveType::LEFT)
-        && authority_.RequestMove(tree, node, MoveType::LEFT)) {
+        && authority_.RequestMove(position, node, MoveType::LEFT)) {
       move_queue.push(TreeMove{node, MoveType::LEFT});
     }
 
     if (authority_.ProposeMove(tree, node, MoveType::RIGHT)
         && TestMove(tree, node, MoveType::RIGHT)
-        && authority_.RequestMove(tree, node, MoveType::RIGHT)) {
+        && authority_.RequestMove(position, node, MoveType::RIGHT)) {
       move_queue.push(TreeMove{node, MoveType::RIGHT});
     }
   }

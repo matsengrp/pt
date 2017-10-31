@@ -10,6 +10,7 @@
 #include "compressed_tree.hpp"
 #include "options.hpp"
 #include "ordered_tree.hpp"
+#include "position.hpp"
 
 namespace pt {
 
@@ -135,13 +136,13 @@ bool Authority::ProposeMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   return proposal_accepted;
 }
 
-bool Authority::RequestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
+bool Authority::RequestMove(const Position& position, pll_unode_t* node, MoveType type)
 {
   // apply the move
   pll_utree_nni(node, type, nullptr);
 
   // check to see if the requested tree has already been visited
-  CompressedTree key = GetKey(tree);
+  CompressedTree key = GetKey(position.GetTree());
   bool request_accepted = visited_trees_.insert(key, 0.0);
 
   // undo the move
