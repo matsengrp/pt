@@ -24,6 +24,7 @@ class Wanderer {
   pll::Partition partition_;
 
   std::shared_ptr<const MoveTester> move_tester_;
+  bool optimize_models_;
 
   // a data structure that makes more sense for this might be a stack
   // of pairs like {tree, move_queue}. MoveBack() could pop the top of
@@ -46,7 +47,8 @@ class Wanderer {
            const Position& starting_position,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
-           std::shared_ptr<const MoveTester> move_tester);
+           std::shared_ptr<const MoveTester> move_tester,
+           bool optimize_models);
 
   ~Wanderer();
 

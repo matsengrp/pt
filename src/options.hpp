@@ -20,6 +20,7 @@ struct Options {
   std::shared_ptr<const MoveTester> move_tester;
 
   bool skip_filtering = false;
+  bool optimize_models = false;
 
   std::string good_trees_path;
   std::string visited_trees_path;

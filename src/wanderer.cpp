@@ -28,12 +28,14 @@ Wanderer::Wanderer(Authority& authority,
                    const Position& starting_position,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
-                   std::shared_ptr<const MoveTester> move_tester) :
+                   std::shared_ptr<const MoveTester> move_tester,
+                   bool optimize_models) :
     authority_(authority),
     partition_(starting_position.GetTree(),
                starting_position.GetModel(),
                labels, sequences),
-    move_tester_(move_tester)
+    move_tester_(move_tester),
+    optimize_models_(optimize_models)
 {
   // we don't want to take ownership of the starting tree, so clone it
   // first and push the clone onto the stack
@@ -86,9 +88,13 @@ void Wanderer::Start()
   // synchronize partition and tree with a full traversal
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
 
-  // do full branch optimization. this function will handle its own
-  // traversal updates.
-  partition_.OptimizeAllBranches(root);
+  // do optimization. the function will handle its own traversal
+  // updates.
+  if (optimize_models_) {
+    partition_.OptimizeBranchesAndModel(root);
+  } else {
+    partition_.OptimizeAllBranches(root);
+  }
 
   // orient CLVs and compute log-likelihood
   partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
@@ -159,9 +165,9 @@ void Wanderer::MoveForward()
   // undo the move on the original tree. the CLVs on that edge of this tree will
   // remain invalid until the next time it's traversed, which will be either:
   //
-  //   * during OptimizeAllBranches() in the next call to
-  //     MoveForward(), if this move doesn't result in a good tree and
-  //     there are moves left in the queue; or
+  //   * during optimization in the next call to MoveForward(), if
+  //     this move doesn't result in a good tree and there are moves
+  //     left in the queue; or
   //
   //   * when a call to MoveBack() returns to this tree, at which
   //     point a full traversal is performed if there are moves left
@@ -171,9 +177,13 @@ void Wanderer::MoveForward()
   // get an inner node of the cloned tree
   pll_unode_t* root = GetVirtualRoot(tree);
 
-  // do full branch optimization. this function will handle its own
-  // traversal updates.
-  partition_.OptimizeAllBranches(root);
+  // do optimization. the function will handle its own traversal
+  // updates.
+  if (optimize_models_) {
+    partition_.OptimizeBranchesAndModel(root);
+  } else {
+    partition_.OptimizeAllBranches(root);
+  }
 
   // orient CLVs and compute log-likelihood
   partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);

@@ -155,12 +155,13 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     pt::Options options;
     options.lnl_offset = lnl_offset;
     options.move_tester = std::make_shared<pt::move_tester::Always>();
+    options.optimize_models = false;
 
     pt::Authority authority(options, ml_lnl);
 
     SECTION("using in-place partition constructor") {
       pt::Wanderer wanderer(authority, pt::Position(tree, model), labels, sequences,
-                            options.move_tester);
+                            options.move_tester, options.optimize_models);
 
       wanderer.Start();
 
@@ -465,6 +466,20 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     size_t good_tree_count = 5;
     size_t visited_tree_count = 8;
     size_t tested_tree_count = 230;
+
+    RunGuruTest(options, tree, model, labels, sequences,
+                good_tree_count, visited_tree_count, tested_tree_count);
+  }
+
+  SECTION("with model optimization enabled") {
+    options.lnl_offset = -3.0;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
+    options.thread_count = 1;
+    options.optimize_models = true;
+
+    size_t good_tree_count = 45;
+    size_t visited_tree_count = 45;
+    size_t tested_tree_count = 1873;
 
     RunGuruTest(options, tree, model, labels, sequences,
                 good_tree_count, visited_tree_count, tested_tree_count);

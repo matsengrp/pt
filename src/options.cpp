@@ -145,6 +145,13 @@ Options ParseArguments(int argc, const char* argv[])
           "evaluated will be included in the results.");
     cmd.add(skip_filtering);
 
+    TCLAP::SwitchArg optimize_models(
+        "",
+        "optimize-models",
+        "After each move, optimize substitution model parameters "
+          "in addition to the tree's branch lengths.");
+    cmd.add(optimize_models);
+
     //
     // positional arguments
     //
@@ -217,6 +224,7 @@ Options ParseArguments(int argc, const char* argv[])
     }
 
     options.skip_filtering = skip_filtering.getValue();
+    options.optimize_models = optimize_models.getValue();
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();

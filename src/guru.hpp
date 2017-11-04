@@ -31,6 +31,7 @@ class Guru : public Authority {
   std::vector<std::string> labels_;
   std::vector<std::string> sequences_;
   std::shared_ptr<const MoveTester> move_tester_;
+  bool optimize_models_;
 
   pll::Partition partition_;
   Position default_position_;
