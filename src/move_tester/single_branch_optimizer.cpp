@@ -22,9 +22,6 @@ SingleBranchOptimizer::EvaluateMove(pll::Partition& partition,
                                     const Authority& authority) const
 {
   // apply move and invalidate the CLVs on that edge
-  //
-  // TODO: should we clone the tree after the move and operate on that
-  //       instead, like in Wanderer::MoveForward()?
   pll_utree_nni(node, type, nullptr);
   pll::InvalidateEdgeClvs(node);
 

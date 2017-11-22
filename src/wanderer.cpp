@@ -42,11 +42,6 @@ Wanderer::Wanderer(Authority& authority,
   pll_utree_t* tree = pll_utree_clone(starting_position.GetTree());
   pll_utree_every(tree, pll::cb_copy_clv_traversal);
 
-  // TODO: should we do a TraversalUpdate() here? Start() does one so
-  //       we probably don't need to, but it might be good to ensure
-  //       that the wanderer is ready as soon as the constructor
-  //       returns
-
   path_.emplace(tree, starting_position.GetModel());
 }
 
@@ -237,9 +232,6 @@ void Wanderer::QueueMoves()
 {
   Position position = path_.top();
 
-  // TODO: add an error check to see if the number of nodes
-  //       pll_utree_query_innernodes() finds is the same as the size
-  //       of the vector
   pll_utree_t* tree = position.GetTree();
   pll_unode_t** inner_nodes = tree->nodes + tree->tip_count;
 
