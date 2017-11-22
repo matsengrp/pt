@@ -255,16 +255,15 @@ void Wanderer::QueueMoves()
     //   continue;
     // }
 
-    // TODO: the wanderer doesn't know this, but the way the
-    //       authority's ProposeMove() method is written, multiple
-    //       wanderers can be granted permission to test moves to the
-    //       same tree. ProposeMove() only checks to see if the
-    //       proposed tree has already been visited, in which case
-    //       testing the move isn't necessary. this is safe because
-    //       the authority will still only grant permission to accept
-    //       the move to a single wanderer, but it's inefficient as
-    //       moves resulting in the same tree may be tested
-    //       simultaneously by different wanderers.
+    // the wanderer doesn't know this, but the way the authority's
+    // ProposeMove() method is written, multiple wanderers can be
+    // granted permission to test moves to the same tree.
+    // ProposeMove() only checks to see if the proposed tree has
+    // already been visited, in which case testing the move isn't
+    // necessary. this is safe because the authority will still only
+    // grant permission to accept the move to a single wanderer, but
+    // it's potentially inefficient as moves resulting in the same
+    // tree may be tested simultaneously by different wanderers.
 
     if (authority_.ProposeMove(tree, node, MoveType::LEFT)
         && TestMove(tree, node, MoveType::LEFT)
