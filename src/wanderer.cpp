@@ -132,11 +132,14 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   bool accept_move;
   double move_score;
 
+  // move testers are in charge of performing whatever traversals are
+  // required, and must ensure the partition and tree are synchronized
+  // upon return. this does not necessarily mean that all the CLVs are
+  // valid and pointed at node, merely that the next partial traversal
+  // will work properly.
+
   std::tie(accept_move, move_score) =
       move_tester_->EvaluateMove(partition_, tree, node, type, authority_);
-
-  // TODO: do whatever's necessary to return the tree and partition to
-  //       a known state, or should EvaluateMove() be in charge of that?
 
   // report the test score to the authority
   authority_.ReportTestScore(tree, node, type, move_score);
