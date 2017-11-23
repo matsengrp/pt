@@ -151,7 +151,7 @@ bool Authority::RequestMove(const Position& position, pll_unode_t* node, MoveTyp
   return request_accepted;
 }
 
-bool Authority::RequestTree(pll_utree_t* tree)
+bool Authority::RequestVisit(pll_utree_t* tree)
 {
   CompressedTree key = GetKey(tree);
   return visited_trees_.insert(key, 0.0);

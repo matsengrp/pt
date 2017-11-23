@@ -36,7 +36,7 @@ In broad strokes, pseudocode for the main wanderer functions is as follows:
 
 ``` pseudo
 function Start(tree):
-  authority.RequestTree(tree)
+  authority.RequestVisit(tree)
   if tree has been visited:
     return
 
@@ -98,8 +98,6 @@ function MoveBack():
   pop top tree off stack
   pop top move_queue off stack
 ```
-
-TODO: given this pseudocode, Authority::RequestTree() might make more sense as Authority::RequestVisit()
 
 
 ## Authority

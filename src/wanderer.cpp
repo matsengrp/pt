@@ -69,7 +69,7 @@ void Wanderer::Start()
   // set initial model
   partition_.SetModel(path_.top().GetModel());
 
-  if (!authority_.RequestTree(tree)) {
+  if (!authority_.RequestVisit(tree)) {
     // if the starting tree has already been visited, we're done.
     pll_utree_destroy(tree, pll::cb_erase_data);
     path_.pop();

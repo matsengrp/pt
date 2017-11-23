@@ -53,7 +53,7 @@ class Authority {
 
   bool ProposeMove(pll_utree_t* tree, pll_unode_t* node, MoveType type);
   virtual bool RequestMove(const Position& position, pll_unode_t* node, MoveType type);
-  bool RequestTree(pll_utree_t* tree);
+  bool RequestVisit(pll_utree_t* tree);
 
   void ReportTestScore(pll_utree_t* tree, pll_unode_t* node, MoveType type,
                        double score);
