@@ -218,7 +218,6 @@ pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
                                            std::list<index_type>& label_indices)
 {
   if (bits.empty()) {
-    // TODO: can this happen? is it a normal part of the algorithm?
     throw std::runtime_error("bits is empty");
   }
 
@@ -246,8 +245,6 @@ pll_unode_t* CompressedTree::DecodeSubtree(pll_unode_t* root,
 
 size_t CompressedTree::Hash() const
 {
-  // TODO: we could also just Decode() and hash the string
-
   size_t seed = std::hash<std::vector<bool>>()(bits_);
 
   for (auto label_index : label_indices_) {
