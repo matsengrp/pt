@@ -244,17 +244,6 @@ void Wanderer::QueueMoves()
       continue;
     }
 
-    // TODO: I think that the traversal that starts at trees_.top()
-    //       produces a collection of inner nodes that includes the
-    //       node at the other end of the "current" edge (that is,
-    //       trees_.top()->back). this results in testing duplicate
-    //       moves across that edge, doesn't it? we might need
-    //       something like the following to avoid this
-    //
-    // if (node == trees_.top()->back) {
-    //   continue;
-    // }
-
     // the wanderer doesn't know this, but the way the authority's
     // ProposeMove() method is written, multiple wanderers can be
     // granted permission to test moves to the same tree.
