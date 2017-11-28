@@ -19,14 +19,14 @@ The purpose of these tests is to offer some flexibility in performance by allowi
 Wanderer decisions are made with guidance from the authority.
 The wanderer communicates with the authority to determine if a tree has already been visited, if a tree is good, if a move is worth taking, and if it's allowed to take a move.
 
-More specifically, each wanderer "position" in this case is an unrooted bifurcating tree, and each "move" is one of the two NNI moves across an inner edge of that tree.
-The trees along the wanderer's current path are stored as a stack, so that each move forward pushes a new tree onto the stack, and each move back pops the top tree off the stack.
-This stack of trees is synchronized with a stack of move queues as follows, such that each queue maintains the set of available moves on its corresponding tree.
+More specifically, each wanderer "position" in this case is an unrooted bifurcating tree and a set of substitution model parameters, and each "move" is one of the two NNI moves across an inner edge of the tree.
+The positions along the wanderer's current path are stored as a stack, so that each move forward pushes a new tree and model onto the stack, and each move back pops the top tree and model off the stack.
+This stack of positions is synchronized with a stack of move queues as follows, such that each queue maintains the set of available moves on its corresponding tree.
 
-To visit a new tree, a move forward pops the next move in the queue and applies it to the current tree.
-Next, the wanderer evaluates the tree's fitness by optimizing the branch lengths of the tree and computing its log-likelihood.
+To visit a new position, a move forward pops the next move in the queue and applies it to the current tree.
+Next, the wanderer evaluates the tree's fitness by optimizing the branch lengths of the tree, optionally optimizing the substitution model parameters, and computing the log-likelihood.
 The log-likelihood is then compared to the authority's threshold to determine if the tree is "good."
-If the tree is good, it is added to the path history stack, and the moves away from the tree are considered.
+If the tree is good, it and the model are added to the path history stack, and the moves away from the tree are considered.
 Moves resulting in trees that have already been visited are ignored.
 It is at this point that a move can optionally be tested to determine if it should be added to the move queue.
 For example, one implemented strategy for testing a move is to apply the move, optimize the length of the single edge across which the NNI move was made, and compute the log-likelihood.
@@ -36,12 +36,18 @@ In broad strokes, pseudocode for the main wanderer functions is as follows:
 
 ``` pseudo
 function Start(tree):
+  model := initial model
+
   authority.RequestVisit(tree)
   if tree has been visited:
     return
 
-  OptimizeAllBranches(tree)
-  lnl := LogLikelihood(tree)
+  if model optimization enabled:
+    OptimizeAllBranchesAndModel(tree, model)
+  else:
+    OptimizeAllBranches(tree, model)
+
+  lnl := LogLikelihood(tree, model)
 
   authority.ReportVisitScore(tree, lnl)
   if tree is not good:
@@ -49,7 +55,7 @@ function Start(tree):
 
   QueueMoves()
 
-  while tree stack is not empty:
+  while position stack is not empty:
     while moves available for top tree:
       MoveForward()
 
@@ -82,20 +88,26 @@ function QueueMoves():
 
 function MoveForward():
   tree := top tree on stack
+  model := top model on stack
   move := pop next move in top move_queue on stack
 
   apply move to tree
-  OptimizeAllBranches(tree)
-  lnl := LogLikelihood(tree)
+
+  if model optimization enabled:
+    OptimizeAllBranchesAndModel(tree, model)
+  else:
+    OptimizeAllBranches(tree, model)
+
+  lnl := LogLikelihood(tree, model)
 
   authority.ReportVisitScore(tree, lnl)
   if tree is good:
-    push tree onto stack
+    push {tree, model} onto stack
     QueueMoves()
 
 
 function MoveBack():
-  pop top tree off stack
+  pop top {tree, model} off stack
   pop top move_queue off stack
 ```
 
