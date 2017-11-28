@@ -696,11 +696,13 @@ TEST_CASE("tree compression works correctly", "[compressed_tree]") {
 
     pt::CompressedTree ct1(tree);
 
+#if 0
     std::cerr << "original tree ("
               << ct1.Hash() << ")\n\n"
               << ct1.ToDebugString() << "\n";
     pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
     std::cerr << "\n\n";
+#endif
 
     //
     // apply an NNI move and verify that the encodings differ
@@ -710,11 +712,13 @@ TEST_CASE("tree compression works correctly", "[compressed_tree]") {
 
     pt::CompressedTree ct2(tree);
 
+#if 0
     std::cerr << "modified tree ("
               << ct2.Hash() << ")\n\n"
               << ct2.ToDebugString() << "\n";
     pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
     std::cerr << "\n\n";
+#endif
 
     CHECK(ct1 != ct2);
     CHECK(ct1.Hash() != ct2.Hash());
@@ -727,11 +731,13 @@ TEST_CASE("tree compression works correctly", "[compressed_tree]") {
 
     pt::CompressedTree ct3(tree);
 
+#if 0
     std::cerr << "undo tree ("
               << ct3.Hash() << ")\n\n"
               << ct3.ToDebugString() << "\n";
     pll_utree_show_ascii(root, PLL_UTREE_SHOW_LABEL);
     std::cerr << "\n\n";
+#endif
 
     CHECK(ct3 == ct1);
     CHECK(ct3.Hash() == ct1.Hash());
