@@ -86,7 +86,7 @@ void Wanderer::Start()
   // do optimization. the function will handle its own traversal
   // updates.
   if (optimize_models_) {
-    partition_.OptimizeBranchesAndModel(root);
+    partition_.OptimizeAllBranchesAndModel(root);
   } else {
     partition_.OptimizeAllBranches(root);
   }
@@ -178,7 +178,7 @@ void Wanderer::MoveForward()
   // do optimization. the function will handle its own traversal
   // updates.
   if (optimize_models_) {
-    partition_.OptimizeBranchesAndModel(root);
+    partition_.OptimizeAllBranchesAndModel(root);
   } else {
     partition_.OptimizeAllBranches(root);
   }
