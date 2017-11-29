@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -17,6 +18,10 @@
 void WriteTreeTable(pt::TreeTable& trees, const std::string& path)
 {
   std::ofstream ofs(path);
+
+  if (!ofs) {
+    throw std::invalid_argument("could not open " + path + " for writing");
+  }
 
   auto table = trees.lock_table();
   for (auto& item : table) {
