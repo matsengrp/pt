@@ -103,9 +103,10 @@ Options ParseArguments(int argc, const char* argv[])
         "",
         "tested-trees",
         "Output file for all tested trees. Note that starting trees "
-        "are always visited but never tested (since there is no move "
-        "to a starting tree to test), so starting trees will not "
-        "appear in this output.",
+          "are always visited but never tested (since there is no move "
+          "to a starting tree to test), so starting trees will not "
+          "appear in this output. Enabling this option significantly "
+          "increases runtime memory usage.",
         false,
         "",
         "file");
