@@ -31,8 +31,6 @@ void ValidateOptions(const Options& options)
         "number of rate categories must be at least 1",
         "rate-categories");
   }
-
-  // TODO: add checks for input file existence etc?
 }
 
 Options ParseArguments(int argc, const char* argv[])
