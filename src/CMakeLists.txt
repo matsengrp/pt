@@ -14,11 +14,11 @@ set(PT_SRC
 
 add_library(pt_static STATIC ${PT_SRC})
 add_dependencies(pt_static ptpll_static)
-target_link_libraries(pt_static ptpll_static pll)
+target_link_libraries(pt_static ptpll_static)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
 add_executable(ptw_threads ptw_threads.cpp)
 add_dependencies(ptw_threads pt_static ptpll_static)
-target_link_libraries(ptw_threads pt_static ptpll_static pll Threads::Threads)
+target_link_libraries(ptw_threads pt_static ptpll_static Threads::Threads)
