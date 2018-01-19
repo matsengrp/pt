@@ -151,6 +151,12 @@ Options ParseArguments(int argc, const char* argv[])
           "in addition to the tree's branch lengths.");
     cmd.add(optimize_models);
 
+    TCLAP::SwitchArg map_mode(
+        "",
+        "map",
+        "Use MAP instead of ML for optimization, assuming an Exp(10) prior.");
+    cmd.add(map_mode);
+
     //
     // positional arguments
     //
@@ -224,6 +230,7 @@ Options ParseArguments(int argc, const char* argv[])
 
     options.skip_filtering = skip_filtering.getValue();
     options.optimize_models = optimize_models.getValue();
+    options.map_mode = map_mode.getValue();
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();

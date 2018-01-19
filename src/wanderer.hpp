@@ -48,7 +48,8 @@ class Wanderer {
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences,
            std::shared_ptr<const MoveTester> move_tester,
-           bool optimize_models);
+           bool optimize_models,
+           bool map_mode);
 
   ~Wanderer();
 

@@ -21,6 +21,7 @@ struct Options {
 
   bool skip_filtering = false;
   bool optimize_models = false;
+  bool map_mode = false;
 
   std::string good_trees_path;
   std::string visited_trees_path;

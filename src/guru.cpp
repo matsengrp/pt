@@ -40,6 +40,7 @@ Guru::Guru(const Options& options,
     sequences_(sequences),
     move_tester_(options.move_tester),
     optimize_models_(options.optimize_models),
+    map_mode_(options.map_mode),
     partition_(starting_tree, model, labels, sequences),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
@@ -76,6 +77,7 @@ Guru::Guru(const Options& options,
     sequences_(sequences),
     move_tester_(options.move_tester),
     optimize_models_(options.optimize_models),
+    map_mode_(options.map_mode),
     partition_(starting_trees.at(0), model, labels, sequences),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
@@ -218,7 +220,7 @@ void Guru::Start()
     starting_positions_.pop();
 
     wanderers_.emplace_back(*this, position, labels_, sequences_,
-                            move_tester_, optimize_models_);
+                            move_tester_, optimize_models_, map_mode_);
 
     // if an earlier wanderer happens to move to this wanderer's
     // starting position before this wanderer is started, the wanderer's
@@ -236,7 +238,7 @@ void Guru::Start()
   for (size_t i = wanderers_.size(); i < thread_count_; ++i)
   {
     wanderers_.emplace_back(*this, default_position_, labels_, sequences_,
-                            move_tester_, optimize_models_);
+                            move_tester_, optimize_models_, map_mode_);
 
     // we "start" the wanderer here only to create its future. Start()
     // will immediately return when it sees that its starting tree has

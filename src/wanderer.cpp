@@ -29,11 +29,12 @@ Wanderer::Wanderer(Authority& authority,
                    const std::vector<std::string>& labels,
                    const std::vector<std::string>& sequences,
                    std::shared_ptr<const MoveTester> move_tester,
-                   bool optimize_models) :
+                   bool optimize_models,
+                   bool map_mode) :
     authority_(authority),
     partition_(starting_position.GetTree(),
                starting_position.GetModel(),
-               labels, sequences),
+               labels, sequences, map_mode),
     move_tester_(move_tester),
     optimize_models_(optimize_models)
 {

@@ -30,8 +30,14 @@ class Guru : public Authority {
   pll::Model model_;
   std::vector<std::string> labels_;
   std::vector<std::string> sequences_;
+
+  // TODO: these are all contained in the options struct, and we're
+  //       just caching them so we can pass them to the wanderer
+  //       constructor. it would be better if we just cached the
+  //       struct and passed that to the wanderer to decouple the two.
   std::shared_ptr<const MoveTester> move_tester_;
   bool optimize_models_;
+  bool map_mode_;
 
   pll::Partition partition_;
   Position default_position_;
