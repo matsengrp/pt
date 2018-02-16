@@ -299,7 +299,7 @@ void Guru::UpdateWandererStatus(size_t index)
   ++idle_wanderer_count_;
 }
 
-void Guru::Wait()
+void Guru::Wait(unsigned int poll_ms)
 {
   while (idle_wanderer_count_ < thread_count_) {
     for (size_t i = 0; i < thread_count_; ++i)
@@ -342,7 +342,7 @@ void Guru::Wait()
       pll_utree_destroy(position.GetTree(), pll::cb_erase_data);
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(poll_ms));
   }
 
   if (!starting_positions_.empty()) {

@@ -65,7 +65,7 @@ int main(int argc, const char* argv[])
   //
 
   guru.Start();
-  guru.Wait();
+  guru.Wait(options.poll_ms);
 
   //
   // write output

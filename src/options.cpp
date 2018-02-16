@@ -88,6 +88,15 @@ Options ParseArguments(int argc, const char* argv[])
         "value");
     cmd.add(rate_categories);
 
+    TCLAP::ValueArg<unsigned int> poll_ms(
+        "",
+        "polling-time",
+        "Thread polling time, in milliseconds.",
+        false,
+        100,
+        "value");
+    cmd.add(poll_ms);
+
     TCLAP::ValueArg<std::string> visited_trees_path(
         "",
         "visited-trees",
@@ -204,6 +213,7 @@ Options ParseArguments(int argc, const char* argv[])
     options.lnl_offset = lnl_offset.getValue();
     options.thread_count = thread_count.getValue();
     options.rate_categories = rate_categories.getValue();
+    options.poll_ms = poll_ms.getValue();
 
     int radius = optimization_radius.getValue();
     if (radius < 0) {

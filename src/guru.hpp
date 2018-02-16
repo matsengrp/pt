@@ -70,7 +70,7 @@ class Guru : public Authority {
   bool RequestMove(const Position& position, pll_unode_t* node, MoveType type) override;
 
   void Start();
-  void Wait();
+  void Wait(unsigned int poll_ms = 100);
 
  private:
   void AddStartingPosition(const Position& position);

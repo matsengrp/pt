@@ -16,6 +16,7 @@ struct Options {
   double lnl_offset = 0.0;
   size_t thread_count = 1;
   unsigned int rate_categories = 4;
+  unsigned int poll_ms = 100;
 
   std::shared_ptr<const MoveTester> move_tester;
 
