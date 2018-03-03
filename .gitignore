@@ -7,3 +7,6 @@ latex/
 .ycm_extra_conf.py*
 _ignore
 /_build/
+.DS_Store
+.dir-locals.el
+/venv/
