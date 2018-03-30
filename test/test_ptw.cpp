@@ -161,9 +161,8 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
     pt::Authority authority(options, ml_lnl);
 
     SECTION("using in-place partition constructor") {
-      pt::Wanderer wanderer(authority, pt::Position(tree, model), labels, sequences,
-                            options.move_tester, options.optimize_models,
-                            options.map_mode);
+      pt::Wanderer wanderer(options, authority, pt::Position(tree, model),
+                            labels, sequences);
 
       wanderer.Start();
 

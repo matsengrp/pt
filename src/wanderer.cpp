@@ -14,7 +14,7 @@
 
 #include "authority.hpp"
 #include "common.hpp"
-#include "move_tester.hpp"
+#include "options.hpp"
 #include "ordered_tree.hpp"
 #include "position.hpp"
 
@@ -24,19 +24,16 @@ namespace pt {
 // Wanderer
 //
 
-Wanderer::Wanderer(Authority& authority,
+Wanderer::Wanderer(const Options& options,
+                   Authority& authority,
                    const Position& starting_position,
                    const std::vector<std::string>& labels,
-                   const std::vector<std::string>& sequences,
-                   std::shared_ptr<const MoveTester> move_tester,
-                   bool optimize_models,
-                   bool map_mode) :
+                   const std::vector<std::string>& sequences) :
+    options_(options),
     authority_(authority),
     partition_(starting_position.GetTree(),
                starting_position.GetModel(),
-               labels, sequences, map_mode),
-    move_tester_(move_tester),
-    optimize_models_(optimize_models)
+               labels, sequences, options.map_mode)
 {
   // we don't want to take ownership of the starting tree, so clone it
   // first and push the clone onto the stack
@@ -86,7 +83,7 @@ void Wanderer::Start()
 
   // do optimization. the function will handle its own traversal
   // updates.
-  if (optimize_models_) {
+  if (options_.optimize_models) {
     partition_.OptimizeAllBranchesAndModel(root);
   } else {
     partition_.OptimizeAllBranches(root);
@@ -135,7 +132,7 @@ bool Wanderer::TestMove(pll_utree_t* tree, pll_unode_t* node, MoveType type)
   // will work properly.
 
   std::tie(accept_move, move_score) =
-      move_tester_->EvaluateMove(partition_, tree, node, type, authority_);
+      options_.move_tester->EvaluateMove(partition_, tree, node, type, authority_);
 
   // report the test score to the authority
   authority_.ReportTestScore(tree, node, type, move_score);
@@ -178,7 +175,7 @@ void Wanderer::MoveForward()
 
   // do optimization. the function will handle its own traversal
   // updates.
-  if (optimize_models_) {
+  if (options_.optimize_models) {
     partition_.OptimizeAllBranchesAndModel(root);
   } else {
     partition_.OptimizeAllBranches(root);

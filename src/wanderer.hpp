@@ -13,18 +13,16 @@
 
 #include "authority.hpp"
 #include "common.hpp"
-#include "move_tester.hpp"
+#include "options.hpp"
 #include "position.hpp"
 
 namespace pt {
 
 class Wanderer {
  private:
+  const Options options_;
   Authority& authority_;
   pll::Partition partition_;
-
-  std::shared_ptr<const MoveTester> move_tester_;
-  bool optimize_models_;
 
   // a data structure that makes more sense for this might be a stack
   // of pairs like {tree, move_queue}. MoveBack() could pop the top of
@@ -43,13 +41,11 @@ class Wanderer {
   std::stack<std::queue<TreeMove>> move_queues_;
 
  public:
-  Wanderer(Authority& authority,
+  Wanderer(const Options& options,
+           Authority& authority,
            const Position& starting_position,
            const std::vector<std::string>& labels,
-           const std::vector<std::string>& sequences,
-           std::shared_ptr<const MoveTester> move_tester,
-           bool optimize_models,
-           bool map_mode);
+           const std::vector<std::string>& sequences);
 
   ~Wanderer();
 

@@ -34,14 +34,11 @@ Guru::Guru(const Options& options,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences) :
     Authority(options, 0.0),
-    thread_count_(options.thread_count),
+    options_(options),
     model_(model),
     labels_(labels),
     sequences_(sequences),
-    move_tester_(options.move_tester),
-    optimize_models_(options.optimize_models),
-    map_mode_(options.map_mode),
-    partition_(starting_tree, model, labels, sequences),
+    partition_(starting_tree, model, labels, sequences, options.map_mode),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
 {
@@ -71,14 +68,11 @@ Guru::Guru(const Options& options,
            const std::vector<std::string>& labels,
            const std::vector<std::string>& sequences) :
     Authority(options, 0.0),
-    thread_count_(options.thread_count),
+    options_(options),
     model_(model),
     labels_(labels),
     sequences_(sequences),
-    move_tester_(options.move_tester),
-    optimize_models_(options.optimize_models),
-    map_mode_(options.map_mode),
-    partition_(starting_trees.at(0), model, labels, sequences),
+    partition_(starting_trees.at(0), model, labels, sequences, options.map_mode),
     idle_wanderer_count_(0),
     wanderer_ready_(options.thread_count, false)
 {
@@ -215,12 +209,11 @@ void Guru::Start()
   // section in the guru until we're done launching all of them
   std::lock_guard<std::mutex> lock(mutex_);
 
-  while (wanderers_.size() < thread_count_ && !starting_positions_.empty()) {
+  while (wanderers_.size() < options_.thread_count && !starting_positions_.empty()) {
     Position position = starting_positions_.front();
     starting_positions_.pop();
 
-    wanderers_.emplace_back(*this, position, labels_, sequences_,
-                            move_tester_, optimize_models_, map_mode_);
+    wanderers_.emplace_back(options_, *this, position, labels_, sequences_);
 
     // if an earlier wanderer happens to move to this wanderer's
     // starting position before this wanderer is started, the wanderer's
@@ -235,10 +228,9 @@ void Guru::Start()
   }
 
   // initialize the wanderers that will start idle at the default position
-  for (size_t i = wanderers_.size(); i < thread_count_; ++i)
+  for (size_t i = wanderers_.size(); i < options_.thread_count; ++i)
   {
-    wanderers_.emplace_back(*this, default_position_, labels_, sequences_,
-                            move_tester_, optimize_models_, map_mode_);
+    wanderers_.emplace_back(options_, *this, default_position_, labels_, sequences_);
 
     // we "start" the wanderer here only to create its future. Start()
     // will immediately return when it sees that its starting tree has
@@ -301,8 +293,8 @@ void Guru::UpdateWandererStatus(size_t index)
 
 void Guru::Wait(unsigned int poll_ms)
 {
-  while (idle_wanderer_count_ < thread_count_) {
-    for (size_t i = 0; i < thread_count_; ++i)
+  while (idle_wanderer_count_ < options_.thread_count) {
+    for (size_t i = 0; i < options_.thread_count; ++i)
     {
       UpdateWandererStatus(i);
 
