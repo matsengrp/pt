@@ -56,7 +56,12 @@ Guru::Guru(const Options& options,
   //       need to be a member variable if that's the case
   pll_unode_t* root = GetVirtualRoot(default_tree);
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
-  SetMaximumScore(partition_.LogLikelihood(root));
+
+  if (options_.marginal_mode) {
+    SetMaximumScore(partition_.LogMarginalLikelihood(root));
+  } else {
+    SetMaximumScore(partition_.LogLikelihood(root));
+  }
 
   // add the starting position to the queue.
   AddStartingPosition(default_position_);
@@ -120,7 +125,12 @@ Guru::Guru(const Options& options,
   // use the default tree's log-likelihood as the authority's initial maximum
   pll_unode_t* root = GetVirtualRoot(default_tree);
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
-  SetMaximumScore(partition_.LogLikelihood(root));
+
+  if (options_.marginal_mode) {
+    SetMaximumScore(partition_.LogMarginalLikelihood(root));
+  } else {
+    SetMaximumScore(partition_.LogLikelihood(root));
+  }
 }
 
 Guru::~Guru()
@@ -160,7 +170,13 @@ std::vector<pll_utree_t*> Guru::SortStartingTrees(
   for (auto tree : starting_trees) {
     pll_unode_t* root = GetVirtualRoot(tree);
     partition_.TraversalUpdate(root, pll::TraversalType::FULL);
-    double lnl = partition_.LogLikelihood(root);
+
+    double lnl;
+    if (options_.marginal_mode) {
+      lnl = partition_.LogMarginalLikelihood(root);
+    } else {
+      lnl = partition_.LogLikelihood(root);
+    }
 
     tree_lnls.emplace_back(tree, lnl);
   }

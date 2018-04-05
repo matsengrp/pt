@@ -154,9 +154,9 @@ TEST_CASE("wanderer operations are correct", "[wanderer]") {
 
     pt::Options options;
     options.lnl_offset = lnl_offset;
-    options.move_tester = std::make_shared<pt::move_tester::Always>();
     options.optimize_models = false;
     options.map_mode = false;
+    options.move_tester = std::make_shared<pt::move_tester::Always>(options);
 
     pt::Authority authority(options, ml_lnl);
 
@@ -224,7 +224,7 @@ TEST_CASE("simple guru operations are correct", "[guru_simple]") {
 
   pt::Options options;
   options.lnl_offset = lnl_offset;
-  options.move_tester = std::make_shared<pt::move_tester::Always>();
+  options.move_tester = std::make_shared<pt::move_tester::Always>(options);
 
   SECTION("single-threaded operation is correct") {
     options.thread_count = 1;
@@ -329,7 +329,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("using move_tester::Always") {
     options.lnl_offset = -2.0;
-    options.move_tester = std::make_shared<pt::move_tester::Always>();
+    options.move_tester = std::make_shared<pt::move_tester::Always>(options);
 
     size_t good_tree_count = 15;
     size_t visited_tree_count = 659;
@@ -352,7 +352,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("using move_tester::SingleBranchOptimizer") {
     options.lnl_offset = -2.0;
-    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
     size_t good_tree_count = 9;
     size_t visited_tree_count = 9;
@@ -377,16 +377,19 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     options.lnl_offset = -2.0;
 
     SECTION("a non-positive radius is not accepted") {
-      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(-1),
+      options.optimization_radius = -1;
+      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(options),
                       std::invalid_argument);
-      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(0),
+
+      options.optimization_radius = 0;
+      CHECK_THROWS_AS(pt::move_tester::BranchNeighborhoodOptimizer tmp(options),
                       std::invalid_argument);
     }
 
     SECTION("with an optimization radius of 1") {
-      int optimization_radius = 1;
+      options.optimization_radius = 1;
       options.move_tester =
-          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
+          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(options);
 
       size_t good_tree_count = 14;
       size_t visited_tree_count = 14;
@@ -408,9 +411,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     }
 
     SECTION("with an optimization radius of 2") {
-      int optimization_radius = 2;
+      options.optimization_radius = 2;
       options.move_tester =
-          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(optimization_radius);
+          std::make_shared<pt::move_tester::BranchNeighborhoodOptimizer>(options);
 
       size_t good_tree_count = 15;
       size_t visited_tree_count = 15;
@@ -434,8 +437,8 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("when tested tree tracking is disabled") {
     options.lnl_offset = -2.0;
-    options.move_tester = std::make_shared<pt::move_tester::Always>();
     options.track_tested_trees = false;
+    options.move_tester = std::make_shared<pt::move_tester::Always>(options);
 
     size_t good_tree_count = 15;
     size_t visited_tree_count = 659;
@@ -458,9 +461,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("with only one rate category") {
     options.lnl_offset = -2.0;
-    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
     options.thread_count = 1;
     options.rate_categories = 1;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
     model = pt::pll::ParseRaxmlInfo(raxml_path, options.rate_categories);
 
@@ -474,9 +477,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("with model optimization enabled") {
     options.lnl_offset = -3.0;
-    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
     options.thread_count = 1;
     options.optimize_models = true;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
     size_t good_tree_count = 45;
     size_t visited_tree_count = 45;
@@ -488,13 +491,28 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
 
   SECTION("with MAP mode enabled") {
     options.lnl_offset = -4.0;
-    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>();
     options.thread_count = 1;
     options.map_mode = true;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
     size_t good_tree_count = 127;
     size_t visited_tree_count = 127;
     size_t tested_tree_count = 4950;
+
+    RunGuruTest(options, tree, model, labels, sequences,
+                good_tree_count, visited_tree_count, tested_tree_count);
+  }
+
+  SECTION("with marginal mode enabled") {
+    options.lnl_offset = -5.0;
+    options.thread_count = 1;
+    options.map_mode = true;
+    options.marginal_mode = true;
+    options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
+
+    size_t good_tree_count = 80;
+    size_t visited_tree_count = 264;
+    size_t tested_tree_count = 3427;
 
     RunGuruTest(options, tree, model, labels, sequences,
                 good_tree_count, visited_tree_count, tested_tree_count);
@@ -529,7 +547,7 @@ TEST_CASE("guru operations on DS1 with two starting trees are correct", "[guru_D
 
   pt::Options options;
   options.thread_count = 1;
-  options.move_tester = std::make_shared<pt::move_tester::Always>();
+  options.move_tester = std::make_shared<pt::move_tester::Always>(options);
 
   SECTION("on the first peak") {
     options.lnl_offset = -2.0;

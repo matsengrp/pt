@@ -4,9 +4,10 @@
 #include <memory>
 #include <string>
 
-#include "move_tester.hpp"
-
 namespace pt {
+
+// forward declaration to resolve circular dependency
+class MoveTester;
 
 struct Options {
   std::string newick_path;
@@ -17,12 +18,14 @@ struct Options {
   size_t thread_count = 1;
   unsigned int rate_categories = 4;
   unsigned int poll_ms = 100;
-
-  std::shared_ptr<const MoveTester> move_tester;
+  int optimization_radius = -1;
 
   bool skip_filtering = false;
   bool optimize_models = false;
   bool map_mode = false;
+  bool marginal_mode = false;
+
+  std::shared_ptr<const MoveTester> move_tester;
 
   std::string good_trees_path;
   std::string visited_trees_path;

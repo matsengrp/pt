@@ -9,12 +9,14 @@
 #include "../authority.hpp"
 #include "../common.hpp"
 #include "../move_tester.hpp"
+#include "../options.hpp"
 
 namespace pt { namespace move_tester {
 
 class SingleBranchOptimizer : public MoveTester
 {
  public:
+  explicit SingleBranchOptimizer(const Options& options);
   ~SingleBranchOptimizer() override;
 
   std::pair<bool, double> EvaluateMove(pll::Partition& partition,

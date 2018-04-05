@@ -8,8 +8,13 @@
 
 #include "../authority.hpp"
 #include "../common.hpp"
+#include "../options.hpp"
 
 namespace pt { namespace move_tester {
+
+SingleBranchOptimizer::SingleBranchOptimizer(const Options& options) :
+    MoveTester(options)
+{ }
 
 SingleBranchOptimizer::~SingleBranchOptimizer()
 { }
@@ -33,12 +38,18 @@ SingleBranchOptimizer::EvaluateMove(pll::Partition& partition,
 
   // no need for another traversal, since the CLVs are already
   // pointing at node
-  const double test_lnl = partition.LogLikelihood(node);
+
+  double test_score;
+  if (GetOptions().marginal_mode) {
+    test_score = partition.LogMarginalLikelihood(node);
+  } else {
+    test_score = partition.LogLikelihood(node);
+  }
 
   // we're just testing whether or not to try the move, so we don't
   // report the score to the authority yet
   bool accept_move = false;
-  if (test_lnl >= authority.GetThresholdScore()) {
+  if (test_score >= authority.GetThresholdScore()) {
     accept_move = true;
   }
 
@@ -49,7 +60,7 @@ SingleBranchOptimizer::EvaluateMove(pll::Partition& partition,
   pll_utree_nni(node, type, nullptr);
   pll::InvalidateEdgeClvs(node);
 
-  return std::make_pair(accept_move, test_lnl);
+  return std::make_pair(accept_move, test_score);
 }
 
 } } // namespace pt::move_tester
