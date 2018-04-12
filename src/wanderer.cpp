@@ -14,6 +14,7 @@
 
 #include "authority.hpp"
 #include "common.hpp"
+#include "move_tester.hpp"
 #include "options.hpp"
 #include "ordered_tree.hpp"
 #include "position.hpp"
@@ -91,7 +92,13 @@ void Wanderer::Start()
 
   // orient CLVs and compute log-likelihood
   partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
-  double lnl = partition_.LogLikelihood(root);
+
+  double lnl;
+  if (options_.marginal_mode) {
+    lnl = partition_.LogMarginalLikelihood(root);
+  } else {
+    lnl = partition_.LogLikelihood(root);
+  }
 
   // report the score to the authority. if it returns false, this
   // isn't a good tree and we're done with it, so destroy it and
@@ -183,7 +190,13 @@ void Wanderer::MoveForward()
 
   // orient CLVs and compute log-likelihood
   partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
-  double lnl = partition_.LogLikelihood(root);
+
+  double lnl;
+  if (options_.marginal_mode) {
+    lnl = partition_.LogMarginalLikelihood(root);
+  } else {
+    lnl = partition_.LogLikelihood(root);
+  }
 
   // report the score to the authority. if it returns true, this is a
   // good tree, and we should push it onto the stack and queue moves

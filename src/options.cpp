@@ -166,6 +166,13 @@ Options ParseArguments(int argc, const char* argv[])
         "Use MAP instead of ML for optimization, assuming an Exp(10) prior.");
     cmd.add(map_mode);
 
+    TCLAP::SwitchArg marginal_mode(
+        "",
+        "marginal",
+        "Use estimated log-marginal likelihood instead of log-likelihood. "
+          "Implies --map.");
+    cmd.add(marginal_mode);
+
     //
     // positional arguments
     //
@@ -214,33 +221,31 @@ Options ParseArguments(int argc, const char* argv[])
     options.thread_count = thread_count.getValue();
     options.rate_categories = rate_categories.getValue();
     options.poll_ms = poll_ms.getValue();
-
-    int radius = optimization_radius.getValue();
-    if (radius < 0) {
-      options.move_tester = std::make_shared<move_tester::Always>();
-    } else if (radius == 0) {
-      // TODO: eventually we might be able to replace
-      //       SingleBranchOptimizer with BranchNeighborhoodOptimizer
-      //       and a radius of 0, but currently the pll-modules
-      //       function neighborhood optimization uses doesn't
-      //       properly handle a radius of 0. see
-      //       https://github.com/ddarriba/pll-modules/issues/15
-      //
-      //       Regardless, as currently written, SingleBranchOptimizer
-      //       is more efficient than BranchNeighborhoodOptimizer
-      //       would be, as it can test the move in-place rather than
-      //       requiring that the tree be cloned, and only requires a
-      //       partial traversal afterward instead of a full
-      //       traversal.
-      options.move_tester = std::make_shared<move_tester::SingleBranchOptimizer>();
-    } else {
-      options.move_tester =
-          std::make_shared<move_tester::BranchNeighborhoodOptimizer>(radius);
-    }
+    options.optimization_radius = optimization_radius.getValue();
 
     options.skip_filtering = skip_filtering.getValue();
     options.optimize_models = optimize_models.getValue();
-    options.map_mode = map_mode.getValue();
+    options.marginal_mode = marginal_mode.getValue();
+
+    if (options.marginal_mode) {
+      options.map_mode = true;
+    } else {
+      options.map_mode = map_mode.getValue();
+    }
+
+    if (options.optimization_radius < 0) {
+      options.move_tester = std::make_shared<move_tester::Always>(options);
+    } else if (options.optimization_radius == 0) {
+      // As currently written, SingleBranchOptimizer is more efficient
+      // than BranchNeighborhoodOptimizer with a radius of 0 would be,
+      // as it can test the move in-place rather than requiring that
+      // the tree be cloned, and only requires a partial traversal
+      // afterward instead of a full traversal.
+      options.move_tester = std::make_shared<move_tester::SingleBranchOptimizer>(options);
+    } else {
+      options.move_tester =
+          std::make_shared<move_tester::BranchNeighborhoodOptimizer>(options);
+    }
 
     options.good_trees_path = good_trees_path.getValue();
     options.visited_trees_path = visited_trees_path.getValue();

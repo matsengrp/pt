@@ -7,8 +7,13 @@
 
 #include "../authority.hpp"
 #include "../common.hpp"
+#include "../options.hpp"
 
 namespace pt { namespace move_tester {
+
+Always::Always(const Options& options) :
+    MoveTester(options)
+{ }
 
 Always::~Always()
 { }

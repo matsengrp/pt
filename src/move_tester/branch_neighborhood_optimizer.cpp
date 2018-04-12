@@ -8,13 +8,14 @@
 
 #include "../authority.hpp"
 #include "../common.hpp"
+#include "../options.hpp"
 
 namespace pt { namespace move_tester {
 
-BranchNeighborhoodOptimizer::BranchNeighborhoodOptimizer(int radius) :
-    radius_(radius)
+BranchNeighborhoodOptimizer::BranchNeighborhoodOptimizer(const Options& options) :
+    MoveTester(options)
 {
-  if (radius_ <= 0) {
+  if (GetOptions().optimization_radius <= 0) {
     throw std::invalid_argument("optimization radius must be positive");
   }
 }
@@ -49,11 +50,17 @@ BranchNeighborhoodOptimizer::EvaluateMove(pll::Partition& partition,
 
   // orient CLVs and optimize branch neighborhood
   partition.TraversalUpdate(node, pll::TraversalType::PARTIAL);
-  partition.OptimizeBranchNeighborhood(node, radius_);
+  partition.OptimizeBranchNeighborhood(node, GetOptions().optimization_radius);
 
   // reorient CLVs and compute log-likelihood
   partition.TraversalUpdate(node, pll::TraversalType::PARTIAL);
-  const double test_score = partition.LogLikelihood(node);
+
+  double test_score;
+  if (GetOptions().marginal_mode) {
+    test_score = partition.LogMarginalLikelihood(node);
+  } else {
+    test_score = partition.LogLikelihood(node);
+  }
 
   // we're just testing whether or not to try the move, so we don't
   // report the score to the authority yet

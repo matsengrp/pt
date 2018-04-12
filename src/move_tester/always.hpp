@@ -9,11 +9,13 @@
 #include "../authority.hpp"
 #include "../common.hpp"
 #include "../move_tester.hpp"
+#include "../options.hpp"
 
 namespace pt { namespace move_tester {
 
 class Always : public MoveTester {
  public:
+  explicit Always(const Options& options);
   ~Always() override;
 
   std::pair<bool, double> EvaluateMove(pll::Partition& partition,
