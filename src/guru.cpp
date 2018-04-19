@@ -48,20 +48,27 @@ Guru::Guru(const Options& options,
   pll_utree_t* default_tree = pll_utree_clone(starting_tree);
   pll_utree_every(default_tree, pll::cb_copy_clv_traversal);
 
-  default_position_ = Position(default_tree, model);
-
-  // use the default tree's log-likelihood as the authority's initial maximum
-  //
-  // TODO: the partition is only ever used here -- it doesn't actually
-  //       need to be a member variable if that's the case
   pll_unode_t* root = GetVirtualRoot(default_tree);
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
 
+  // do initial optimization
+  if (options_.optimize_models) {
+    partition_.OptimizeAllBranchesAndModel(root);
+  } else {
+    partition_.OptimizeAllBranches(root);
+  }
+
+  // orient CLVs for score computation
+  partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
+
+  // use the default tree's score as the authority's initial maximum
   if (options_.marginal_mode) {
     SetMaximumScore(partition_.LogMarginalLikelihood(root));
   } else {
     SetMaximumScore(partition_.LogLikelihood(root));
   }
+
+  default_position_ = Position(default_tree, partition_.GetModel());
 
   // add the starting position to the queue.
   AddStartingPosition(default_position_);
@@ -104,25 +111,25 @@ Guru::Guru(const Options& options,
     starting_clones.push_back(clone);
   }
 
-  // sort the starting tree clones by descending log-likelihood
-  std::vector<pll_utree_t*> sorted_clones = SortStartingTrees(starting_clones);
+  // sort the starting positions by descending score
+  std::vector<Position> sorted_positions = SortStartingPositions(starting_clones);
 
   // when the guru starts, if we don't have enough starting trees to
   // create as many wanderers as requested, we'll need a default tree
   // to initialize them with
-  pll_utree_t* default_tree = pll_utree_clone(sorted_clones[0]);
+  pll_utree_t* default_tree = pll_utree_clone(sorted_positions[0].GetTree());
   pll_utree_every(default_tree, pll::cb_copy_clv_traversal);
 
-  default_position_ = Position(default_tree, model);
+  default_position_ = Position(default_tree, sorted_positions[0].GetModel());
 
   // add the starting positions to the queue
-  for (auto clone : sorted_clones) {
+  for (auto position : sorted_positions) {
     // since we own these clones, we can just add them to the queue
     // directly instead of using AddStartingPosition()
-    starting_positions_.emplace(clone, model);
+    starting_positions_.emplace(position);
   }
 
-  // use the default tree's log-likelihood as the authority's initial maximum
+  // use the default tree's score as the authority's initial maximum
   pll_unode_t* root = GetVirtualRoot(default_tree);
   partition_.TraversalUpdate(root, pll::TraversalType::FULL);
 
@@ -161,15 +168,25 @@ void Guru::AddStartingPosition(const Position& position)
   }
 }
 
-std::vector<pll_utree_t*> Guru::SortStartingTrees(
+std::vector<Position> Guru::SortStartingPositions(
     const std::vector<pll_utree_t*>& starting_trees)
 {
-  using ValueType = std::pair<pll_utree_t*, double>;
-  std::vector<ValueType> tree_lnls;
+  using ValueType = std::pair<Position, double>;
+  std::vector<ValueType> position_lnls;
 
   for (auto tree : starting_trees) {
     pll_unode_t* root = GetVirtualRoot(tree);
     partition_.TraversalUpdate(root, pll::TraversalType::FULL);
+
+    // do initial optimization
+    if (options_.optimize_models) {
+      partition_.OptimizeAllBranchesAndModel(root);
+    } else {
+      partition_.OptimizeAllBranches(root);
+    }
+
+    // orient CLVs for score computation
+    partition_.TraversalUpdate(root, pll::TraversalType::PARTIAL);
 
     double lnl;
     if (options_.marginal_mode) {
@@ -178,20 +195,20 @@ std::vector<pll_utree_t*> Guru::SortStartingTrees(
       lnl = partition_.LogLikelihood(root);
     }
 
-    tree_lnls.emplace_back(tree, lnl);
+    position_lnls.emplace_back(Position(tree, partition_.GetModel()), lnl);
   }
 
-  std::sort(tree_lnls.begin(), tree_lnls.end(),
+  std::sort(position_lnls.begin(), position_lnls.end(),
             [](const ValueType& lhs, const ValueType& rhs) {
               return lhs.second > rhs.second;
             });
 
-  std::vector<pll_utree_t*> sorted_trees;
-  for (auto value : tree_lnls) {
-    sorted_trees.emplace_back(value.first);
+  std::vector<Position> sorted_positions;
+  for (auto value : position_lnls) {
+    sorted_positions.emplace_back(value.first);
   }
 
-  return sorted_trees;
+  return sorted_positions;
 }
 
 bool Guru::RequestMove(const Position& position, pll_unode_t* node, MoveType type)

@@ -67,7 +67,7 @@ class Guru : public Authority {
  private:
   void AddStartingPosition(const Position& position);
 
-  std::vector<pll_utree_t*> SortStartingTrees(
+  std::vector<Position> SortStartingPositions(
       const std::vector<pll_utree_t*>& starting_trees);
 
   void UpdateWandererStatus(size_t index);
