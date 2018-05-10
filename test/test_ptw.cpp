@@ -468,7 +468,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     model = pt::pll::ParseRaxmlInfo(raxml_path, options.rate_categories);
 
     size_t good_tree_count = 5;
-    size_t visited_tree_count = 8;
+    size_t visited_tree_count = 7;
     size_t tested_tree_count = 230;
 
     RunGuruTest(options, tree, model, labels, sequences,
@@ -510,9 +510,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     options.marginal_mode = true;
     options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
-    size_t good_tree_count = 61;
-    size_t visited_tree_count = 270;
-    size_t tested_tree_count = 2659;
+    size_t good_tree_count = 51;
+    size_t visited_tree_count = 194;
+    size_t tested_tree_count = 2204;
 
     RunGuruTest(options, tree, model, labels, sequences,
                 good_tree_count, visited_tree_count, tested_tree_count);
