@@ -1,0 +1,19 @@
+box: debian:stretch
+no-response-timeout: 25
+
+build:
+  steps:
+    - install-packages:
+        packages: autoconf bison build-essential cmake file flex git libgsl-dev libtool
+    - script:
+        name: initialize git submodules
+        code: |
+          git submodule update --init --recursive
+    - script:
+        name: make
+        code: |
+          make
+    - script:
+        name: make test
+        code: |
+          make test
