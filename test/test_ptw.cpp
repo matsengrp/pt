@@ -510,9 +510,9 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     options.marginal_mode = true;
     options.move_tester = std::make_shared<pt::move_tester::SingleBranchOptimizer>(options);
 
-    size_t good_tree_count = 51;
-    size_t visited_tree_count = 194;
-    size_t tested_tree_count = 2204;
+    size_t good_tree_count = 147;
+    size_t visited_tree_count = 506;
+    size_t tested_tree_count = 6063;
 
     RunGuruTest(options, tree, model, labels, sequences,
                 good_tree_count, visited_tree_count, tested_tree_count);
