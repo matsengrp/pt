@@ -53,9 +53,9 @@ Guru::Guru(const Options& options,
 
   // do initial optimization
   if (options_.optimize_models) {
-    partition_.OptimizeAllBranchesAndModel(root);
+    partition_.OptimizeAllBranchesAndModel(root, options_.marginal_mode);
   } else {
-    partition_.OptimizeAllBranches(root);
+    partition_.OptimizeAllBranches(root, options_.marginal_mode);
   }
 
   // orient CLVs for score computation
@@ -180,9 +180,9 @@ std::vector<Position> Guru::SortStartingPositions(
 
     // do initial optimization
     if (options_.optimize_models) {
-      partition_.OptimizeAllBranchesAndModel(root);
+      partition_.OptimizeAllBranchesAndModel(root, options_.marginal_mode);
     } else {
-      partition_.OptimizeAllBranches(root);
+      partition_.OptimizeAllBranches(root, options_.marginal_mode);
     }
 
     // orient CLVs for score computation

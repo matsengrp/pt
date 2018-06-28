@@ -85,9 +85,9 @@ void Wanderer::Start()
   // do optimization. the function will handle its own traversal
   // updates.
   if (options_.optimize_models) {
-    partition_.OptimizeAllBranchesAndModel(root);
+    partition_.OptimizeAllBranchesAndModel(root, options_.marginal_mode);
   } else {
-    partition_.OptimizeAllBranches(root);
+    partition_.OptimizeAllBranches(root, options_.marginal_mode);
   }
 
   // orient CLVs and compute log-likelihood
@@ -183,9 +183,9 @@ void Wanderer::MoveForward()
   // do optimization. the function will handle its own traversal
   // updates.
   if (options_.optimize_models) {
-    partition_.OptimizeAllBranchesAndModel(root);
+    partition_.OptimizeAllBranchesAndModel(root, options_.marginal_mode);
   } else {
-    partition_.OptimizeAllBranches(root);
+    partition_.OptimizeAllBranches(root, options_.marginal_mode);
   }
 
   // orient CLVs and compute log-likelihood
