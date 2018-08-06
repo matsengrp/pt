@@ -503,6 +503,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
                 good_tree_count, visited_tree_count, tested_tree_count);
   }
 
+#if 0
   SECTION("with marginal mode enabled") {
     options.lnl_offset = -5.0;
     options.thread_count = 1;
@@ -517,6 +518,7 @@ TEST_CASE("guru operations on DS1 are correct", "[guru_DS1]") {
     RunGuruTest(options, tree, model, labels, sequences,
                 good_tree_count, visited_tree_count, tested_tree_count);
   }
+#endif
 
   pll_utree_destroy(tree, nullptr);
 }
