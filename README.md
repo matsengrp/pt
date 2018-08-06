@@ -1,15 +1,17 @@
+[![wercker status](https://app.wercker.com/status/d4b02863ff26dc75109c78a85225cd61/s/master "wercker status")](https://app.wercker.com/project/byKey/d4b02863ff26dc75109c78a85225cd61)
+
 # phylogenetic topographer
 
 
 ## Compiling
 
-`pt`'s dependencies are included as git submodules, so when cloning the repository is it necessary to use the `--recursive` flag, like so:
+Most of `pt`'s dependencies are included as git submodules, so when cloning the repository is it necessary to use the `--recursive` flag, like so:
 
 ``` shell
 git clone --recursive https://github.com/matsengrp/pt.git
 ```
 
-A C++11 compiler and CMake 3.0+ are required for compilation.
+A C++11 compiler, CMake 3.0+, and GSL (version 1 or 2) are required for compilation.
 To compile, simply run `make` in the project directory.
 To run `pt`'s unit tests, run `make test`.
 The unit tests usually take between 5-10 minutes to run.
